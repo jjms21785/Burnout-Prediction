@@ -13,11 +13,6 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-3">
-                    <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-                        <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                            <div class="w-4 h-4 bg-green-600 rounded-full"></div>
-                        </div>
-                    </div>
                     <div>
                         <h1 class="text-xl font-bold text-gray-900">Burnalytix</h1>
                         <p class="text-sm text-green-600">@yield('subtitle', 'Academic Burnout Predictor')</p>
@@ -56,9 +51,6 @@
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col items-center">
                 <div class="flex items-center space-x-3 mb-4">
-                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                        <div class="w-6 h-6 bg-green-800 rounded-full"></div>
-                    </div>
                     <span class="text-xl font-bold">Burnalytix</span>
                 </div>
                 <p class="text-green-200 text-center mb-6">

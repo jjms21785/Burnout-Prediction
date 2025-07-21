@@ -74,42 +74,56 @@
         <div class="bg-white border border-gray-200 rounded-lg p-6">
             <h3 class="text-xl font-bold text-green-800 mb-2">Burnout Risk Distribution</h3>
             <p class="text-gray-600 mb-6">Current assessment results breakdown</p>
-            <div class="relative">
-                <canvas id="riskDistributionChart" width="400" height="400"></canvas>
-            </div>
-            <div class="flex justify-center space-x-6 mt-4">
-                <div class="flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span class="text-sm">Low Risk {{ number_format(($lowRisk / $totalAssessments) * 100, 1) }}%</span>
+            @if($totalAssessments > 0)
+                <div class="relative">
+                    <canvas id="riskDistributionChart" width="400" height="400"></canvas>
                 </div>
-                <div class="flex items-center">
-                    <div class="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
-                    <span class="text-sm">Moderate Risk {{ number_format(($moderateRisk / $totalAssessments) * 100, 1) }}%</span>
+                <div class="flex justify-center space-x-6 mt-4">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                        <span class="text-sm">
+                            Low Risk {{ number_format(($lowRisk / $totalAssessments) * 100, 1) }}%
+                        </span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
+                        <span class="text-sm">
+                            Moderate Risk {{ number_format(($moderateRisk / $totalAssessments) * 100, 1) }}%
+                        </span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                        <span class="text-sm">
+                            High Risk {{ number_format(($highRisk / $totalAssessments) * 100, 1) }}%
+                        </span>
+                    </div>
                 </div>
-                <div class="flex items-center">
-                    <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                    <span class="text-sm">High Risk {{ number_format(($highRisk / $totalAssessments) * 100, 1) }}%</span>
-                </div>
-            </div>
+            @else
+                <div class="flex items-center justify-center h-40 text-gray-400">No data available for this chart.</div>
+            @endif
         </div>
 
         <!-- Recent Assessments -->
         <div class="bg-white border border-gray-200 rounded-lg p-6">
             <h3 class="text-xl font-bold text-green-800 mb-2">Recent Assessments</h3>
             <p class="text-gray-600 mb-6">Latest burnout assessments submitted</p>
-            <div class="space-y-4">
-                @foreach($recentAssessments as $assessment)
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                        <p class="font-medium text-gray-900">Assessment #{{ $assessment->id }}</p>
-                        <p class="text-sm text-gray-500">{{ $assessment->created_at->format('Y-m-d H:i') }}</p>
+            @if(isset($recentAssessments) && $recentAssessments->count() > 0)
+                <div class="space-y-4">
+                    @foreach($recentAssessments->take(5) as $assessment)
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="font-medium text-gray-900">Assessment #{{ $assessment->id }}</p>
+                            <p class="text-sm text-gray-500">{{ $assessment->created_at->format('Y-m-d H:i') }}</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium {{ $assessment->risk_badge_color }}">
+                            {{ $assessment->formatted_risk }}
+                        </span>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-medium {{ $assessment->risk_badge_color }}">
-                        {{ $assessment->formatted_risk }}
-                    </span>
+                    @endforeach
                 </div>
-                @endforeach
-            </div>
+            @else
+                <div class="flex items-center justify-center h-24 text-gray-400">No recent assessments available.</div>
+            @endif
         </div>
     </div>
 
@@ -119,14 +133,22 @@
         <div class="bg-white border border-gray-200 rounded-lg p-6 h-[28rem] flex flex-col justify-between overflow-hidden pb-25">
             <h3 class="text-xl font-bold text-green-800 mb-2">Burnout Trends by Department</h3>
             <p class="text-gray-600 mb-6">Assessment distribution by academic department</p>
-            <canvas id="departmentChart" width="400" height="300"></canvas>
+            @if(isset($departmentData) && count($departmentData['labels']) > 0)
+                <canvas id="departmentChart" width="400" height="300"></canvas>
+            @else
+                <div class="flex items-center justify-center h-full text-gray-400">No data available for this chart.</div>
+            @endif
         </div>
 
         <!-- Trend Over Time -->
         <div class="bg-white border border-gray-200 rounded-lg p-6 h-[28rem] flex flex-col justify-between overflow-hidden pb-25">
             <h3 class="text-xl font-bold text-green-800 mb-2">Burnout Trends Over Time</h3>
             <p class="text-gray-600 mb-6">Monthly assessment trends by risk level</p>
-            <canvas id="trendChart" width="400" height="300"></canvas>
+            @if(isset($trendData) && count($trendData['labels']) > 0)
+                <canvas id="trendChart" width="400" height="300"></canvas>
+            @else
+                <div class="flex items-center justify-center h-full text-gray-400">No data available for this chart.</div>
+            @endif
         </div>
     </div>
 
@@ -134,6 +156,7 @@
     <div class="bg-white border border-gray-200 rounded-lg p-6">
         <h3 class="text-xl font-bold text-green-800 mb-2">Action Items</h3>
         <p class="text-gray-600 mb-6">Recommended actions based on current data</p>
+        @if($totalAssessments > 0)
         <div class="space-y-4">
             @if($highRisk > 0)
             <div class="flex items-start space-x-3 p-4 bg-red-50 rounded-lg border-l-4 border-red-400">
@@ -169,11 +192,15 @@
                 </div>
             </div>
         </div>
+        @else
+        <div class="flex items-center justify-center h-24 text-gray-400">No action items available.</div>
+        @endif
     </div>
 </div>
 
 <script>
 // Risk Distribution Pie Chart
+@if($totalAssessments > 0)
 const riskCtx = document.getElementById('riskDistributionChart').getContext('2d');
 new Chart(riskCtx, {
     type: 'doughnut',
@@ -195,75 +222,31 @@ new Chart(riskCtx, {
         }
     }
 });
+@endif
 
 // Department Chart
+@if(isset($departmentData) && count($departmentData['labels']) > 0)
 const deptCtx = document.getElementById('departmentChart').getContext('2d');
 new Chart(deptCtx, {
     type: 'bar',
-    data: {
-        labels: ['Computer Science', 'Engineering', 'Business', 'Nursing', 'Psychology'],
-        datasets: [
-            {
-                label: 'High Risk',
-                data: [8, 5, 4, 3, 3],
-                backgroundColor: '#ef4444'
-            },
-            {
-                label: 'Moderate Risk',
-                data: [15, 12, 18, 8, 6],
-                backgroundColor: '#f97316'
-            },
-            {
-                label: 'Low Risk',
-                data: [25, 20, 22, 15, 12],
-                backgroundColor: '#22c55e'
-            }
-        ]
-    },
+    data: @json($departmentData),
     options: {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-            x: {
-                stacked: true
-            },
-            y: {
-                stacked: true
-            }
+            x: { stacked: true },
+            y: { stacked: true }
         }
     }
 });
+@endif
 
 // Trend Chart
+@if(isset($trendData) && count($trendData['labels']) > 0)
 const trendCtx = document.getElementById('trendChart').getContext('2d');
 new Chart(trendCtx, {
     type: 'line',
-    data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [
-            {
-                label: 'High Risk',
-                data: [12, 15, 18, 23, 20, 25],
-                borderColor: '#ef4444',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                fill: true
-            },
-            {
-                label: 'Moderate Risk',
-                data: [45, 52, 48, 55, 60, 58],
-                borderColor: '#f97316',
-                backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                fill: true
-            },
-            {
-                label: 'Low Risk',
-                data: [78, 85, 92, 98, 95, 102],
-                borderColor: '#22c55e',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                fill: true
-            }
-        ]
-    },
+    data: @json($trendData),
     options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -273,5 +256,6 @@ new Chart(trendCtx, {
         }
     }
 });
+@endif
 </script>
 @endsection

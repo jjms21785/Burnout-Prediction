@@ -16,9 +16,6 @@
             <a href="#how-burnalytix-helps" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors scroll-smooth">
                 Get Started
             </a>
-            <a href="{{ route('assessment.index') }}" class="border border-green-600 text-green-600 hover:bg-green-50 px-8 py-3 rounded-lg font-medium transition-colors">
-                Take Assessment Now
-            </a>
         </div>
     </div>
 </section>
@@ -141,10 +138,10 @@
         <h2 class="text-3xl font-bold text-white mb-8">Ready to Assess your Burnout Risk?</h2>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="{{ route('assessment.index') }}" class="bg-white text-green-600 hover:bg-gray-100 px-8 py-3 rounded-lg font-medium transition-colors">
-                Start Assessment Now?
+                Start Assessment
             </a>
             <a href="{{ route('admin.dashboard') }}" class="border border-white text-white hover:bg-white hover:text-green-600 px-8 py-3 rounded-lg font-medium transition-colors">
-                Go to Admin Portal?
+                Go to Admin Portal
             </a>
         </div>
     </div>

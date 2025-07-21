@@ -1,4 +1,3 @@
-# train.py
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -16,7 +15,6 @@ model.fit(X_train, y_train)
 
 joblib.dump(model, "burnout_model.pkl")
 
-# Evaluation
 y_pred = model.predict(X_test)
 print("Classification Report:\n", classification_report(y_test, y_pred))
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
