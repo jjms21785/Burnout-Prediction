@@ -24,7 +24,7 @@
                     Import/Export Data
                 </button>
                 <a href="{{ route('assessment.index') }}" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
-                    Assessment
+                    Individual Assessment
                 </a>
                 <button class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
                     Settings
