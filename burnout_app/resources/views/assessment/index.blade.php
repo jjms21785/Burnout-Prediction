@@ -5,7 +5,7 @@
 
 @section('content')
 <!-- OLBI-S Info Modal -->
-<div id="olbiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm" style="display: flex;">
+<div id="olbiModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" style="background: transparent; display: flex;">
     <div class="bg-white rounded-lg shadow-lg w-[90vw] max-w-5xl h-auto p-8 relative flex flex-col justify-center items-center" style="min-width:600px;">
         <h2 class="text-2xl font-bold text-green-700 mb-4">About the OLBI-S Assessment</h2>
         <p class="mb-2 text-gray-700">
@@ -51,52 +51,107 @@
     <div class="bg-white border border-gray-200 rounded-lg shadow-lg">
         <form action="{{ route('assessment.store') }}" method="POST" id="assessmentForm">
             @csrf
-            <div class="border-b p-6">
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center">
-                        <p class="text-green-600 font-medium">
-                            Progress: <span id="progressText">0/16</span> questions completed
-                        </p>
+            <div id="demographicStep" class="p-8">
+                <!-- <h2 class="text-2xl font-bold text-green-700 mb-6 text-center">Basic Information</h2> -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="student_id" class="block text-gray-700 font-medium mb-2">Student ID</label>
+                        <input type="text" name="student_id" id="student_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" maxlength="32" required pattern="^[A-Za-z0-9\-]+$">
+                        @error('student_id')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div id="progressBar" class="bg-green-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    <div>
+                        <label for="name" class="block text-gray-700 font-medium mb-2">Name (Optional)</label>
+                        <input type="text" name="name" id="name" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" maxlength="255" pattern="^[A-Za-z ]*$">
+                        @error('name')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
                     </div>
+                    <div>
+                        <label for="age" class="block text-gray-700 font-medium mb-2">Age</label>
+                        <input type="number" name="age" id="age" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" min="10" max="100" required>
+                        @error('age')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+                    </div>
+                    <div>
+                        <label for="gender" class="block text-gray-700 font-medium mb-2">Gender</label>
+                        <select name="gender" id="gender" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" required>
+                            <option value="" disabled selected>Select gender</option>
+                            @foreach($genders as $gender)
+                                <option value="{{ $gender }}">{{ $gender }}</option>
+                            @endforeach
+                        </select>
+                        @error('gender')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+                    </div>
+                    <div>
+                        <label for="program" class="block text-gray-700 font-medium mb-2">Program</label>
+                        <select name="program" id="program" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" required>
+                            <option value="" disabled selected>Select program</option>
+                            @foreach($programs as $program)
+                                <option value="{{ $program }}">{{ $program }}</option>
+                            @endforeach
+                        </select>
+                        <input type="text" name="program_other" id="program_other" class="w-full border border-gray-300 rounded-lg px-4 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-green-200" placeholder="Please specify program" style="display:none;">
+                        @error('program')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+                    </div>
+                    <div>
+                        <label for="year_level" class="block text-gray-700 font-medium mb-2">Year Level</label>
+                        <select name="year_level" id="year_level" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" required>
+                            <option value="" disabled selected>Select year level</option>
+                            @foreach($year_levels as $level)
+                                <option value="{{ $level }}">{{ $level }}</option>
+                            @endforeach
+                        </select>
+                        @error('year_level')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+                    </div>
+                </div>
+                <div class="text-center pt-8">
+                    <button type="button" id="nextBtn" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors">Next</button>
                 </div>
             </div>
 
-            <div class="m-4">
-                @php
-                    $olbi_questions = [
-                        'I always find new and interesting aspects in my studies.',
-                        'It happens more and more often that I talk about my studies in a negative way.',
-                        'Lately, I tend to think less about my academic tasks and do them almost mechanically.',
-                        'I find my studies to be a positive challenge.',
-                        'Over time, one can become disconnected from this type of study.',
-                        'Sometimes I feel sickened by my studies.',
-                        'This is the only field of study that I can imagine myself doing.',
-                        'I feel more and more engaged in my studies.',
-                        'There are days when I feel tired before I arrive in class or start studying.',
-                        'After a class or after studying, I tend to need more time than in the past in order to relax and feel better.',
-                        'I can tolerate the pressure of my studies very well.',
-                        'While studying, I often feel emotionally drained.',
-                        'After a class or after studying, I have enough energy for my leisure activities.',
-                        'After a class or after studying, I usually feel worn out and weary.',
-                        'I can usually manage my study-related workload well.',
-                        'When I study, I usually feel energized.'
-                    ];
-                    $olbi_options = [
-                        ['value' => 3, 'label' => 'Strongly Agree'],
-                        ['value' => 2, 'label' => 'Agree'],
-                        ['value' => 1, 'label' => 'Disagree'],
-                        ['value' => 0, 'label' => 'Strongly Disagree'],
-                                    ];
-                                @endphp
+            <div id="questionsStep" style="display:none;">
+                <div class="border-b p-6">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <p class="text-green-600 font-medium">
+                                Progress: <span id="progressText">0/16</span> questions completed
+                            </p>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progressBar" class="bg-green-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="m-4">
+                    @php
+                        $olbi_questions = [
+                            'I always find new and interesting aspects in my studies.',
+                            'It happens more and more often that I talk about my studies in a negative way.',
+                            'Lately, I tend to think less about my academic tasks and do them almost mechanically.',
+                            'I find my studies to be a positive challenge.',
+                            'Over time, one can become disconnected from this type of study.',
+                            'Sometimes I feel sickened by my studies.',
+                            'This is the only field of study that I can imagine myself doing.',
+                            'I feel more and more engaged in my studies.',
+                            'There are days when I feel tired before I arrive in class or start studying.',
+                            'After a class or after studying, I tend to need more time than in the past in order to relax and feel better.',
+                            'I can tolerate the pressure of my studies very well.',
+                            'While studying, I often feel emotionally drained.',
+                            'After a class or after studying, I have enough energy for my leisure activities.',
+                            'After a class or after studying, I usually feel worn out and weary.',
+                            'I can usually manage my study-related workload well.',
+                            'When I study, I usually feel energized.'
+                        ];
+                        $olbi_options = [
+                            ['value' => 3, 'label' => 'Strongly Agree'],
+                            ['value' => 2, 'label' => 'Agree'],
+                            ['value' => 1, 'label' => 'Disagree'],
+                            ['value' => 0, 'label' => 'Strongly Disagree'],
+                        ];
+                    @endphp
 
-                @foreach($olbi_questions as $index => $question)
-                <div class="mb-8">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $index + 1 }}. {{ $question }}</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                        @foreach($olbi_options as $option)
+                    @foreach($olbi_questions as $index => $question)
+                    <div class="mb-8">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $index + 1 }}. {{ $question }}</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                            @foreach($olbi_options as $option)
                                 <label class="flex items-center space-x-3 p-4 rounded-lg border-2 border-gray-200 hover:border-green-300 cursor-pointer transition-colors answer-option">
                                     <input type="radio" 
                                            name="answers[{{ $index }}]" 
@@ -105,19 +160,20 @@
                                            required>
                                     <span class="flex-1 text-gray-700">{{ $option['label'] }}</span>
                                 </label>
-                                @endforeach
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-                @endforeach
+                    @endforeach
 
-                <div class="text-center pt-8">
-                    <button type="submit" 
-                            id="submitBtn"
-                            class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors opacity-50 cursor-not-allowed"
-                            disabled>
-                        Submit
-                    </button>
-                    <p class="text-gray-500 text-sm mt-2">Please answer all 16 questions to submit the survey</p>
+                    <div class="text-center pt-8">
+                        <button type="submit" 
+                                id="submitBtn"
+                                class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors opacity-50 cursor-not-allowed"
+                                disabled>
+                            Submit
+                        </button>
+                        <p class="text-gray-500 text-sm mt-2">Please answer all 16 questions to submit the survey</p>
+                    </div>
                 </div>
             </div>
         </form>
@@ -132,6 +188,51 @@ document.addEventListener('DOMContentLoaded', function() {
     if (modal && continueBtn) {
         continueBtn.addEventListener('click', function() {
             modal.style.display = 'none';
+        });
+    }
+
+    // Two-step form logic
+    const demographicStep = document.getElementById('demographicStep');
+    const questionsStep = document.getElementById('questionsStep');
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn && demographicStep && questionsStep) {
+        nextBtn.addEventListener('click', function() {
+            // Validate demographic fields before proceeding
+            const studentId = document.getElementById('student_id');
+            const name = document.getElementById('name');
+            const age = document.getElementById('age');
+            const gender = document.getElementById('gender');
+            const program = document.getElementById('program');
+            const yearLevel = document.getElementById('year_level');
+            let valid = true;
+            [studentId, name, age, gender, program, yearLevel].forEach(field => {
+                if (!field.value) {
+                    field.classList.add('border-red-500');
+                    valid = false;
+                } else {
+                    field.classList.remove('border-red-500');
+                }
+            });
+            if (valid) {
+                demographicStep.style.display = 'none';
+                questionsStep.style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    }
+
+    // Show/hide program_other field
+    const programSelect = document.getElementById('program');
+    const programOther = document.getElementById('program_other');
+    if (programSelect && programOther) {
+        programSelect.addEventListener('change', function() {
+            if (programSelect.value === 'Other') {
+                programOther.style.display = 'block';
+                programOther.required = true;
+            } else {
+                programOther.style.display = 'none';
+                programOther.required = false;
+            }
         });
     }
 
@@ -178,3 +279,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+
+<style>
+#olbiModal {
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(8px);
+}
+</style>

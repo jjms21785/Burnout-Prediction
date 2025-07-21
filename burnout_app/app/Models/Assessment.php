@@ -13,11 +13,24 @@ class Assessment extends Model
         'answers',
         'overall_risk',
         'ip_address',
-        'user_agent'
+        'user_agent',
+        'confidence',
+        'exhaustion_score',
+        'disengagement_score',
+        'name',
+        'age',
+        'gender',
+        'program',
+        'year_level',
+        'student_id'
     ];
 
     protected $casts = [
-        'answers' => 'array'
+        'answers' => 'array',
+        'confidence' => 'float',
+        'exhaustion_score' => 'integer',
+        'disengagement_score' => 'integer',
+        'age' => 'integer',
     ];
 
     public function getRiskBadgeColorAttribute()

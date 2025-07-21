@@ -8,7 +8,7 @@
 <div class="bg-green-600 text-white py-12">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h1 class="text-3xl font-bold mb-4">Your Burnout Assessment Result</h1>
-        <p class="text-green-100">Based on your responses to 22 psychometric questions using MBI-HSS scoring</p>
+        <p class="text-green-100">Based on your responses to 16 psychometric questions using OLBI-S scoring</p>
     </div>
 </div>
 
@@ -38,7 +38,7 @@
                     Burnout Risk Level: {{ ucfirst($assessment->overall_risk) }}
                 </h2>
                 <p class="text-{{ $assessment->overall_risk === 'high' ? 'red' : ($assessment->overall_risk === 'moderate' ? 'orange' : 'green') }}-600">
-                    Based on MBI-HSS scoring system
+                    Based on OLBI-S scoring system
                 </p>
             </div>
         </div>
@@ -62,76 +62,34 @@
         </div>
     </div>
 
-    <!-- MBI-HSS Score Breakdown -->
+    <!-- OLBI-S Score Breakdown -->
     <div class="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-        <h2 class="text-2xl font-bold text-green-800 mb-6">📊 MBI-HSS Score Breakdown</h2>
-        <div class="grid md:grid-cols-3 gap-6">
-            <!-- Emotional Exhaustion -->
+        <h2 class="text-2xl font-bold text-green-800 mb-6">📊 OLBI-S Score Breakdown</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Exhaustion -->
             <div class="text-center">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Emotional Exhaustion (EE)</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Exhaustion</h3>
                 <div class="relative w-32 h-32 mx-auto mb-4">
                     <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
                         <path class="text-gray-300" stroke="currentColor" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
-                        <path class="text-{{ isset($assessment->ee_score) && $assessment->ee_score >= 27 ? 'red' : (isset($assessment->ee_score) && $assessment->ee_score >= 17 ? 'orange' : 'green') }}-600" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="{{ isset($assessment->ee_score) ? ($assessment->ee_score / 54) * 100 : 0 }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                        <path class="text-green-600" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="{{ isset($assessment->exhaustion_score) ? ($assessment->exhaustion_score / 24) * 100 : 0 }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
                     </svg>
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-xl font-bold">{{ $assessment->ee_score ?? 'N/A' }}/54</span>
+                        <span class="text-xl font-bold">{{ $assessment->exhaustion_score ?? 'N/A' }}/24</span>
                     </div>
-                </div>
-                @php
-                    $eeInterpretation = isset($assessment->ee_score) && $assessment->ee_score >= 27 ? ['level' => 'High', 'description' => 'Emotionally drained', 'color' => 'red'] : 
-                                       (isset($assessment->ee_score) && $assessment->ee_score >= 17 ? ['level' => 'Moderate', 'description' => 'Some emotional strain', 'color' => 'orange'] : 
-                                       ['level' => 'Low', 'description' => 'Emotionally stable', 'color' => 'green']);
-                @endphp
-                <div class="bg-{{ $eeInterpretation['color'] }}-50 border border-{{ $eeInterpretation['color'] }}-200 rounded-lg p-3">
-                    <p class="font-semibold text-{{ $eeInterpretation['color'] }}-800">{{ $eeInterpretation['level'] }}</p>
-                    <p class="text-sm text-{{ $eeInterpretation['color'] }}-600">{{ $eeInterpretation['description'] }}</p>
                 </div>
             </div>
-
-            <!-- Depersonalization -->
+            <!-- Disengagement -->
             <div class="text-center">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Depersonalization (DP)</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Disengagement</h3>
                 <div class="relative w-32 h-32 mx-auto mb-4">
                     <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
                         <path class="text-gray-300" stroke="currentColor" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
-                        <path class="text-{{ isset($assessment->dp_score) && $assessment->dp_score >= 13 ? 'red' : (isset($assessment->dp_score) && $assessment->dp_score >= 7 ? 'orange' : 'green') }}-600" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="{{ isset($assessment->dp_score) ? ($assessment->dp_score / 30) * 100 : 0 }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                        <path class="text-orange-600" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="{{ isset($assessment->disengagement_score) ? ($assessment->disengagement_score / 24) * 100 : 0 }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
                     </svg>
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-xl font-bold">{{ $assessment->dp_score ?? 'N/A' }}/30</span>
+                        <span class="text-xl font-bold">{{ $assessment->disengagement_score ?? 'N/A' }}/24</span>
                     </div>
-                </div>
-                @php
-                    $dpInterpretation = isset($assessment->dp_score) && $assessment->dp_score >= 13 ? ['level' => 'High', 'description' => 'Detached from studies', 'color' => 'red'] : 
-                                       (isset($assessment->dp_score) && $assessment->dp_score >= 7 ? ['level' => 'Moderate', 'description' => 'Some detachment', 'color' => 'orange'] : 
-                                       ['level' => 'Low', 'description' => 'Engaged with studies', 'color' => 'green']);
-                @endphp
-                <div class="bg-{{ $dpInterpretation['color'] }}-50 border border-{{ $dpInterpretation['color'] }}-200 rounded-lg p-3">
-                    <p class="font-semibold text-{{ $dpInterpretation['color'] }}-800">{{ $dpInterpretation['level'] }}</p>
-                    <p class="text-sm text-{{ $dpInterpretation['color'] }}-600">{{ $dpInterpretation['description'] }}</p>
-                </div>
-            </div>
-
-            <!-- Personal Accomplishment -->
-            <div class="text-center">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Personal Accomplishment (PA)</h3>
-                <div class="relative w-32 h-32 mx-auto mb-4">
-                    <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
-                        <path class="text-gray-300" stroke="currentColor" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
-                        <path class="text-{{ isset($assessment->pa_score) && $assessment->pa_score <= 31 ? 'red' : (isset($assessment->pa_score) && $assessment->pa_score <= 36 ? 'orange' : 'green') }}-600" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="{{ isset($assessment->pa_score) ? ($assessment->pa_score / 48) * 100 : 0 }}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
-                    </svg>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-xl font-bold">{{ $assessment->pa_score ?? 'N/A' }}/48</span>
-                    </div>
-                </div>
-                @php
-                    $paInterpretation = isset($assessment->pa_score) && $assessment->pa_score <= 31 ? ['level' => 'Low', 'description' => 'Feels unaccomplished', 'color' => 'red'] : 
-                                       (isset($assessment->pa_score) && $assessment->pa_score <= 36 ? ['level' => 'Moderate', 'description' => 'Moderate accomplishment', 'color' => 'orange'] : 
-                                       ['level' => 'High', 'description' => 'Feels accomplished', 'color' => 'green']);
-                @endphp
-                <div class="bg-{{ $paInterpretation['color'] }}-50 border border-{{ $paInterpretation['color'] }}-200 rounded-lg p-3">
-                    <p class="font-semibold text-{{ $paInterpretation['color'] }}-800">{{ $paInterpretation['level'] }}</p>
-                    <p class="text-sm text-{{ $paInterpretation['color'] }}-600">{{ $paInterpretation['description'] }}</p>
                 </div>
             </div>
         </div>
