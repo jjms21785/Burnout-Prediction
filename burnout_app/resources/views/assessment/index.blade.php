@@ -12,8 +12,8 @@
             The Oldenburg Burnout Inventory – Student Version (OLBI-S) is a scientifically validated tool used to assess academic burnout among students. It focuses on two key dimensions of burnout:
         </p>
         <ul class="list-disc pl-6 mb-2 text-gray-700">
-            <li><b>Exhaustion</b> – emotional, cognitive, and physical fatigue caused by study demands.</li>
-            <li><b>Disengagement</b> – withdrawal and detachment from academic work and lack of motivation.</li>
+            <b>Exhaustion:</b> emotional, cognitive, and physical fatigue caused by study demands.<br>
+            <b>Disengagement:</b> withdrawal and detachment from academic work and lack of motivation.
         </ul>
         <p class="mb-2 text-gray-700">
             The OLBI-S is adapted from the original OLBI created by Evangelia Demerouti and colleagues, and is freely available for academic and research purposes. It has been widely used in burnout studies involving students from various disciplines and countries.
@@ -22,10 +22,7 @@
             This burnout self-assessment is based on the Oldenburg Burnout Inventory – Student version (OLBI-S), which is a research-based tool used to explore patterns of academic stress, exhaustion, and disengagement among students.
         </p>
         <p class="mb-2 text-gray-700">
-            This assessment is provided for educational and self-reflection purposes only. It is not a diagnostic tool and does not replace professional mental health evaluation, counseling, or treatment.
-        </p>
-        <p class="mb-2 text-gray-700">
-            By continuing, you acknowledge and agree to the following:
+            This assessment is provided for educational and self-reflection purposes only. It is not a diagnostic tool and does not replace professional mental health evaluation, counseling, or treatment. By continuing, you acknowledge and agree to the following:
         </p>
         <ul class="list-disc pl-6 mb-2 text-gray-700">
             <li>Your responses are used only for academic and research purposes.</li>

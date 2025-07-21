@@ -5,9 +5,9 @@
 
 @section('content')
 <!-- Dashboard Content -->
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="flex flex-col h-full min-h-screen p-6 md:p-10 lg:p-12 xl:p-16" style="max-width: 1600px; margin: 0 auto;">
     <!-- Key Metrics -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
         <div class="bg-white border border-green-200 rounded-lg p-6">
             <div class="flex items-center justify-between">
                 <div>
@@ -69,9 +69,9 @@
         </div>
     </div>
 
-    <div class="grid lg:grid-cols-2 gap-8 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 w-full flex-1">
         <!-- Risk Distribution Pie Chart -->
-        <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <div class="bg-white border border-gray-200 rounded-lg p-6 h-full flex flex-col" style="max-height: 480px;">
             <h3 class="text-xl font-bold text-green-800 mb-2">Burnout Risk Distribution</h3>
             <p class="text-gray-600 mb-6">Current assessment results breakdown</p>
             @if($totalAssessments > 0)
@@ -104,7 +104,7 @@
         </div>
 
         <!-- Recent Assessments -->
-        <div class="bg-white border border-gray-200 rounded-lg p-6">
+        <div class="bg-white border border-gray-200 rounded-lg p-6 h-full flex flex-col" style="max-height: 480px;">
             <h3 class="text-xl font-bold text-green-800 mb-2">Recent Assessments</h3>
             <p class="text-gray-600 mb-6">Latest burnout assessments submitted</p>
             @if(isset($recentAssessments) && $recentAssessments->count() > 0)
@@ -128,9 +128,9 @@
     </div>
 
     <!-- Charts Row -->
-    <div class="grid lg:grid-cols-2 gap-8 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 w-full flex-1">
         <!-- Department Breakdown -->
-        <div class="bg-white border border-gray-200 rounded-lg p-6 h-[28rem] flex flex-col justify-between overflow-hidden pb-25">
+        <div class="bg-white border border-gray-200 rounded-lg p-6 h-full flex flex-col" style="max-height: 480px;">
             <h3 class="text-xl font-bold text-green-800 mb-2">Burnout Trends by Department</h3>
             <p class="text-gray-600 mb-6">Assessment distribution by academic department</p>
             @if(isset($departmentData) && count($departmentData['labels']) > 0)
@@ -141,7 +141,7 @@
         </div>
 
         <!-- Trend Over Time -->
-        <div class="bg-white border border-gray-200 rounded-lg p-6 h-[28rem] flex flex-col justify-between overflow-hidden pb-25">
+        <div class="bg-white border border-gray-200 rounded-lg p-6 h-full flex flex-col" style="max-height: 480px;">
             <h3 class="text-xl font-bold text-green-800 mb-2">Burnout Trends Over Time</h3>
             <p class="text-gray-600 mb-6">Monthly assessment trends by risk level</p>
             @if(isset($trendData) && count($trendData['labels']) > 0)
@@ -153,7 +153,7 @@
     </div>
 
     <!-- Action Items -->
-    <div class="bg-white border border-gray-200 rounded-lg p-6">
+    <div class="bg-white border border-gray-200 rounded-lg p-6 w-full flex flex-col" style="max-height: 400px;">
         <h3 class="text-xl font-bold text-green-800 mb-2">Action Items</h3>
         <p class="text-gray-600 mb-6">Recommended actions based on current data</p>
         @if($totalAssessments > 0)
