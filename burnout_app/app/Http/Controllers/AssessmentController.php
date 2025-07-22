@@ -105,14 +105,86 @@ class AssessmentController extends Controller
         $exhaustion = $json['olbi_s']['exhaustion'] ?? null;
         $disengagement = $json['olbi_s']['disengagement'] ?? null;
 
+        $overallRisk = $prediction ? strtolower($prediction) : 'unknown';
         $assessment->update([
-            'overall_risk' => $prediction,
+            'overall_risk' => $overallRisk,
             'confidence' => $confidence,
             'exhaustion_score' => $exhaustion,
             'disengagement_score' => $disengagement
         ]);
 
         return redirect()->route('assessment.results', $assessment->id);
+    }
+
+    public function calculateBurnout(Request $request)
+    {
+        // 1. Collect responses
+        $responses = [];
+        for ($i = 1; $i <= 16; $i++) {
+            $responses["Q$i"] = (int) $request->input("Q$i");
+        }
+        $age = (int) $request->input('age');
+        $gender = $request->input('gender');
+        $program = $request->input('program');
+
+        // 2. Reverse scoring
+        $reverseItems = ['Q1', 'Q4', 'Q7', 'Q8', 'Q11', 'Q13', 'Q15', 'Q16'];
+        foreach ($reverseItems as $item) {
+            $responses[$item] = 5 - $responses[$item];
+        }
+
+        // 3. Score breakdown
+        $exhaustionItems = ['Q2', 'Q5', 'Q6', 'Q10', 'Q12', 'Q14'];
+        $disengagementItems = ['Q1', 'Q3', 'Q4', 'Q7', 'Q8', 'Q9', 'Q11', 'Q13', 'Q15', 'Q16'];
+        $exhaustionScore = array_sum(array_intersect_key($responses, array_flip($exhaustionItems)));
+        $disengagementScore = array_sum(array_intersect_key($responses, array_flip($disengagementItems)));
+
+        // 4. Total score
+        $totalScore = array_sum($responses);
+
+        // 5. Prepare input for model
+        $modelInput = array_values($responses);
+        $modelInput[] = $age;
+        $genderMap = ['Male' => 0, 'Female' => 1];
+        $programMap = [
+            'BSA' => 0, 'BSBA' => 1, 'BSENT' => 2, 'BSHM' => 3, 'BEED' => 4,
+            'BSED-ENG' => 5, 'BSED-FIL' => 6, 'BSED-MATH' => 7, 'BA-PSYCH' => 8,
+            'BSCS' => 9, 'BSIT' => 10, 'BSECE' => 11, 'BSN' => 12
+        ];
+        $modelInput[] = $genderMap[$gender] ?? 0;
+        $modelInput[] = $programMap[$program] ?? 0;
+
+        // 6. Call Python API for prediction
+        $apiUrl = 'http://127.0.0.1:5000/predict';
+        $labels = ['Low', 'Moderate', 'High'];
+        $errorMsg = null;
+        $predictedLabel = null;
+        $confidence = null;
+        $modelAccuracy = null;
+        try {
+            $response = \Illuminate\Support\Facades\Http::post($apiUrl, ['input' => $modelInput]);
+            if ($response->failed()) {
+                $errorMsg = 'Prediction service unavailable.';
+            } else {
+                $result = $response->json();
+                $predictedLabel = $result['label'] ?? null;
+                $confidence = $result['confidence'] ?? null;
+                $modelAccuracy = $result['accuracy'] ?? null;
+                $totalScore = $result['total_score'] ?? null;
+                $exhaustionScore = $result['exhaustion'] ?? null;
+                $disengagementScore = $result['disengagement'] ?? null;
+            }
+        } catch (\Exception $e) {
+            $errorMsg = 'Prediction error: ' . $e->getMessage();
+        }
+
+        $overallRisk = $predictedLabel ? strtolower($predictedLabel) : 'unknown';
+
+        return view('assessment.result', compact(
+            'responses', 'age', 'gender', 'program',
+            'totalScore', 'predictedLabel', 'confidence', 'labels',
+            'exhaustionScore', 'disengagementScore', 'exhaustionItems', 'disengagementItems', 'modelAccuracy', 'errorMsg', 'overallRisk'
+        ));
     }
 
     public function results($id)

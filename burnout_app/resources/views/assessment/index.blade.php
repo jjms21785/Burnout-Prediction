@@ -29,10 +29,7 @@
             <li>The results are not a medical diagnosis, and any concerns should be discussed with a licensed mental health professional or school counselor.</li>
             <li>If you are experiencing high levels of stress, emotional distress, or academic difficulties, we strongly encourage you to reach out to your school’s guidance office or a qualified professional.</li>
         </ul>
-        <p class="mb-4 text-gray-700">
-            By clicking "Continue", you agree that you have read and understood the above.
-        </p>
-        <button id="continueBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium w-full mt-2">Continue</button>
+        <button id="continueBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium w-40 mt-2">Continue</button>
     </div>
 </div>
 
@@ -49,18 +46,18 @@
 <!-- Assessment Form -->
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white border border-gray-200 rounded-lg shadow-lg">
-        <form action="{{ route('assessment.store') }}" method="POST" id="assessmentForm">
+        <form action="{{ route('assessment.calculate') }}" method="POST" id="assessmentForm">
             @csrf
             <div id="demographicStep" class="p-8">
                 <!-- <h2 class="text-2xl font-bold text-green-700 mb-6 text-center">Basic Information</h2> -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="student_id" class="block text-gray-700 font-medium mb-2">Student ID</label>
-                        <input type="text" name="student_id" id="student_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" maxlength="32" required pattern="^[A-Za-z0-9\-]+$">
-                        @error('student_id')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
+                        <input type="number" name="student_id" id="student_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" min="1000000" max="9999999" required step="1" maxlength="7" oninput="if(this.value.length>7)this.value=this.value.slice(0,7);">
+                        @error('student_id')<span class="text-red-600 text-sm">Student ID must be a 7-digit number.</span>@enderror
                     </div>
                     <div>
-                        <label for="name" class="block text-gray-700 font-medium mb-2">Name (Optional)</label>
+                        <label for="name" class="block text-gray-700 font-medium mb-2">Name</label>
                         <input type="text" name="name" id="name" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" maxlength="255" pattern="^[A-Za-z ]*$">
                         @error('name')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
                     </div>
@@ -276,6 +273,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize
     updateProgress();
+
+    // Before submit, map answers[0-15] to Q1-Q16 hidden inputs
+    document.getElementById('assessmentForm').addEventListener('submit', function(e) {
+        // Remove any previous hidden inputs
+        document.querySelectorAll('.olbi-hidden-q').forEach(el => el.remove());
+        for (let i = 0; i < 16; i++) {
+            const val = answers[i];
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'Q' + (i+1);
+            input.value = val;
+            input.className = 'olbi-hidden-q';
+            this.appendChild(input);
+        }
+    });
 });
 </script>
 @endsection

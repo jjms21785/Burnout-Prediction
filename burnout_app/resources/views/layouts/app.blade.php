@@ -17,14 +17,17 @@
                 <p class="text-sm text-green-600">@yield('subtitle', 'Academic Burnout Predictor')</p>
             </div>
             <nav class="flex flex-col space-y-4 mt-16 w-full items-center">
-                <a href="{{ route('admin.dashboard') }}" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
+                <a href="{{ route('admin.dashboard') }}" id="sidebarDashboardBtn" data-section="dashboard" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
                     Dashboard
                 </a>
+                <a href="#" id="sidebarDataMonitoringBtn" data-section="data-monitoring" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
+                    Data Monitoring
+                </a>
                 <button id="importExportBtn" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm ">
-                    Import/Export Data
+                    Import/Export
                 </button>
                 <a href="{{ route('assessment.index') }}" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
-                    Individual Assessment
+                    Predict
                 </a>
                 <button class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
                     Settings
@@ -35,31 +38,31 @@
             <!-- Header removed for admin pages -->
             <!-- Main Content -->
             <main class="flex-1">
-                @yield('content')
+                <div id="adminSectionContainer">
+                    @yield('content')
+                </div>
             </main>
         </div>
     </div>
     <!-- Import/Export Modal -->
     <div id="importExportModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" style="background: transparent; display:none;">
-        <div class="bg-white rounded-lg shadow-lg max-w-lg w-full p-8 relative">
+        <div class="bg-white rounded-lg shadow-lg max-w-lg w-full p-8 relative flex flex-col items-center justify-center">
             <button id="closeImportExportModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
-            <h2 class="text-2xl font-bold text-blue-700 mb-6 text-center">Import/Export Data</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <h2 class="text-2xl font-bold text-black-700 mb-6 text-center w-full">Import/Export Data</h2>
+            <div class="flex flex-col items-center w-full gap-8">
                 <!-- Import Data -->
-                <div>
+                <div class="flex flex-col items-center w-full">
                     <h3 class="text-lg font-semibold text-gray-800 mb-2">Import Data</h3>
-                    <form action="#" method="POST" enctype="multipart/form-data" id="importForm">
+                    <form action="{{ route('admin.import') }}" method="POST" enctype="multipart/form-data" id="importForm" class="flex flex-col items-center w-full">
                         @csrf
-                        <input type="file" name="import_file" accept=".csv,.xlsx" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-200 mb-4" />
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-full">Upload</button>
+                        <input type="file" name="import_file" accept=".csv,.xlsx" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-200 mb-4 text-center" />
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-40 mx-auto">Upload</button>
                     </form>
                 </div>
                 <!-- Export Data -->
-                <div>
+                <div class="flex flex-col items-center w-full">
                     <h3 class="text-lg font-semibold text-gray-800 mb-2">Export Data</h3>
-                    <form action="#" method="GET" id="exportForm">
-                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-full">Download</button>
-                    </form>
+                    <button type="button" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium w-40 mx-auto" disabled>Download</button>
                 </div>
             </div>
         </div>

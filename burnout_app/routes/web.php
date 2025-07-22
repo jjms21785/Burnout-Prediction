@@ -16,8 +16,13 @@ Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 Route::get('/assessment', [AssessmentController::class, 'index'])->name('assessment.index');
 Route::post('/assessment', [AssessmentController::class, 'store'])->name('assessment.store');
 Route::get('/results/{id}', [AssessmentController::class, 'results'])->name('assessment.results');
+Route::post('/assessment/calculate', [AssessmentController::class, 'calculateBurnout'])->name('assessment.calculate');
 
 Route::prefix('admin')->group(function () {
     Route::get('/students', [AdminController::class, 'students'])->name('admin.students');
     Route::get('/reports', [AdminController::class, 'reports'])->name('admin.reports');
+    Route::get('/data-monitoring', [AdminController::class, 'dataMonitoring'])->name('admin.data-monitoring');
+    Route::get('/data-monitoring/programs', [AdminController::class, 'dataMonitoringPrograms'])->name('admin.data-monitoring.programs');
+    Route::get('/high-risk-students', [AdminController::class, 'topHighRiskStudents'])->name('admin.high-risk-students');
+    Route::post('/import', [AdminController::class, 'import'])->name('admin.import');
 });

@@ -52,4 +52,9 @@ class Assessment extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public static function getUniquePrograms()
+    {
+        return self::query()->distinct()->pluck('program')->filter()->values();
+    }
 }
