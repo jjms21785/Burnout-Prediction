@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Burnalytix - Academic Burnout Predictor')</title>
+    <title>@yield('title', 'Burnalytix - Academic Burnout Tool')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -14,7 +14,7 @@
         <aside class="w-64 bg-white border-r border-gray-200 flex flex-col py-8 px-4 space-y-6 items-center">
             <div class="mb-8 text-center w-full">
                 <h2 class="text-2xl font-bold text-green-700">Burnalytix</h2>
-                <p class="text-sm text-green-600">@yield('subtitle', 'Academic Burnout Predictor')</p>
+                <p class="text-sm text-green-600">@yield('subtitle', 'Academic Burnout Tool')</p>
             </div>
             <nav class="flex flex-col space-y-4 mt-16 w-full items-center">
                 <a href="{{ route('admin.dashboard') }}" id="sidebarDashboardBtn" data-section="dashboard" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
@@ -76,7 +76,7 @@
                 <div class="flex items-center space-x-3">
                     <div>
                         <h1 class="text-xl font-bold text-gray-900">Burnalytix</h1>
-                        <p class="text-sm text-green-600">@yield('subtitle', 'Academic Burnout Predictor')</p>
+                        <p class="text-sm text-green-600">@yield('subtitle', 'Academic Burnout Tool')</p>
                     </div>
                 </div>
                 <nav class="flex items-center space-x-8">

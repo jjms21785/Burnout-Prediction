@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Burnalytix - Predicting Academic Burnout')
+@section('title', 'Burnalytix - Academic Burnout Tool')
 
 @section('content')
 <!-- Hero Section -->

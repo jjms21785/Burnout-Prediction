@@ -12,40 +12,45 @@ class AssessmentController extends Controller
 
     public function index()
     {
-        $questions = [
-            'I feel emotionally drained from my work/studies',
-            'I have trouble sleeping because of my studies',
-            'Working with people all day is really a strain for me',
-            'I feel burned out from my studies',
-            'I feel frustrated by my studies',
-            'I feel I\'m working too hard in my studies',
-            'I don\'t really care what happens to some students',
-            'Working directly with people puts too much stress on me',
-            'I feel like I\'m at the end of my rope',
-            'I feel very energetic',
-            'I feel exhilarated after working closely with my recipients',
-            'I have accomplished many worthwhile things in this job',
-            'I can easily understand how my recipients feel about things',
-            'I deal very effectively with the problems of my recipients',
-            'I feel I\'m positively influencing other people\'s lives through my work',
-            'I feel very energetic',
-            'I can easily create a relaxed atmosphere with my recipients',
-            'I feel exhilarated after working closely with my recipients',
-            'I have accomplished many worthwhile things in this job',
-            'In my work, I deal with emotional problems very calmly',
-            'I feel recipients blame me for some of their problems',
-            'I worry that this job is hardening me emotionally'
+        $olbi_questions = [
+            'I always find new and interesting aspects in my studies.',
+            'It happens more and more often that I talk about my studies in a negative way.',
+            'Lately, I tend to think less about my academic tasks and do them almost mechanically.',
+            'I find my studies to be a positive challenge.',
+            'Over time, one can become disconnected from this type of study.',
+            'Sometimes I feel sickened by my studies.',
+            'This is the only field of study that I can imagine myself doing.',
+            'I feel more and more engaged in my studies.',
+            'There are days when I feel tired before I arrive in class or start studying.',
+            'After a class or after studying, I tend to need more time than in the past in order to relax and feel better.',
+            'I can tolerate the pressure of my studies very well.',
+            'While studying, I usually feel emotionally drained.',
+            'After a class or after studying, I have enough energy for my leisure activities.',
+            'After a class or after studying, I usually feel worn out and weary.',
+            'I can usually manage my study-related workload well.',
+            'When I study, I usually feel energized.'
         ];
         $programs = [
+            'Accountancy',
+            'Business Administration Major in Marketing Management',
+            'Entrepreneurship',
+            'Hospitality Management',
+            'Elementary Education',
+            'Secondary Education Major in English',
+            'Secondary Education Major in Filipino',
+            'Secondary Education Major in Math',
+            'Arts in Psychology',
             'Computer Science',
             'Information Technology',
+            'Electronics Engineering',
+            'Nursing',
             'Other'
         ];
         $year_levels = [
             '1st Year', '2nd Year', '3rd Year', '4th Year'
         ];
         $genders = ['Male', 'Female', 'Other'];
-        return view('assessment.index', compact('questions', 'programs', 'year_levels', 'genders'));
+        return view('assessment.index', compact('olbi_questions', 'programs', 'year_levels', 'genders'));
     }
 
     public function store(Request $request)
@@ -123,6 +128,9 @@ class AssessmentController extends Controller
         for ($i = 1; $i <= 16; $i++) {
             $responses["Q$i"] = (int) $request->input("Q$i");
         }
+        $original_responses = $responses;
+        $student_id = $request->input('student_id');
+        $name = $request->input('name');
         $age = (int) $request->input('age');
         $gender = $request->input('gender');
         $program = $request->input('program');
@@ -130,7 +138,7 @@ class AssessmentController extends Controller
         // 2. Reverse scoring
         $reverseItems = ['Q1', 'Q4', 'Q7', 'Q8', 'Q11', 'Q13', 'Q15', 'Q16'];
         foreach ($reverseItems as $item) {
-            $responses[$item] = 5 - $responses[$item];
+            $responses[$item] = 3 - $responses[$item];
         }
 
         // 3. Score breakdown
@@ -181,7 +189,7 @@ class AssessmentController extends Controller
         $overallRisk = $predictedLabel ? strtolower($predictedLabel) : 'unknown';
 
         return view('assessment.result', compact(
-            'responses', 'age', 'gender', 'program',
+            'responses', 'original_responses', 'student_id', 'name', 'age', 'gender', 'program',
             'totalScore', 'predictedLabel', 'confidence', 'labels',
             'exhaustionScore', 'disengagementScore', 'exhaustionItems', 'disengagementItems', 'modelAccuracy', 'errorMsg', 'overallRisk'
         ));

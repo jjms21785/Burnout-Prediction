@@ -46,7 +46,7 @@
                         </tr>
                     </thead>
                     <tbody id="highRiskTableBody">
-                        <tr><td colspan="5" class="text-center text-gray-400 py-8">Loading...</td></tr>
+                        <tr><td colspan="5" class="text-center text-gray-400 py-8">No data available</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -111,7 +111,7 @@
                     </div>
                 </div>
             @else
-                <div class="flex items-center justify-center h-40 text-gray-400">No data available for this chart.</div>
+                <div class="flex items-center justify-center h-40 text-gray-400">No data available</div>
             @endif
         </div>
 
@@ -148,7 +148,7 @@
             @if(isset($departmentData) && count($departmentData['labels']) > 0)
                 <canvas id="departmentChart" width="400" height="300"></canvas>
             @else
-                <div class="flex items-center justify-center h-full text-gray-400">No data available for this chart.</div>
+                <div class="flex items-center justify-center h-full text-gray-400">No data available</div>
             @endif
         </div>
 
@@ -159,7 +159,7 @@
             @if(isset($trendData) && count($trendData['labels']) > 0)
                 <canvas id="trendChart" width="400" height="300"></canvas>
             @else
-                <div class="flex items-center justify-center h-full text-gray-400">No data available for this chart.</div>
+                <div class="flex items-center justify-center h-full text-gray-400">No data available</div>
             @endif
         </div>
     </div>

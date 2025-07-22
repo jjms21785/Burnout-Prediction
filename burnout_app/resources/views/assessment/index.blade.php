@@ -98,7 +98,7 @@
                     </div>
                 </div>
                 <div class="text-center pt-8">
-                    <button type="button" id="nextBtn" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors">Next</button>
+                    <button type="button" id="nextBtn" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium w-40 transition-colors">Next</button>
                 </div>
             </div>
 
@@ -117,24 +117,6 @@
                 </div>
                 <div class="m-4">
                     @php
-                        $olbi_questions = [
-                            'I always find new and interesting aspects in my studies.',
-                            'It happens more and more often that I talk about my studies in a negative way.',
-                            'Lately, I tend to think less about my academic tasks and do them almost mechanically.',
-                            'I find my studies to be a positive challenge.',
-                            'Over time, one can become disconnected from this type of study.',
-                            'Sometimes I feel sickened by my studies.',
-                            'This is the only field of study that I can imagine myself doing.',
-                            'I feel more and more engaged in my studies.',
-                            'There are days when I feel tired before I arrive in class or start studying.',
-                            'After a class or after studying, I tend to need more time than in the past in order to relax and feel better.',
-                            'I can tolerate the pressure of my studies very well.',
-                            'While studying, I often feel emotionally drained.',
-                            'After a class or after studying, I have enough energy for my leisure activities.',
-                            'After a class or after studying, I usually feel worn out and weary.',
-                            'I can usually manage my study-related workload well.',
-                            'When I study, I usually feel energized.'
-                        ];
                         $olbi_options = [
                             ['value' => 3, 'label' => 'Strongly Agree'],
                             ['value' => 2, 'label' => 'Agree'],
@@ -142,7 +124,6 @@
                             ['value' => 0, 'label' => 'Strongly Disagree'],
                         ];
                     @endphp
-
                     @foreach($olbi_questions as $index => $question)
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $index + 1 }}. {{ $question }}</h3>
@@ -160,7 +141,6 @@
                         </div>
                     </div>
                     @endforeach
-
                     <div class="text-center pt-8">
                         <button type="submit" 
                                 id="submitBtn"

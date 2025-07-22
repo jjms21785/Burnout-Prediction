@@ -13,40 +13,22 @@
         <p class="text-white">Based on the responses to 16 questions</p>
     </div>
 
-    <!-- Risk & Confidence -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white border rounded-lg p-6 flex flex-col items-center">
-            <h3 class="text-xl font-bold mb-1" style="color: black;">Burnout Risk Level: 
-                @if(isset($predictedLabel) && $predictedLabel)
-                    <span class="@if($predictedLabel=='High') text-red-600 @elseif($predictedLabel=='Moderate') text-yellow-600 @else text-green-600 @endif">
-                        {{ $predictedLabel }}
-                    </span>
-                @else
-                    <span class="text-gray-400">Unavailable</span>
-                @endif
-            </h3>
-            <div class="mb-2" style="color: black;">
-                Average score: 
-                @if(isset($totalScore))
-                    {{ round($totalScore/16, 2) }}
-                @else
-                    <span class="text-gray-400">Unavailable</span>
-                @endif
-            </div>
-            <div class="text-xs text-gray-500">About Risk Level and Average Score. ⓘ </div>
-            @if(isset($errorMsg) && $errorMsg)
-                <div class="mt-2 text-red-600 text-sm">{{ $errorMsg }}</div>
-            @endif
-        </div>
-        <div class="bg-white border rounded-lg p-6 flex flex-col items-center">
-            <h3 class="text-xl font-bold mb-1" style="color: black;">Prediction Confidence</h3>
-            <div class="mb-2" style="color: black;">{{ isset($modelAccuracy) ? 'Model Accuracy: '.($modelAccuracy*100).'%' : '' }}</div>
-            <div class="text-xs text-gray-500">About Confidence and Accuracy. ⓘ </div>
-        </div>
-    </div>
-
     <!-- Demographics -->
     <div class="mb-4 text-center text-sm text-gray-700">
+        <span>Student ID: <b>
+            @if(isset($student_id))
+                {{ $student_id }}
+            @else
+                <span class="text-gray-400">Unavailable</span>
+            @endif
+        </b></span> |
+        <span>Name: <b>
+            @if(isset($name))
+                {{ $name }}
+            @else
+                <span class="text-gray-400">Unavailable</span>
+            @endif
+        </b></span> |
         <span>Age: <b>
             @if(isset($age))
                 {{ $age }}
@@ -69,49 +51,157 @@
             @endif
         </b></span>
     </div>
+    
+    <!-- Risk & Confidence -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white border rounded-lg p-6 flex flex-col items-center">
+            <h3 class="text-xl font-bold mb-1" style="color: black;">Burnout Risk Level:</h3>
+            @if(isset($predictedLabel) && $predictedLabel)
+                <div class="mt-1">
+                    <span class="text-xl font-bold @if($predictedLabel=='High') text-red-600 @elseif($predictedLabel=='Moderate') text-yellow-600 @else text-green-600 @endif">
+                        {{ $predictedLabel }}
+                    </span>
+                </div>
+            @else
+                <div class="mt-1">
+                    <span class="text-xl font-bold text-gray-400">Unavailable</span>
+                </div>
+            @endif
+            @if(isset($predictedLabel))
+                <div class="text-xs text-gray-500 mt-2">
+                    <span class="tooltip-hover">About Risk Level.  
+                        <span class="tooltip-box">
+                            The burnout risk level (Low, Moderate, or High) is not based on fixed scores.<br>
+                            Instead, it's predicted by the Random Forest model trained on dataset of the responses.<br><br>
+                            <b>How?</b> The model looks at all answers together and compares them with patterns it has learned from the dataset to determine burnout levels, even if two people have the same average score, their response patterns may result in different predictions.
+                        </span>
+                    </span>
+                </div>
+            @endif
+            @if(isset($errorMsg) && $errorMsg)
+                <div class="mt-2 text-red-600 text-sm">{{ $errorMsg }}</div>
+            @endif
+        </div>
+        <div class="bg-white border rounded-lg p-6 flex flex-col items-center">
+        <div class="text-xl font-bold mb-1" fstyle="color: black;">
+                @if(isset($confidence) && is_array($confidence))
+                    Prediction Confidence: {{ number_format(max($confidence)*100,2) }}%
+                @else
+                    <span class="text-gray-400">Prediction Confidence: Unavailable</span>
+                @endif
+            </div>
+            <div class="text-xl font-bold mb-1" fstyle="color: black;">{{ isset($modelAccuracy) ? 'Model Accuracy: '.($modelAccuracy*100).'%' : '' }}</div>
+            @if(isset($modelAccuracy) && isset($confidence))
+                <div class="text-xs text-gray-500 mt-2">
+                    <span class="tooltip-hover">About Confidence and Accuracy.
+                        <span class="tooltip-box">
+                            <b>Confidence</b> shows how certain the trained model is about the burnout risk level prediction. 
+                            It's based on how consistently the answers match patterns seen in the training data. 
+                            Higher confidence means the model is more certain that the pattern fits a specific risk level.<br><br>  
+                            <b>Accuracy</b> shows how well the Machine Learning model performs on unseen data. 
+                            The model has been tested on hundreds of samples and achieved around 92% accuracy. 
+                            That means it correctly predicted burnout risk in 92% out of 100% cases during evaluation.
+                        </span>
+                    </span>
+                </div>
+            @else
+                <div class="text-xs text-gray-400">Unavailable</div>
+            @endif
+            @if(isset($errorMsg) && $errorMsg)
+                <div class="mt-2 text-red-600 text-sm">{{ $errorMsg }}</div>
+            @endif
+        </div>
+    </div>
 
     <!-- Score Breakdown -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white border rounded-lg p-4 text-center">
+            <h5 class="font-semibold mb-1">Average Score</h5>
+            <p class="text-lg"><strong>
+                @if(isset($totalScore))
+                    {{ round($totalScore/16, 2) }}
+                @else
+                    <span class="text-gray-400">Unavailable</span>
+                @endif
+            </strong></p>
+            <div class="text-xs text-gray-500 mt-4">
+                <span class="tooltip-hover">Mean of all 16 answers (range: 0-3). <br>More info here.
+                    <span class="tooltip-box">
+                        The average score is the total of the answers to all 16 questions divided by 16.<br>
+                        (Total Score ÷ 16 = Average Score)<br><br>
+                        Each answer is rated from 0 (Strongly Agree) to 3 (Strongly Disagree).
+                    </span>
+                </span>
+            </div>
+        </div>
         <div class="bg-white border rounded-lg p-4 text-center">
             <h5 class="font-semibold mb-1">Exhaustion Score</h5>
-            <p class="text-lg">
+            <p class="text-lg"><strong>
                 @if(isset($exhaustionScore))
                     {{ $exhaustionScore }}
                 @else
                     <span class="text-gray-400">Unavailable</span>
                 @endif
-            </p>
-            <div class="text-xs text-gray-500">Sum of OLBI-S items related to exhaustion. <br> Learn More. ⓘ </div>
+            </strong></p>
+            <div class="text-xs text-gray-500 mt-4">
+                <span class="tooltip-hover">Sum of OLBI-S items related to exhaustion questions. <br>More info here. 
+                    <span class="tooltip-box">
+                        This score reflects how emotionally and physically drained the feeling from the work or studies.<br><br>
+                        It's calculated by averaging the responses to the Exhaustion-related items:<br>
+                        <b>Q2, Q3, Q6, Q10, Q12, Q14</b><br><br>
+                        Higher scores indicate greater emotional fatigue.
+                    </span>
+                </span>
+            </div>
         </div>
         <div class="bg-white border rounded-lg p-4 text-center">
             <h5 class="font-semibold mb-1">Disengagement Score</h5>
-            <p class="text-lg">
+            <p class="text-lg"><strong>
                 @if(isset($disengagementScore))
                     {{ $disengagementScore }}
                 @else
                     <span class="text-gray-400">Unavailable</span>
                 @endif
-            </p>
-            <div class="text-xs text-gray-500">Sum of OLBI-S items related to disengagement. <br> Learn More. ⓘ </div>
+            </strong></p>
+            <div class="text-xs text-gray-500 mt-4">
+                <span class="tooltip-hover">Sum of OLBI-S items related to disengagement questions. <br>More info here. 
+                    <span class="tooltip-box">
+                        This score measures how mentally distanced or disconnected the feeling from the tasks or responsibilities.<br><br>
+                        It's calculated by averaging the answers to the Disengagement-related questions:<br>
+                        <b>Q1, Q4, Q5, Q7, Q8, Q9, Q11, Q13, Q15, Q16</b><br><br>
+                        Some of these are reverse-scored because they are positively worded (it will become opposite of chosen answer for calculations).<br>
+                        <b>Reverse-scored questions:</b> Q1, Q4, Q7, Q8, Q11, Q13, Q15, Q16
+                    </span>
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="w-full flex justify-center mb-8">
+        <div class="max-w-2xl text-xs text-gray-600 text-center">
+            <b>About The Scores</b><br>
+            The average, exhaustion, and disengagement scores are shown here to help understand the responses better, but they are not used to determine the actual burnout risk level.<br>
+            The burnout risk (Low, Moderate, or High) is predicted by a machine learning model trained on patterns from the dataset. The model analyzes all the individual answers, not just summary scores.<br>
+            These scores are helpful for insights, but they do not affect the prediction or its accuracy.
         </div>
     </div>
 
-    <!-- Answer Summary Table -->
     <div class="bg-white border rounded-lg p-4 mb-6">
-        <h5 class="font-semibold mb-1">Answer Summary</h5>
+        <div class="flex items-center mb-1">
+            <h5 class="font-semibold">Answer Summary</h5>
+        </div>
         <div class="overflow-x-auto">
-            @if(isset($responses) && is_array($responses) && count($responses) > 0)
+            @if(isset($original_responses) && is_array($original_responses) && count($original_responses) > 0)
                 <table class="min-w-full text-center text-xs">
                     <thead>
                         <tr>
-                            @foreach(array_keys($responses) as $question)
+                            @foreach(array_keys($original_responses) as $question)
                                 <th class="px-2 py-1">{{ $question }}</th>
                             @endforeach
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            @foreach($responses as $value)
+                            @foreach($original_responses as $value)
                                 <td class="px-2 py-1">
                                     {{ $value }}
                                 </td>
@@ -119,65 +209,95 @@
                         </tr>
                     </tbody>
                 </table>
-                <div class="mt-2 text-xs text-gray-600 text-left">
-                    <div>3 = Strongly Agree</div>
-                    <div>2 = Agree</div>
-                    <div>1 = Disagree</div>
-                    <div>0 = Strongly Disagree</div>
+                <div class="w-full flex justify-center mt-4">
+                    <div class="bg-gray-100 border border-gray-300 rounded px-4 py-2 text-xs text-gray-700 text-center">
+                        <b>3 = Strongly Agree | 2 = Agree | 1 = Disagree | 0 = Strongly Disagree</b>
+                    </div>
                 </div>
             @else
-                <div class="text-gray-400 py-4 text-center">No responses available.</div>
+                <div class="text-gray-400 py-4 text-center">Unavailable.</div>
             @endif
         </div>
     </div>
 
     <!-- Recommendation Box -->
+    <h4 class="text-lg font-bold mt-8 mb-2">Interpretation</h4>
     @if($predictedLabel == 'Low')
         <div class="alert alert-success mt-4">
-            <strong>You're currently showing low signs of burnout.</strong><br>
+            Currently showing low signs of burnout.<br>
+            <div class="font-semibold mt-2 mb-1">Suggestions</div>
             This indicates a healthy balance between academic demands and personal well-being.
             <ul class="mt-2">
-                <li><strong>Maintain:</strong> Continue habits that promote your emotional and cognitive engagement.</li>
-                <li><strong>Monitor:</strong> Stay aware of signs like persistent fatigue or loss of motivation.</li>
-                <li><strong>Support Others:</strong> Students in better mental states often play a key role in peer well-being.</li>
+                <li>Maintain: Continue habits that promote emotional and cognitive engagement.</li>
+                <li>Monitor: Stay aware of signs like persistent fatigue or loss of motivation.</li>
+                <li>Support Others: Students in better mental states often play a key role in peer well-being.</li>
             </ul>
             <div class="mt-2">
-                <em>Even if you're doing well, visiting the counseling office for check-ins or other personal concerns is always encouraged.</em>
-                <br><a href="https://www.mind.org.uk/information-support/types-of-mental-health-problems/burnout/" target="_blank">Learn more about recognizing burnout</a>
+                <em>Even if doing well, visiting the counseling office for check-ins or other personal concerns is always encouraged.</em>
             </div>
         </div>
     @elseif($predictedLabel == 'Moderate')
         <div class="alert alert-warning mt-4">
             Moderate risk often means emotional fatigue is rising and motivation may be fluctuating.
+            <div class="font-semibold mt-2 mb-1">Suggestions</div>
             <ul class="mt-2">
-                <li><strong>Self-Audit:</strong> Track time spent on academic work, sleep, social activity, and rest. Recognize imbalance.</li>
-                <li><strong>Recalibrate:</strong> Adjust workloads and integrate breaks, even short ones. Use the <a href='https://pomofocus.io/' target='_blank'>Pomodoro Technique</a> or similar tools.</li>
-                <li><strong>Talk:</strong> Share with a peer or visit the counseling office for support and strategy.</li>
+                <li>Self-Audit: Track time spent on academic work, sleep, social activity, and rest. Recognize imbalance.</li>
+                <li>Recalibrate: Adjust workloads and integrate breaks, even short ones. </li>
+                <li>Talk: Share with a peer and visit the counseling office for support and strategy.</li>
             </ul>
             <div class="mt-2">
-                <em>Early intervention helps prevent chronic burnout. Reach out to your campus wellness center.</em>
-                <br><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6320571/" target="_blank">Research on student burnout interventions</a>
+                <em>Early intervention helps prevent chronic burnout. Reach out to Guidance and Counseling Office.</em>
             </div>
         </div>
     @elseif($predictedLabel == 'High')
         <div class="alert alert-danger mt-4">
-            <strong>We recommend speaking with a counselor or academic advisor immediately.</strong><br>
-            You may be showing signs of sustained emotional exhaustion and disengagement — common but serious indicators of academic burnout.
+            We recommend speaking with a counselor or academic advisor immediately.<br>
+            <div class="font-semibold mt-2 mb-1">Suggestions</div>
             <ul class="mt-2">
-                <li><strong>Seek Help:</strong> Prioritize scheduling a confidential session at the counseling center.</li>
-                <li><strong>Reduce Pressure:</strong> Consider temporary academic adjustments (extensions, breaks, etc.).</li>
-                <li><strong>Recovery Plan:</strong> Build a structured recovery plan with a counselor — focus on sleep, nutrition, and boundary-setting.</li>
+                <li>Seek Help: Prioritize scheduling a confidential session at the counseling center.</li>
+                <li>Reduce Pressure: Consider temporary academic adjustments (extensions, breaks, etc.).</li>
+                <li>Recovery Plan: Build a structured recovery plan with a counselor — focus on sleep, nutrition, and boundary-setting.</li>
             </ul>
             <div class="mt-2">
-                <em>Burnout is not failure — it’s a signal to realign. Help is available and effective.</em>
-                <br><a href="https://www.who.int/news-room/fact-sheets/detail/mental-health-strengthening-our-response" target="_blank">WHO: Mental Health Response and Support</a>
-                <br><a href="https://adaa.org/understanding-anxiety/burnout" target="_blank">Anxiety & Depression Association of America on Burnout</a>
+                <em>Burnout is not failure — it's a signal to realign. Help is available and effective.</em>
             </div>
         </div>
     @endif
 
     <div class="flex justify-center mt-8">
-        <a href="{{ route('assessment.index') }}" class="bg-green-100 border border-green-400 text-green-700 px-6 py-2 rounded-lg font-semibold hover:bg-green-200 transition">New Assessment</a>
+        <a href="{{ route('assessment.index') }}" class="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">New Assessment</a>
     </div>
 </div>
 @endsection 
+
+<style>
+.tooltip-hover {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+.tooltip-hover .tooltip-box {
+  visibility: hidden;
+  opacity: 0;
+  width: 340px;
+  background-color: #fff;
+  color: #333;
+  text-align: left;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 1rem;
+  position: absolute;
+  z-index: 50;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 120%;
+  transition: opacity 0.2s;
+  font-size: 0.95rem;
+}
+.tooltip-hover:hover .tooltip-box {
+  visibility: visible;
+  opacity: 1;
+}
+</style>
+

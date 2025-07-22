@@ -25,7 +25,7 @@ exhaustion_indices = [1, 4, 5, 9, 11, 13]  # Q2, Q5, Q6, Q10, Q12, Q14
 disengagement_indices = [0, 2, 3, 6, 7, 8, 10, 12, 14, 15]
 
 def reverse_score(val):
-    return 5 - val
+    return 3 - val
 
 @app.route('/')
 def home():
