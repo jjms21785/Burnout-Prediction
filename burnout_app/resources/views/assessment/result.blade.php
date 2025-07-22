@@ -15,8 +15,8 @@
 
     <!-- Risk & Confidence -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div class="bg-orange-100 border border-orange-300 rounded-lg p-6 flex flex-col items-center">
-            <h3 class="text-xl font-bold text-orange-700 mb-1">Burnout Risk Level: 
+        <div class="bg-white border rounded-lg p-6 flex flex-col items-center">
+            <h3 class="text-xl font-bold mb-1" style="color: black;">Burnout Risk Level: 
                 @if(isset($predictedLabel) && $predictedLabel)
                     <span class="@if($predictedLabel=='High') text-red-600 @elseif($predictedLabel=='Moderate') text-yellow-600 @else text-green-600 @endif">
                         {{ $predictedLabel }}
@@ -25,7 +25,7 @@
                     <span class="text-gray-400">Unavailable</span>
                 @endif
             </h3>
-            <div class="text-gray-600 mb-2">
+            <div class="mb-2" style="color: black;">
                 Average score: 
                 @if(isset($totalScore))
                     {{ round($totalScore/16, 2) }}
@@ -33,39 +33,15 @@
                     <span class="text-gray-400">Unavailable</span>
                 @endif
             </div>
-            <div class="w-full">
-                <div class="flex justify-between text-xs mb-1">
-                    <span class="text-green-600">Low</span>
-                    <span class="text-red-600">High</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
-                    <div class="bg-red-500 h-3 rounded-full" style="width: 
-                        @if(isset($totalScore))
-                            {{ min(100, max(0, ($totalScore-16)/48*100)) }}
-                        @else
-                            0
-                        @endif
-                    %"></div>
-                </div>
-            </div>
-            <div class="text-xs text-gray-500">Based on 16 completed questions. <span title="Score range: 16 (least burnout) to 64 (most burnout). Reverse scoring applied.">ⓘ</span></div>
+            <div class="text-xs text-gray-500">About Risk Level and Average Score. ⓘ </div>
             @if(isset($errorMsg) && $errorMsg)
                 <div class="mt-2 text-red-600 text-sm">{{ $errorMsg }}</div>
             @endif
         </div>
-        <div class="bg-blue-50 border border-blue-300 rounded-lg p-6 flex flex-col items-center">
-            <h3 class="text-xl font-bold text-blue-700 mb-1">Prediction Confidence</h3>
-            <div class="text-gray-600 mb-2">{{ isset($modelAccuracy) ? 'Model Accuracy: '.($modelAccuracy*100).'%' : '' }}</div>
-            <div class="w-full">
-                <div class="flex justify-between text-xs mb-1">
-                    <span>0%</span>
-                    <span>100%</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
-                    <div class="bg-blue-500 h-3 rounded-full" style="width: {{ isset($confidence) && is_array($confidence) ? (max($confidence)*100) : 0 }}%"></div>
-                </div>
-            </div>
-            <div class="text-xs text-gray-500">System Confidence: {{ isset($confidence) && is_array($confidence) ? number_format(max($confidence)*100,2) : '?' }}% <span title="How sure the model is based on learned data.">ⓘ</span></div>
+        <div class="bg-white border rounded-lg p-6 flex flex-col items-center">
+            <h3 class="text-xl font-bold mb-1" style="color: black;">Prediction Confidence</h3>
+            <div class="mb-2" style="color: black;">{{ isset($modelAccuracy) ? 'Model Accuracy: '.($modelAccuracy*100).'%' : '' }}</div>
+            <div class="text-xs text-gray-500">About Confidence and Accuracy. ⓘ </div>
         </div>
     </div>
 
@@ -105,7 +81,7 @@
                     <span class="text-gray-400">Unavailable</span>
                 @endif
             </p>
-            <div class="text-xs text-gray-500" title="Sum of OLBI-S items related to exhaustion.">ⓘ What is this?</div>
+            <div class="text-xs text-gray-500">Sum of OLBI-S items related to exhaustion. <br> Learn More. ⓘ </div>
         </div>
         <div class="bg-white border rounded-lg p-4 text-center">
             <h5 class="font-semibold mb-1">Disengagement Score</h5>
@@ -116,7 +92,7 @@
                     <span class="text-gray-400">Unavailable</span>
                 @endif
             </p>
-            <div class="text-xs text-gray-500" title="Sum of OLBI-S items related to disengagement.">ⓘ What is this?</div>
+            <div class="text-xs text-gray-500">Sum of OLBI-S items related to disengagement. <br> Learn More. ⓘ </div>
         </div>
     </div>
 
@@ -137,18 +113,17 @@
                         <tr>
                             @foreach($responses as $value)
                                 <td class="px-2 py-1">
-                                    @php
-                                        $letters = ['A', 'B', 'C', 'D'];
-                                        // 3 = A, 2 = B, 1 = C, 0 = D
-                                        echo $letters[3 - (int)$value];
-                                    @endphp
+                                    {{ $value }}
                                 </td>
                             @endforeach
                         </tr>
                     </tbody>
                 </table>
                 <div class="mt-2 text-xs text-gray-600 text-left">
-                    A = Strongly Agree, B = Agree, C = Disagree, D = Strongly Disagree
+                    <div>3 = Strongly Agree</div>
+                    <div>2 = Agree</div>
+                    <div>1 = Disagree</div>
+                    <div>0 = Strongly Disagree</div>
                 </div>
             @else
                 <div class="text-gray-400 py-4 text-center">No responses available.</div>
@@ -202,7 +177,7 @@
     @endif
 
     <div class="flex justify-center mt-8">
-        <a href="{{ route('assessment.index') }}" class="bg-green-100 border border-green-400 text-green-700 px-6 py-2 rounded-lg font-semibold hover:bg-green-200 transition">Take Assessment Again</a>
+        <a href="{{ route('assessment.index') }}" class="bg-green-100 border border-green-400 text-green-700 px-6 py-2 rounded-lg font-semibold hover:bg-green-200 transition">New Assessment</a>
     </div>
 </div>
 @endsection 

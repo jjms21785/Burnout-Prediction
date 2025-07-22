@@ -49,7 +49,6 @@
         <form action="{{ route('assessment.calculate') }}" method="POST" id="assessmentForm">
             @csrf
             <div id="demographicStep" class="p-8">
-                <!-- <h2 class="text-2xl font-bold text-green-700 mb-6 text-center">Basic Information</h2> -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="student_id" class="block text-gray-700 font-medium mb-2">Student ID</label>

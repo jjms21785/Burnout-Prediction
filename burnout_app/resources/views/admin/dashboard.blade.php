@@ -25,7 +25,7 @@
                 <p class="text-2xl font-bold text-orange-800">{{ $moderateRisk }}</p>
                 <p class="text-xs text-orange-600">Monitor closely</p>
             </div>
-            <div class="bg-green-50 border border-green-200 rounded-lg p-6 flex flex-col items-center justify-center">
+            <div class="bg-white border border-green-100 rounded-lg p-6 flex flex-col items-center justify-center">
                 <p class="text-sm font-medium text-green-600">Low Risk</p>
                 <p class="text-2xl font-bold text-green-800">{{ $lowRisk }}</p>
                 <p class="text-xs text-green-600">Healthy status</p>
