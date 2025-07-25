@@ -1,6 +1,7 @@
 @php
     if (!isset($predictedLabel)) $predictedLabel = null;
 @endphp
+
 @extends('layouts.app')
 
 @section('title', 'Burnout Assessment Result')
@@ -15,13 +16,6 @@
 
     <!-- Demographics -->
     <div class="mb-4 text-center text-sm text-gray-700">
-        <span>Student ID: <b>
-            @if(isset($student_id))
-                {{ $student_id }}
-            @else
-                <span class="text-gray-400">Unavailable</span>
-            @endif
-        </b></span> |
         <span>Name: <b>
             @if(isset($name))
                 {{ $name }}
@@ -55,10 +49,11 @@
     <!-- Risk & Confidence -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div class="bg-white border rounded-lg p-6 flex flex-col items-center">
-            <h3 class="text-xl font-bold mb-1" style="color: black;">Burnout Risk Level:</h3>
-            @if(isset($predictedLabel) && $predictedLabel)
+            <h3 class="text-xl font-bold mb-1" style="color: black;">Burnout Category:</h3>
+            @if(isset(
+                $predictedLabel) && $predictedLabel)
                 <div class="mt-1">
-                    <span class="text-xl font-bold @if($predictedLabel=='High') text-red-600 @elseif($predictedLabel=='Moderate') text-yellow-600 @else text-green-600 @endif">
+                    <span class="text-xl font-bold @if($predictedLabel=='High') text-red-600 @elseif($predictedLabel=='Exhausted') text-yellow-600 @elseif($predictedLabel=='Disengaged') text-yellow-600 @else text-green-600 @endif">
                         {{ $predictedLabel }}
                     </span>
                 </div>
@@ -69,11 +64,10 @@
             @endif
             @if(isset($predictedLabel))
                 <div class="text-xs text-gray-500 mt-2">
-                    <span class="tooltip-hover">About Risk Level.  
+                    <span class="tooltip-hover">About Burnout Category.  
                         <span class="tooltip-box">
-                            The burnout risk level (Low, Moderate, or High) is not based on fixed scores.<br>
-                            Instead, it's predicted by the Random Forest model trained on dataset of the responses.<br><br>
-                            <b>How?</b> The model looks at all answers together and compares them with patterns it has learned from the dataset to determine burnout levels, even if two people have the same average score, their response patterns may result in different predictions.
+                            The burnout category (Low, Disengaged, Exhausted, or High) is not based on fixed scores.<br>
+                            Instead, it's predicted by the Random Forest model trained on a dataset of responses.<br><br>
                         </span>
                     </span>
                 </div>
@@ -83,7 +77,8 @@
             @endif
         </div>
         <div class="bg-white border rounded-lg p-6 flex flex-col items-center">
-            <h3 class="text-xl font-bold mb-1" fstyle="color: black;">Prediction Confidence: </h3>
+            <h3 class="text-xl font-bold mb-1" fstyle="color: black;">Model Confidence: </h3>
+                <div class="text-xl font-bold mt-2"></div>
                 @if(isset($confidence) && is_array($confidence))
                     {{ number_format(max($confidence)*100,2) }}%
                 @else
@@ -91,17 +86,13 @@
                         <span class="text-xl font-bold text-gray-400">Unavailable</span>
                     </div>
                 @endif
-            <div class="text-xl font-bold mb-1" fstyle="color: black;">{{ isset($modelAccuracy) ? 'Model Accuracy: '.($modelAccuracy*100).'%' : '' }}</div>
-            @if(isset($modelAccuracy) && isset($confidence))
+            @if(isset($confidence))
                 <div class="text-xs text-gray-500 mt-2">
-                    <span class="tooltip-hover">About Confidence and Accuracy.
+                    <span class="tooltip-hover">About Model Confidence.
                         <span class="tooltip-box">
-                            <b>Confidence</b> shows how certain the trained model is about the burnout risk level prediction. 
+                            <b>Model Confidence</b> shows how certain the trained model is about the burnout category prediction. 
                             It's based on how consistently the answers match patterns seen in the training data. 
-                            Higher confidence means the model is more certain that the pattern fits a specific risk level.<br><br>  
-                            <b>Accuracy</b> shows how well the Machine Learning model performs on unseen data. 
-                            The model has been tested on hundreds of samples and achieved around the said accuracy. 
-                            That means it correctly predicted burnout risk out of 100% of cases during evaluation.
+                            Higher confidence means the model is more certain that the pattern fits a specific burnout category.<br><br>  
                         </span>
                     </span>
                 </div>
@@ -115,20 +106,19 @@
     <!-- Score Breakdown -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="bg-white border rounded-lg p-4 text-center">
-            <h5 class="font-semibold mb-1">Average Score</h5>
+            <h5 class="font-semibold mb-1">Total Score</h5>
             <p class="text-lg"><strong>
                 @if(isset($totalScore))
-                    {{ round($totalScore/16, 2) }}
+                    {{ $totalScore }}
                 @else
                     <span class="text-gray-400">Unavailable</span>
                 @endif
             </strong></p>
             <div class="text-xs text-gray-500 mt-4">
-                <span class="tooltip-hover">Mean of all 16 answers (range: 0-3). <br>More info here.
+                <span class="tooltip-hover">Sum of all 16 answers. <br>More info here.
                     <span class="tooltip-box">
-                        The average score is the total of the answers to all 16 questions divided by 16.<br>
-                        (Total Score ÷ 16 = Average Score)<br><br>
-                        Each answer is rated from 0 (Strongly Agree) to 3 (Strongly Disagree).
+                        The total score is the sum of the answers to all 16 questions.<br>
+                        Each answer is rated from 1 (Strongly Agree) to 4 (Strongly Disagree).
                     </span>
                 </span>
             </div>
@@ -143,14 +133,13 @@
                 @endif
             </strong></p>
             <div class="text-xs text-gray-500 mt-4">
-                <span class="tooltip-hover">Sum of OLBI-S items related to exhaustion questions. <br>More info here. 
+                <span class="tooltip-hover">Sum of exhaustion questions. <br>More info here. 
                     <span class="tooltip-box">
                         This score reflects how emotionally and physically drained the feeling from the work or studies.<br><br>
                         It's calculated by averaging the responses to the Exhaustion-related items:<br>
-                        <b>Q9, Q10, Q11, Q12, Q13, Q14, Q15, Q16</b><br><br>
-                        Higher scores indicate greater emotional fatigue.
+                        <b>Q2, Q4, Q6, Q8, Q10, Q12, Q14, Q16</b><br><br>
                         Some of these are reverse-scored because they are negatively worded (it will become the opposite of the chosen answer for calculations).<br>
-                        <b>Reverse-scored questions:</b> Q9, Q10, Q12, Q14
+                        <b>Reverse-scored questions:</b> Q2, Q6, Q10, Q14
                     </span>
                 </span>
             </div>
@@ -165,13 +154,13 @@
                 @endif
             </strong></p>
             <div class="text-xs text-gray-500 mt-4">
-                <span class="tooltip-hover">Sum of OLBI-S items related to disengagement questions. <br>More info here. 
+                <span class="tooltip-hover">Sum of disengagement questions. <br>More info here. 
                     <span class="tooltip-box">
                         This score measures how mentally distanced or disconnected the feeling from the tasks or responsibilities.<br><br>
                         It's calculated by averaging the answers to the Disengagement-related questions:<br>
-                        <b>Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8</b><br><br>
+                        <b>Q1, Q3, Q5, Q7, Q9, Q11, Q13, Q15</b><br><br>
                         Some of these are reverse-scored because they are negatively worded (it will become the opposite of the chosen answer for calculations).<br>
-                        <b>Reverse-scored questions:</b> Q2, Q3, Q5, Q6
+                        <b>Reverse-scored questions:</b> Q3, Q7, Q11, Q15
                     </span>
                 </span>
             </div>
@@ -181,8 +170,8 @@
         <div class="max-w-2xl text-xs text-gray-600 text-center">
             <b>About The Scores</b><br>
             The average, exhaustion, and disengagement scores are shown here to help understand the responses better, but they are not used to determine the actual burnout risk level.<br>
-            The burnout risk (Low, Moderate, or High) is predicted by a machine learning model trained on patterns from the dataset. The model analyzes all the individual answers, not summary scores.<br>
-            Although, these scores are helpful for insights, they do not affect the prediction or its accuracy.
+            The burnout risk categories (Low, Disengaged, Exhausted, or High) is predicted by a machine learning model trained on patterns from the dataset. The model analyzes all the individual answers, not summary scores.<br>
+            Although, these scores are helpful for insights, they do not affect the actual cateogires, prediction, or its confidence.
         </div>
     </div>
 
@@ -202,7 +191,10 @@
                     </thead>
                     <tbody>
                         <tr>
-                            @foreach($original_responses as $value)
+                            @foreach($original_responses as $q => $value)
+                                @php
+                                    $qnum = intval(str_replace('Q', '', $q));
+                                @endphp
                                 <td class="px-2 py-1">
                                     {{ $value }}
                                 </td>
@@ -212,7 +204,8 @@
                 </table>
                 <div class="w-full flex justify-center mt-4">
                     <div class="bg-gray-100 border border-gray-300 rounded px-4 py-2 text-xs text-gray-700 text-center">
-                        <b>3 = Strongly Agree | 2 = Agree | 1 = Disagree | 0 = Strongly Disagree</b>
+                        <b>1 = Strongly Agree | 2 = Agree | 3 = Disagree | 4 = Strongly Disagree</b><br>
+                        <span class="text-blue-600">(Note: This presents the original answers, not included the reversed ones)</span>
                     </div>
                 </div>
             @else
@@ -223,9 +216,7 @@
 
     <!-- Recommendation Box -->
     <h4 class="text-lg font-bold mt-8 mb-2">Interpretation</h4>
-    @if(isset($predictedLabel) && $predictedLabel)
-        <span class="text-xl font-bold text-gray-400">Unavailable</span>
-    @endif
+    {{-- Remove the 'Unavailable' span that always shows when there is a prediction --}}
     @if($predictedLabel == 'Low')
         <div class="alert alert-success mt-4">
             Currently showing low signs of burnout.<br>

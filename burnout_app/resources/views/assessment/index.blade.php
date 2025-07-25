@@ -48,11 +48,6 @@
             <div id="demographicStep" class="p-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label for="student_id" class="block text-gray-700 font-medium mb-2">Student ID</label>
-                        <input type="number" name="student_id" id="student_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" min="1000000" max="9999999" required step="1" maxlength="7" oninput="if(this.value.length>7)this.value=this.value.slice(0,7);">
-                        @error('student_id')<span class="text-red-600 text-sm">Student ID must be a 7-digit number.</span>@enderror
-                    </div>
-                    <div>
                         <label for="name" class="block text-gray-700 font-medium mb-2">Name</label>
                         <input type="text" name="name" id="name" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" maxlength="255" pattern="^[A-Za-z ]*$">
                         @error('name')<span class="text-red-600 text-sm">{{ $message }}</span>@enderror
@@ -115,10 +110,10 @@
                 <div class="m-4">
                     @php
                         $olbi_options = [
-                            ['value' => 3, 'label' => 'Strongly Agree'],
+                            ['value' => 1, 'label' => 'Strongly Agree'],
                             ['value' => 2, 'label' => 'Agree'],
-                            ['value' => 1, 'label' => 'Disagree'],
-                            ['value' => 0, 'label' => 'Strongly Disagree'],
+                            ['value' => 3, 'label' => 'Disagree'],
+                            ['value' => 4, 'label' => 'Strongly Disagree'],
                         ];
                     @endphp
                     @foreach($olbi_questions as $index => $question)
@@ -171,14 +166,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (nextBtn && demographicStep && questionsStep) {
         nextBtn.addEventListener('click', function() {
             // Validate demographic fields before proceeding
-            const studentId = document.getElementById('student_id');
             const name = document.getElementById('name');
             const age = document.getElementById('age');
             const gender = document.getElementById('gender');
             const program = document.getElementById('program');
             const yearLevel = document.getElementById('year_level');
             let valid = true;
-            [studentId, name, age, gender, program, yearLevel].forEach(field => {
+            [name, age, gender, program, yearLevel].forEach(field => {
                 if (!field.value) {
                     field.classList.add('border-red-500');
                     valid = false;

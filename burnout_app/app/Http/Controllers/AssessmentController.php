@@ -13,22 +13,22 @@ class AssessmentController extends Controller
     public function index()
     {
         $olbi_questions = [
-            'I always find new and interesting aspects in my studies.',
-            'It happens more and more often that I talk about my studies in a negative way.',
-            'Lately, I tend to think less about my academic tasks and do them almost mechanically.',
-            'I find my studies to be a positive challenge.',
-            'Over time, one can become disconnected from this type of study.',
-            'Sometimes I feel sickened by my studies.',
-            'This is the only field of study that I can imagine myself doing.',
-            'I feel more and more engaged in my studies.',
-            'There are days when I feel tired before I arrive in class or start studying.',
-            'After a class or after studying, I tend to need more time than in the past in order to relax and feel better.',
-            'I can tolerate the pressure of my studies very well.',
-            'While studying, I usually feel emotionally drained.',
-            'After a class or after studying, I have enough energy for my leisure activities.',
-            'After a class or after studying, I usually feel worn out and weary.',
-            'I can usually manage my study-related workload well.',
-            'When I study, I usually feel energized.'
+            'I always find new and interesting aspects in my studies.', // D1
+            'There are days when I feel tired before I arrive in class or start studying.', // E1 - N
+            'I can usually manage my study-related workload well.', // D2 -N
+            'Over time, one can become disconnected from this type of study.', // E2
+            'I find my studies to be a positive challenge.', // D3
+            'After a class or after studying, I tend to need more time than in the past in order to relax and feel better.', // E3 - N
+            'I can tolerate the pressure of my studies very well.', // D4 - N
+            'Lately, I tend to think less about my academic tasks and do them almost mechanically.', // E4
+            'I feel more and more engaged in my studies.', // D5
+            'While studying, I usually feel emotionally drained.', // E5 - N
+            'After a class or after studying, I have enough energy for my leisure activities.', // D6 -N
+            'It happens more and more often that I talk about my studies in a negative way.', // E6
+            'This is the only field of study that I can imagine myself doing.', // D7
+            'After a class or after studying, I usually feel worn out and weary.', // E7 - N
+            'When I study, I usually feel energized.', // D8 - N
+            'Sometimes I feel sickened by my studies.' // E8
         ];
         $programs = [
             'Accountancy',
@@ -110,7 +110,7 @@ class AssessmentController extends Controller
 
     public function calculateBurnout(Request $request)
     {
-        // 1. Collect responses
+        // Collect responses
         $responses = [];
         for ($i = 1; $i <= 16; $i++) {
             $responses["Q$i"] = (int) $request->input("Q$i");
@@ -120,51 +120,47 @@ class AssessmentController extends Controller
         $name = $request->input('name');
         $year_level = $request->input('year_level');
 
-        // 2. Reverse scoring
-        // Positively worded items (to be reverse scored):
-        // Q1: I always find new and interesting aspects in my studies.
-        // Q4: I find my studies to be a positive challenge.
-        // Q7: This is the only field of study that I can imagine myself doing.
-        // Q8: I feel more and more engaged in my studies.
-        // Q11: I can tolerate the pressure of my studies very well.
-        // Q13: After a class or after studying, I have enough energy for my leisure activities.
-        // Q15: I can usually manage my study-related workload well.
-        // Q16: When I study, I usually feel energized.
-        $reverseItems = ['Q1', 'Q4', 'Q7', 'Q8', 'Q11', 'Q13', 'Q15', 'Q16'];
+        // 1. Reverse all negative worded items ['Q2', 'Q3', 'Q6', 'Q7', 'Q10', 'Q11', 'Q14', 'Q15']
+        $reverseItems = ['Q2', 'Q3', 'Q6', 'Q7', 'Q10', 'Q11', 'Q14', 'Q15'];
         foreach ($reverseItems as $item) {
             $responses[$item] = 5 - $responses[$item];
         }
 
-        // 3. Score breakdown
-        // Corrected OLBI-S mapping:
-        // Exhaustion items:
-        // Q9: There are days when I feel tired before I arrive in class or start studying
-        // Q10: After a class or after studying, I tend to need more time than in the past in order to relax and feel better.
-        // Q11: I can tolerate the pressure of my studies very well
-        // Q12: While studying, I usually feel emotionally drained.
-        // Q13: After a class or after studying, I have enough energy for my leisure activities.
-        // Q14: After a class or after studying, I usually feel worn out and weary.
-        // Q15: I can usually manage my study-related workload well.
-        // Q16: When I study, I usually feel energized
-        $exhaustionItems = ['Q9', 'Q10', 'Q11', 'Q12', 'Q13', 'Q14', 'Q15', 'Q16'];
-        // Disengagement items: all others
-        $disengagementItems = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8'];
+        // 2. Fetch exhaustion and disengagement items from reversed responses
+        $exhaustionItems = ['Q2', 'Q4', 'Q6', 'Q8', 'Q10', 'Q12', 'Q14', 'Q16'];
+        $disengagementItems = ['Q1', 'Q3', 'Q5', 'Q7', 'Q9', 'Q11', 'Q13', 'Q15'];
         $exhaustionScore = array_sum(array_intersect_key($responses, array_flip($exhaustionItems)));
         $disengagementScore = array_sum(array_intersect_key($responses, array_flip($disengagementItems)));
 
-        // 4. Total score
-        $totalScore = array_sum($responses);
+        // 3. Total score is the sum of exhaustion and disengagement items
+        $totalScore = $exhaustionScore + $disengagementScore;
 
-        // 5. Prepare input for model
-        $modelInput = array_values($responses);
+        // 4. Prepare input for model (D1,D2,D3,D4,D5,D6,D7,D8,E1,E2,E3,E4,E5,E6,E7,E8)
+        $modelInput = [
+            $responses['Q1'],  // D1
+            $responses['Q3'],  // D2
+            $responses['Q5'],  // D3
+            $responses['Q7'],  // D4
+            $responses['Q9'],  // D5
+            $responses['Q11'], // D6
+            $responses['Q13'], // D7
+            $responses['Q15'], // D8
+            $responses['Q2'],  // E1
+            $responses['Q4'],  // E2
+            $responses['Q6'],  // E3
+            $responses['Q8'],  // E4
+            $responses['Q10'], // E5
+            $responses['Q12'], // E6
+            $responses['Q14'], // E7
+            $responses['Q16'], // E8
+        ];
 
-        // 6. Call Python API for prediction
+        // 5. Python API prediction
         $apiUrl = 'http://127.0.0.1:5000/predict';
-        $labels = ['Low', 'Moderate', 'High'];
+        $labels = ['Low', 'Disengaged', 'Exhausted', 'High'];
         $errorMsg = null;
         $predictedLabel = null;
         $confidence = null;
-        $modelAccuracy = null;
         try {
             $response = \Illuminate\Support\Facades\Http::post($apiUrl, ['input' => $modelInput]);
             if ($response->failed()) {
@@ -173,10 +169,10 @@ class AssessmentController extends Controller
                 $result = $response->json();
                 $predictedLabel = $result['label'] ?? null;
                 $confidence = $result['confidence'] ?? null;
-                $modelAccuracy = $result['accuracy'] ?? null;
-                $totalScore = $result['total_score'] ?? null;
-                $exhaustionScore = $result['exhaustion'] ?? null;
-                $disengagementScore = $result['disengagement'] ?? null;
+                // Overwrite with our own calculation for consistency
+                $totalScore = $exhaustionScore + $disengagementScore;
+                $exhaustionScore = $exhaustionScore;
+                $disengagementScore = $disengagementScore;
             }
         } catch (\Exception $e) {
             $errorMsg = 'Prediction error: ' . $e->getMessage();
@@ -187,7 +183,7 @@ class AssessmentController extends Controller
         return view('assessment.result', compact(
             'responses', 'original_responses', 'student_id', 'name', 'year_level',
             'totalScore', 'predictedLabel', 'confidence', 'labels',
-            'exhaustionScore', 'disengagementScore', 'exhaustionItems', 'disengagementItems', 'modelAccuracy', 'errorMsg', 'overallRisk'
+            'exhaustionScore', 'disengagementScore', 'exhaustionItems', 'disengagementItems', 'errorMsg', 'overallRisk'
         ));
     }
 

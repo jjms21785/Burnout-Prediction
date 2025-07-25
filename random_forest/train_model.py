@@ -1,41 +1,31 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.metrics import classification_report, accuracy_score
 import joblib
 
-# Load dataset
-df = pd.read_csv(r"C:\Users\juice wah\Desktop\thesis\thesis\random_forest\olbi_dataset.csv")  
+# Load your cleaned dataset
+df = pd.read_csv(r'C:\Users\juice wah\Desktop\thesis\thesis\random_forest\cleaned_data.csv')
 
-X = df.drop(["Burnout_Risk", "Age", "Total_Score", "Gender", "Program"], axis=1)
+# Define features and target
+feature_cols = ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8',
+                'E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8']
+X = df[feature_cols]
+y = df['burnout_cat']
 
-# Target label (numeric: 0=Low, 1=Moderate, 2=High)
-y = df["Burnout_Risk"]
+# Split dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
+# Train model
+clf = RandomForestClassifier(random_state=42)
+clf.fit(X_train, y_train)
 
-# Initialize Random Forest
-model = RandomForestClassifier(
-    n_estimators=100,
-    max_depth=None,
-    random_state=42,
-    class_weight="balanced"
-)
+# Predict
+y_pred = clf.predict(X_test)
 
-# Train the model
-model.fit(X_train, y_train)
+# Evaluate model
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred, digits=4))
 
-# Predict on test set
-y_pred = model.predict(X_test)
-
-# Evaluate performance
-print("Model Accuracy:", accuracy_score(y_test, y_pred))
-print("\nClassification Report:\n", classification_report(y_test, y_pred, target_names=["Low", "Moderate", "High"]))
-print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
-
-# # Save trained model
-# joblib.dump(model, "olbi_model.pkl")
-# print("\nModel saved successfully as")
+# # Save model
+# joblib.dump(clf, r'C:\Users\juice wah\Desktop\thesis\thesis\random_forest\olbi_model.joblib')
