@@ -134,7 +134,7 @@
                     @endforeach
                 </div>
             @else
-                <div class="flex items-center justify-center h-24 text-gray-400">No recent assessments available.</div>
+                <div class="flex items-center justify-center h-24 text-gray-400">No data available</div>
             @endif
         </div>
     </div>

@@ -7,9 +7,9 @@ import joblib
 # Load dataset
 df = pd.read_csv(r"C:\Users\juice wah\Desktop\thesis\thesis\random_forest\olbi_dataset.csv")  
 
-X = df.drop(["Burnout_Risk", "Total_Score"], axis=1)
+X = df.drop(["Burnout_Risk", "Age", "Total_Score", "Gender", "Program"], axis=1)
 
-# Target label (already numeric: 0=Low, 1=Moderate, 2=High)
+# Target label (numeric: 0=Low, 1=Moderate, 2=High)
 y = df["Burnout_Risk"]
 
 # Train-test split
@@ -36,6 +36,6 @@ print("Model Accuracy:", accuracy_score(y_test, y_pred))
 print("\nClassification Report:\n", classification_report(y_test, y_pred, target_names=["Low", "Moderate", "High"]))
 print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
 
-# Save trained model
-joblib.dump(model, "olbi_model.pkl")
-print("\nModel saved successfully as 'olbi_model.pkl'.")
+# # Save trained model
+# joblib.dump(model, "olbi_model.pkl")
+# print("\nModel saved successfully as")

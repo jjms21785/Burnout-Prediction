@@ -5,18 +5,13 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\AdminController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');    
 
 Route::get('/assessment', [AssessmentController::class, 'index'])->name('assessment.index');
 Route::post('/assessment', [AssessmentController::class, 'store'])->name('assessment.store');
 Route::get('/results/{id}', [AssessmentController::class, 'results'])->name('assessment.results');
-Route::post('/assessment/calculate', [AssessmentController::class, 'calculateBurnout'])->name('assessment.calculate');
+Route::post('/assessment/result', [AssessmentController::class, 'calculateBurnout'])->name('assessment.result');
 
 Route::prefix('admin')->group(function () {
     Route::get('/students', [AdminController::class, 'students'])->name('admin.students');

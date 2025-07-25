@@ -35,12 +35,6 @@ class AssessmentController extends Controller
             'Business Administration Major in Marketing Management',
             'Entrepreneurship',
             'Hospitality Management',
-            'Elementary Education',
-            'Secondary Education Major in English',
-            'Secondary Education Major in Filipino',
-            'Secondary Education Major in Math',
-            'Arts in Psychology',
-            'Computer Science',
             'Information Technology',
             'Electronics Engineering',
             'Nursing',
@@ -58,16 +52,12 @@ class AssessmentController extends Controller
         $validated = $request->validate([
             'student_id' => ['required', 'string', 'max:32', 'regex:/^[A-Za-z0-9\-]+$/'],
             'name' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z ]*$/'],
-            'age' => 'required|integer|min:10|max:100',
-            'gender' => ['required', 'string', 'in:Male,Female,Other'],
-            'program' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z ]+$/'],
             'year_level' => ['required', 'string', 'max:32', 'regex:/^[A-Za-z0-9 ]+$/'],
             'answers' => 'required|array|size:16',
             'answers.*' => 'required|integer|min:0|max:3'
         ], [
             'student_id.regex' => 'Student ID may only contain letters, numbers, and dashes.',
             'name.regex' => 'Name may only contain letters and spaces.',
-            'program.regex' => 'Program may only contain letters and spaces.',
             'year_level.regex' => 'Year level may only contain letters, numbers, and spaces.'
         ]);
 
@@ -89,9 +79,6 @@ class AssessmentController extends Controller
         $assessment = Assessment::create([
             'student_id' => $validated['student_id'],
             'name' => $validated['name'],
-            'age' => $validated['age'],
-            'gender' => $validated['gender'],
-            'program' => $validated['program'],
             'year_level' => $validated['year_level'],
             'answers' => json_encode($validated['answers']),
             'ip_address' => $request->ip(),
@@ -131,19 +118,37 @@ class AssessmentController extends Controller
         $original_responses = $responses;
         $student_id = $request->input('student_id');
         $name = $request->input('name');
-        $age = (int) $request->input('age');
-        $gender = $request->input('gender');
-        $program = $request->input('program');
+        $year_level = $request->input('year_level');
 
         // 2. Reverse scoring
+        // Positively worded items (to be reverse scored):
+        // Q1: I always find new and interesting aspects in my studies.
+        // Q4: I find my studies to be a positive challenge.
+        // Q7: This is the only field of study that I can imagine myself doing.
+        // Q8: I feel more and more engaged in my studies.
+        // Q11: I can tolerate the pressure of my studies very well.
+        // Q13: After a class or after studying, I have enough energy for my leisure activities.
+        // Q15: I can usually manage my study-related workload well.
+        // Q16: When I study, I usually feel energized.
         $reverseItems = ['Q1', 'Q4', 'Q7', 'Q8', 'Q11', 'Q13', 'Q15', 'Q16'];
         foreach ($reverseItems as $item) {
-            $responses[$item] = 3 - $responses[$item];
+            $responses[$item] = 5 - $responses[$item];
         }
 
         // 3. Score breakdown
-        $exhaustionItems = ['Q2', 'Q5', 'Q6', 'Q10', 'Q12', 'Q14'];
-        $disengagementItems = ['Q1', 'Q3', 'Q4', 'Q7', 'Q8', 'Q9', 'Q11', 'Q13', 'Q15', 'Q16'];
+        // Corrected OLBI-S mapping:
+        // Exhaustion items:
+        // Q9: There are days when I feel tired before I arrive in class or start studying
+        // Q10: After a class or after studying, I tend to need more time than in the past in order to relax and feel better.
+        // Q11: I can tolerate the pressure of my studies very well
+        // Q12: While studying, I usually feel emotionally drained.
+        // Q13: After a class or after studying, I have enough energy for my leisure activities.
+        // Q14: After a class or after studying, I usually feel worn out and weary.
+        // Q15: I can usually manage my study-related workload well.
+        // Q16: When I study, I usually feel energized
+        $exhaustionItems = ['Q9', 'Q10', 'Q11', 'Q12', 'Q13', 'Q14', 'Q15', 'Q16'];
+        // Disengagement items: all others
+        $disengagementItems = ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8'];
         $exhaustionScore = array_sum(array_intersect_key($responses, array_flip($exhaustionItems)));
         $disengagementScore = array_sum(array_intersect_key($responses, array_flip($disengagementItems)));
 
@@ -152,15 +157,6 @@ class AssessmentController extends Controller
 
         // 5. Prepare input for model
         $modelInput = array_values($responses);
-        $modelInput[] = $age;
-        $genderMap = ['Male' => 0, 'Female' => 1];
-        $programMap = [
-            'BSA' => 0, 'BSBA' => 1, 'BSENT' => 2, 'BSHM' => 3, 'BEED' => 4,
-            'BSED-ENG' => 5, 'BSED-FIL' => 6, 'BSED-MATH' => 7, 'BA-PSYCH' => 8,
-            'BSCS' => 9, 'BSIT' => 10, 'BSECE' => 11, 'BSN' => 12
-        ];
-        $modelInput[] = $genderMap[$gender] ?? 0;
-        $modelInput[] = $programMap[$program] ?? 0;
 
         // 6. Call Python API for prediction
         $apiUrl = 'http://127.0.0.1:5000/predict';
@@ -189,7 +185,7 @@ class AssessmentController extends Controller
         $overallRisk = $predictedLabel ? strtolower($predictedLabel) : 'unknown';
 
         return view('assessment.result', compact(
-            'responses', 'original_responses', 'student_id', 'name', 'age', 'gender', 'program',
+            'responses', 'original_responses', 'student_id', 'name', 'year_level',
             'totalScore', 'predictedLabel', 'confidence', 'labels',
             'exhaustionScore', 'disengagementScore', 'exhaustionItems', 'disengagementItems', 'modelAccuracy', 'errorMsg', 'overallRisk'
         ));

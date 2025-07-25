@@ -16,10 +16,7 @@
             <b>Disengagement:</b> withdrawal and detachment from academic work and lack of motivation.
         </ul>
         <p class="mb-2 text-gray-700">
-            The OLBI-S is adapted from the original OLBI created by Evangelia Demerouti and colleagues, and is freely available for academic and research purposes. It has been widely used in burnout studies involving students from various disciplines and countries.
-        </p>
-        <p class="mb-2 text-gray-700">
-            This burnout self-assessment is based on the Oldenburg Burnout Inventory – Student version (OLBI-S), which is a research-based tool used to explore patterns of academic stress, exhaustion, and disengagement among students.
+            The OLBI-S is adapted from the original OLBI created by Evangelia Demerouti and colleagues, which is a research-based tool used to explore patterns of academic stress, exhaustion, and disengagement among students. It has been widely used in burnout studies involving students from various disciplines and countries.
         </p>
         <p class="mb-2 text-gray-700">
             This assessment is provided for educational and self-reflection purposes only. It is not a diagnostic tool and does not replace professional mental health evaluation, counseling, or treatment. By continuing, you acknowledge and agree to the following:
@@ -27,7 +24,7 @@
         <ul class="list-disc pl-6 mb-2 text-gray-700">
             <li>Your responses are used only for academic and research purposes.</li>
             <li>The results are not a medical diagnosis, and any concerns should be discussed with a licensed mental health professional or school counselor.</li>
-            <li>If you are experiencing high levels of stress, emotional distress, or academic difficulties, we strongly encourage you to reach out to your school’s guidance office or a qualified professional.</li>
+            <li>If you are experiencing high levels of stress, emotional distress, or academic difficulties, it is strongly encourage you to reach out to your school's guidance office or a qualified professional.</li>
         </ul>
         <button id="continueBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium w-40 mt-2">Continue</button>
     </div>
@@ -46,7 +43,7 @@
 <!-- Assessment Form -->
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white border border-gray-200 rounded-lg shadow-lg">
-        <form action="{{ route('assessment.calculate') }}" method="POST" id="assessmentForm">
+        <form action="{{ route('assessment.result') }}" method="POST" id="assessmentForm">
             @csrf
             <div id="demographicStep" class="p-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

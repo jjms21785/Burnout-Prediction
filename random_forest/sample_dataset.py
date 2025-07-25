@@ -22,9 +22,9 @@ genders = list(gender_map.keys())
 # Number of records per class
 samples_per_class = 800 // len(labels)
 
-# Function to reverse score (on 1–4 scale)
+# Function to reverse score (on 0–3 scale)
 def reverse_score(val):
-    return 5 - val
+    return 3 - val
 
 # Generate synthetic response
 def generate_response(label):

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Burnalytix - Academic Burnout Tool')
+@section('title', 'Burnalytix - Burnout Assessment Tool')
 
 @section('content')
 <!-- Hero Section -->
@@ -112,7 +112,7 @@
                 <ul class="space-y-3 text-gray-600">
                     <li class="flex items-start">
                         <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                        Quick 22-question assessment
+                        Quick 16-question assessment based on the Oldenburg Burnout Inventory - Student version (OLBI-S)
                     </li>
                     <li class="flex items-start">
                         <span class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>

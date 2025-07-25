@@ -83,13 +83,14 @@
             @endif
         </div>
         <div class="bg-white border rounded-lg p-6 flex flex-col items-center">
-        <div class="text-xl font-bold mb-1" fstyle="color: black;">
+            <h3 class="text-xl font-bold mb-1" fstyle="color: black;">Prediction Confidence: </h3>
                 @if(isset($confidence) && is_array($confidence))
-                    Prediction Confidence: {{ number_format(max($confidence)*100,2) }}%
+                    {{ number_format(max($confidence)*100,2) }}%
                 @else
-                    <span class="text-gray-400">Prediction Confidence: Unavailable</span>
+                    <div class="mt-1">
+                        <span class="text-xl font-bold text-gray-400">Unavailable</span>
+                    </div>
                 @endif
-            </div>
             <div class="text-xl font-bold mb-1" fstyle="color: black;">{{ isset($modelAccuracy) ? 'Model Accuracy: '.($modelAccuracy*100).'%' : '' }}</div>
             @if(isset($modelAccuracy) && isset($confidence))
                 <div class="text-xs text-gray-500 mt-2">
@@ -99,13 +100,11 @@
                             It's based on how consistently the answers match patterns seen in the training data. 
                             Higher confidence means the model is more certain that the pattern fits a specific risk level.<br><br>  
                             <b>Accuracy</b> shows how well the Machine Learning model performs on unseen data. 
-                            The model has been tested on hundreds of samples and achieved around 92% accuracy. 
-                            That means it correctly predicted burnout risk in 92% out of 100% cases during evaluation.
+                            The model has been tested on hundreds of samples and achieved around the said accuracy. 
+                            That means it correctly predicted burnout risk out of 100% of cases during evaluation.
                         </span>
                     </span>
                 </div>
-            @else
-                <div class="text-xs text-gray-400">Unavailable</div>
             @endif
             @if(isset($errorMsg) && $errorMsg)
                 <div class="mt-2 text-red-600 text-sm">{{ $errorMsg }}</div>
@@ -148,8 +147,10 @@
                     <span class="tooltip-box">
                         This score reflects how emotionally and physically drained the feeling from the work or studies.<br><br>
                         It's calculated by averaging the responses to the Exhaustion-related items:<br>
-                        <b>Q2, Q3, Q6, Q10, Q12, Q14</b><br><br>
+                        <b>Q9, Q10, Q11, Q12, Q13, Q14, Q15, Q16</b><br><br>
                         Higher scores indicate greater emotional fatigue.
+                        Some of these are reverse-scored because they are negatively worded (it will become the opposite of the chosen answer for calculations).<br>
+                        <b>Reverse-scored questions:</b> Q9, Q10, Q12, Q14
                     </span>
                 </span>
             </div>
@@ -168,9 +169,9 @@
                     <span class="tooltip-box">
                         This score measures how mentally distanced or disconnected the feeling from the tasks or responsibilities.<br><br>
                         It's calculated by averaging the answers to the Disengagement-related questions:<br>
-                        <b>Q1, Q4, Q5, Q7, Q8, Q9, Q11, Q13, Q15, Q16</b><br><br>
-                        Some of these are reverse-scored because they are positively worded (it will become opposite of chosen answer for calculations).<br>
-                        <b>Reverse-scored questions:</b> Q1, Q4, Q7, Q8, Q11, Q13, Q15, Q16
+                        <b>Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8</b><br><br>
+                        Some of these are reverse-scored because they are negatively worded (it will become the opposite of the chosen answer for calculations).<br>
+                        <b>Reverse-scored questions:</b> Q2, Q3, Q5, Q6
                     </span>
                 </span>
             </div>
@@ -180,8 +181,8 @@
         <div class="max-w-2xl text-xs text-gray-600 text-center">
             <b>About The Scores</b><br>
             The average, exhaustion, and disengagement scores are shown here to help understand the responses better, but they are not used to determine the actual burnout risk level.<br>
-            The burnout risk (Low, Moderate, or High) is predicted by a machine learning model trained on patterns from the dataset. The model analyzes all the individual answers, not just summary scores.<br>
-            These scores are helpful for insights, but they do not affect the prediction or its accuracy.
+            The burnout risk (Low, Moderate, or High) is predicted by a machine learning model trained on patterns from the dataset. The model analyzes all the individual answers, not summary scores.<br>
+            Although, these scores are helpful for insights, they do not affect the prediction or its accuracy.
         </div>
     </div>
 
@@ -222,6 +223,9 @@
 
     <!-- Recommendation Box -->
     <h4 class="text-lg font-bold mt-8 mb-2">Interpretation</h4>
+    @if(isset($predictedLabel) && $predictedLabel)
+        <span class="text-xl font-bold text-gray-400">Unavailable</span>
+    @endif
     @if($predictedLabel == 'Low')
         <div class="alert alert-success mt-4">
             Currently showing low signs of burnout.<br>

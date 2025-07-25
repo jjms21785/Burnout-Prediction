@@ -2,27 +2,42 @@ from flask import Flask, render_template, request, jsonify
 import joblib
 import numpy as np
 import pandas as pd
+from sklearn.metrics import accuracy_score
 
 app = Flask(__name__)
 
 # Load the trained model
 model = joblib.load("olbi_model.pkl")
 
+# Load test dataset and calculate actual accuracy
+try:
+    test_df = pd.read_csv("olbi_dataset.csv")
+    # Assume the last column is the label, first 16 columns are answers
+    X_test = test_df.iloc[:, :16].values
+    y_test = test_df.iloc[:, -1].values
+    y_pred = model.predict(X_test)
+    actual_accuracy = accuracy_score(y_test, y_pred)
+except Exception as e:
+    actual_accuracy = None
+
 # Define mappings used during training
-reverse_scored_items = ['Q1', 'Q4', 'Q7', 'Q8', 'Q11', 'Q13', 'Q15', 'Q16']
-gender_map = {"Female": 0, "Male": 1}
-program_map = {
-    "BSA": 0, "BSBA": 1, "BSENT": 2, "BSHM": 3, "BEED": 4,
-    "BSED-ENG": 5, "BSED-FIL": 6, "BSED-MATH": 7, "BA-PSYCH": 8,
-    "BSCS": 9, "BSIT": 10, "BSECE": 11, "BSN": 12
-}
+# Negatively worded items (to be reverse scored):
+# Q2: index 1
+# Q3: index 2
+# Q5: index 4
+# Q6: index 5
+# Q9: index 8
+# Q10: index 9
+# Q12: index 11
+# Q14: index 13
+reverse_scored_indices = [1, 2, 4, 5, 8, 9, 11, 13]
 label_reverse_map = {0: "Low", 1: "Moderate", 2: "High"}
 
 # Indices for breakdown (0-based)
-exhaustion_indices = [1, 4, 5, 9, 11, 13]  # Q2, Q5, Q6, Q10, Q12, Q14
-# Q1, Q3, Q4, Q7, Q8, Q9, Q11, Q13, Q15, Q16
-# Indices: 0, 2, 3, 6, 7, 8, 10, 12, 14, 15
-disengagement_indices = [0, 2, 3, 6, 7, 8, 10, 12, 14, 15]
+# Exhaustion items: Q9-Q16 (indices 8-15)
+exhaustion_indices = [8, 9, 10, 11, 12, 13, 14, 15]
+# Disengagement items: Q1-Q8 (indices 0-7)
+disengagement_indices = [0, 1, 2, 3, 4, 5, 6, 7]
 
 def reverse_score(val):
     return 3 - val
@@ -42,18 +57,14 @@ def predict():
             responses = []
             for i in range(16):
                 val = features[i]
-                key = f'Q{i+1}'
-                if key in reverse_scored_items:
+                if i in reverse_scored_indices:
                     val = reverse_score(val)
                 responses.append(val)
-            age = features[16]
-            gender = features[17]
-            program = features[18]
-            features_array = np.array([responses + [age, gender, program]])
+            features_array = np.array([responses])
             prediction = model.predict(features_array)[0]
             proba = model.predict_proba(features_array)[0]
             predicted_label = label_reverse_map[prediction]
-            accuracy = 0.92  # Replace with your model's test accuracy if known
+            accuracy = actual_accuracy if actual_accuracy is not None else None
             total_score = sum(responses)
             exhaustion = sum([responses[i] for i in exhaustion_indices])
             disengagement = sum([responses[i] for i in disengagement_indices])
@@ -65,19 +76,16 @@ def predict():
                 'exhaustion': exhaustion,
                 'disengagement': disengagement
             })
-        # Web form logic (manual testing)
+        # Web form 
         data = request.form
         responses = []
         for i in range(1, 17):
             key = f"Q{i}"
             val = int(data[key])
-            if key in reverse_scored_items:
+            if (i-1) in reverse_scored_indices:
                 val = reverse_score(val)
             responses.append(val)
-        age = int(data['Age'])
-        gender = gender_map[data['Gender']]
-        program = program_map[data['Program']]
-        features = responses + [age, gender, program]
+        features = responses
         features_array = np.array([features])
         prediction = model.predict(features_array)[0]
         proba = model.predict_proba(features_array)[0]
@@ -92,9 +100,6 @@ def predict():
             confidence=confidence,
             total_score=total_score,
             answers=responses,
-            age=age,
-            gender=data['Gender'],
-            program=data['Program'],
             exhaustion=exhaustion,
             disengagement=disengagement
         )
