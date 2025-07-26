@@ -18,7 +18,6 @@ return new class extends Migration
             $table->integer('exhaustion_score')->nullable();
             $table->integer('disengagement_score')->nullable();
             $table->string('name')->nullable();
-            $table->string('student_id');
             $table->integer('age');
             $table->string('gender');
             $table->string('program');

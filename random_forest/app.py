@@ -11,15 +11,10 @@ model = joblib.load("olbi_model.joblib")
 # Label mapping to match PHP controller/model
 label_reverse_map = {0: "Low", 1: "Disengaged", 2: "Exhausted", 3: "High"}
 
-# Reverse-scored indices (0-based): Q1, Q4, Q5, Q8, Q9, Q12, Q13, Q16
-reverse_scored_indices = [0, 3, 4, 7, 8, 11, 12, 15]
 # Exhaustion: Q2, Q4, Q6, Q8, Q10, Q12, Q14, Q16 (indices 1,3,5,7,9,11,13,15)
 exhaustion_indices = [1, 3, 5, 7, 9, 11, 13, 15]
 # Disengagement: Q1, Q3, Q5, Q7, Q9, Q11, Q13, Q15 (indices 0,2,4,6,8,10,12,14)
 disengagement_indices = [0, 2, 4, 6, 8, 10, 12, 14]
-
-def reverse_score(val):
-    return 3 - val
 
 @app.route('/')
 def home():
@@ -31,19 +26,14 @@ def predict():
         if request.is_json:
             data = request.get_json()
             features = data['input']
-            responses = []
-            for i in range(16):
-                val = features[i]
-                if i in reverse_scored_indices:
-                    val = reverse_score(val)
-                responses.append(val)
-            features_array = np.array([responses])
+            # Use features directly since PHP controller already handles reverse scoring
+            features_array = np.array([features])
             prediction = model.predict(features_array)[0]
             proba = model.predict_proba(features_array)[0]
             predicted_label = label_reverse_map.get(prediction, str(prediction))
-            total_score = sum(responses)
-            exhaustion = sum([responses[i] for i in exhaustion_indices])
-            disengagement = sum([responses[i] for i in disengagement_indices])
+            total_score = sum(features)
+            exhaustion = sum([features[i] for i in exhaustion_indices])
+            disengagement = sum([features[i] for i in disengagement_indices])
             return jsonify({
                 'label': predicted_label,
                 'confidence': proba.tolist(),
@@ -57,8 +47,6 @@ def predict():
         for i in range(1, 17):
             key = f"Q{i}"
             val = int(data[key])
-            if (i-1) in reverse_scored_indices:
-                val = reverse_score(val)
             responses.append(val)
         features = responses
         features_array = np.array([features])

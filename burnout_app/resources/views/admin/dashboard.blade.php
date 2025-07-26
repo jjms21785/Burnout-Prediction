@@ -38,7 +38,6 @@
                 <table class="min-w-full divide-y divide-gray-200 text-sm text-center" id="highRiskTable">
                     <thead>
                         <tr class="bg-red-50">
-                            <th class="px-4 py-2">Student ID</th>
                             <th class="px-4 py-2">Name</th>
                             <th class="px-4 py-2">Program</th>
                             <th class="px-4 py-2">Burnout Risk</th>
@@ -46,7 +45,7 @@
                         </tr>
                     </thead>
                     <tbody id="highRiskTableBody">
-                        <tr><td colspan="5" class="text-center text-gray-400 py-8">No data available</td></tr>
+                        <tr><td colspan="4" class="text-center text-gray-400 py-8">No data available</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -64,7 +63,6 @@
                 }
                 tbody.innerHTML = data.map(row => `
                     <tr>
-                        <td class="px-4 py-2 text-center">${row.student_id || 'N/A'}</td>
                         <td class="px-4 py-2 text-center">${row.name}</td>
                         <td class="px-4 py-2 text-center">${row.program}</td>
                         <td class="px-4 py-2 text-center">${row.risk}</td>
@@ -265,7 +263,6 @@
             <table class="min-w-full divide-y divide-gray-200 text-sm" id="dmTable">
                 <thead>
                     <tr class="bg-green-50">
-                        <th class="px-4 py-2 text-left">Student ID</th>
                         <th class="px-4 py-2 text-left">Name</th>
                         <th class="px-4 py-2 text-left">Gender</th>
                         <th class="px-4 py-2 text-left">Age</th>
@@ -279,7 +276,7 @@
                     </tr>
                 </thead>
                 <tbody id="dmTableBody">
-                    <tr><td colspan="11" class="text-center text-gray-400 py-8">Loading data...</td></tr>
+                    <tr><td colspan="10" class="text-center text-gray-400 py-8">Loading data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -320,19 +317,18 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(data => renderDMTable(data))
             .catch(() => {
-                document.getElementById('dmTableBody').innerHTML = '<tr><td colspan="11" class="text-center text-red-400 py-8">Failed to load data.</td></tr>';
+                document.getElementById('dmTableBody').innerHTML = '<tr><td colspan="10" class="text-center text-red-400 py-8">Failed to load data.</td></tr>';
             });
         // TODO: Add filter/search event listeners and AJAX calls
     };
     function renderDMTable(data) {
         const tbody = document.getElementById('dmTableBody');
         if(!data || !Array.isArray(data) || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" class="text-center text-gray-400 py-8">No data available.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-gray-400 py-8">No data available.</td></tr>';
             return;
         }
         tbody.innerHTML = data.map(row => `
             <tr>
-                <td class="px-4 py-2">${row.student_id || '-'}</td>
                 <td class="px-4 py-2">${row.name || '-'}</td>
                 <td class="px-4 py-2">${row.gender || '-'}</td>
                 <td class="px-4 py-2">${row.age || '-'}</td>
@@ -364,7 +360,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 tbody.innerHTML = data.map(row => `
                     <tr>
-                        <td class="px-4 py-2 text-center">${row.student_id || 'N/A'}</td>
                         <td class="px-4 py-2 text-center">${row.name}</td>
                         <td class="px-4 py-2 text-center">${row.program}</td>
                         <td class="px-4 py-2 text-center">${row.risk}</td>

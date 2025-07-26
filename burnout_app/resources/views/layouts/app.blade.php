@@ -83,7 +83,7 @@
                     <a href="#" class="text-gray-600 hover:text-green-600 transition-all duration-200 transform hover:scale-105">Home</a>
                     <a href="#" class="text-gray-600 hover:text-green-600 transition-all duration-200 transform hover:scale-105">About</a>
                     @if(request()->routeIs('home') || request()->routeIs('assessment.*'))
-                        <a href="{{ route('admin.dashboard') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium shadow hover:bg-green-700 transition-all duration-200 transform hover:scale-105">Dashboard</a>
+                        <a href="{{ route('assessment.index') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium shadow hover:bg-green-700 transition-all duration-200 transform hover:scale-105">New Assessment</a>
                     @endif
                 </nav>
             </div>

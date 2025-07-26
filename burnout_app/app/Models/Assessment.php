@@ -21,8 +21,7 @@ class Assessment extends Model
         'age',
         'gender',
         'program',
-        'year_level',
-        'student_id'
+        'year_level'
     ];
 
     protected $casts = [

@@ -76,7 +76,6 @@ class AdminController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
-                  ->orWhere('student_id', 'like', "%$search%")
                   ->orWhere('program', 'like', "%$search%")
                   ->orWhere('year_level', 'like', "%$search%")
                   ->orWhere('gender', 'like', "%$search%")
@@ -123,7 +122,6 @@ class AdminController extends Controller
 
         $data = $assessments->map(function($a) {
             return [
-                'student_id' => $a->student_id ?? '-',
                 'name' => $a->name ?? '-',
                 'gender' => $a->gender ?? '-',
                 'age' => $a->age ?? '-',
@@ -155,7 +153,6 @@ class AdminController extends Controller
             ->get()
             ->map(function($a) {
                 return [
-                    'student_id' => $a->student_id ?? 'N/A',
                     'name' => $a->name ?? '-',
                     'program' => $a->program ?? '-',
                     'risk' => ucfirst($a->overall_risk ?? '-'),
@@ -204,7 +201,6 @@ class AdminController extends Controller
     {
         // Map columns, use placeholder if missing
         Assessment::create([
-            'student_id' => $data['student_id'] ?? 'N/A',
             'name' => $data['name'] ?? 'N/A',
             'age' => $data['age'] ?? null,
             'gender' => $data['gender'] ?? 'N/A',
