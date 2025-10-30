@@ -1,379 +1,394 @@
 @extends('layouts.app')
 
-@section('title', 'Admin Dashboard - Burnalytix')
-@section('subtitle', 'Admin Dashboard')
+@section('title', 'Dashboard - Burnalytics')
+
+@section('header-actions')
+<div class="flex items-center space-x-2">
+    <button onclick="exportToExcel()" class="flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition">
+        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        Excel
+    </button>
+    <button onclick="exportToCSV()" class="flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition">
+        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        CSV
+    </button>
+    <button onclick="exportToPDF()" class="flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 transition">
+        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+        </svg>
+        PDF
+    </button>
+</div>
+@endsection
 
 @section('content')
-<template id="dashboardSectionTemplate">
-<!-- Dashboard Content -->
-<div class="flex flex-col h-full min-h-screen p-6 md:p-10 lg:p-12 xl:p-16" style="max-width: 1600px; margin: 0 auto;">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 w-full">
-        <!-- Metrics 2x2 on the left -->
-        <div class="grid grid-cols-2 gap-6 h-full">
-            <div class="bg-white border border-green-200 rounded-lg p-6 flex flex-col items-center justify-center">
-                <p class="text-sm font-medium text-green-600">Total Assessments</p>
-                <p class="text-2xl font-bold text-green-800">{{ $totalAssessments }}</p>
-                <p class="text-xs text-green-600">All time</p>
-            </div>
-            <div class="bg-red-50 border border-red-200 rounded-lg p-6 flex flex-col items-center justify-center">
-                <p class="text-sm font-medium text-red-600">High Risk</p>
-                <p class="text-2xl font-bold text-red-800">{{ $highRisk }}</p>
-                <p class="text-xs text-red-600">Requires immediate attention</p>
-            </div>
-            <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 flex flex-col items-center justify-center">
-                <p class="text-sm font-medium text-orange-600">Moderate Risk</p>
-                <p class="text-2xl font-bold text-orange-800">{{ $moderateRisk }}</p>
-                <p class="text-xs text-orange-600">Monitor closely</p>
-            </div>
-            <div class="bg-white border border-green-100 rounded-lg p-6 flex flex-col items-center justify-center">
-                <p class="text-sm font-medium text-green-600">Low Risk</p>
-                <p class="text-2xl font-bold text-green-800">{{ $lowRisk }}</p>
-                <p class="text-xs text-green-600">Healthy status</p>
-            </div>
-        </div>
-        <!-- High Risk Students on the right -->
-        <div class="bg-white border border-red-200 rounded-lg p-6 w-full h-full flex flex-col" style="max-height: 480px;">
-            <h3 class="text-xl font-bold text-red-800 mb-2 text-center">High Risk Students</h3>
-            <div class="overflow-x-auto flex-1">
-                <table class="min-w-full divide-y divide-gray-200 text-sm text-center" id="highRiskTable">
-                    <thead>
-                        <tr class="bg-red-50">
-                            <th class="px-4 py-2">Name</th>
-                            <th class="px-4 py-2">Program</th>
-                            <th class="px-4 py-2">Burnout Risk</th>
-                            <th class="px-4 py-2">OLBI Score</th>
-                        </tr>
-                    </thead>
-                    <tbody id="highRiskTableBody">
-                        <tr><td colspan="4" class="text-center text-gray-400 py-8">No data available</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <script>
-    function loadHighRiskStudents() {
-        fetch('/admin/high-risk-students')
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.getElementById('highRiskTableBody');
-                if (!data || !Array.isArray(data) || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-8">No high risk students found.</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = data.map(row => `
-                    <tr>
-                        <td class="px-4 py-2 text-center">${row.name}</td>
-                        <td class="px-4 py-2 text-center">${row.program}</td>
-                        <td class="px-4 py-2 text-center">${row.risk}</td>
-                        <td class="px-4 py-2 text-center">${row.score}</td>
-                    </tr>
-                `).join('');
-            })
-            .catch(() => {
-                document.getElementById('highRiskTableBody').innerHTML = '<tr><td colspan="5" class="text-center text-red-400 py-8">Failed to load data.</td></tr>';
-            });
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-        loadHighRiskStudents();
-    });
-    </script>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 w-full flex-1">
-        <!-- Risk Distribution Pie Chart -->
-        <div class="bg-white border border-gray-200 rounded-lg p-6 h-full flex flex-col" style="max-height: 480px;">
-            <h3 class="text-xl font-bold text-green-800 mb-2">Burnout Risk Distribution</h3>
-            <p class="text-gray-600 mb-6">Current assessment results breakdown</p>
-            @if($totalAssessments > 0)
-                <div class="relative">
-                    <canvas id="riskDistributionChart" width="400" height="400"></canvas>
-                </div>
-                <div class="flex justify-center space-x-6 mt-4">
-                    <div class="flex items-center">
-                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                        <span class="text-sm">
-                            Low Risk {{ number_format(($lowRisk / $totalAssessments) * 100, 1) }}%
-                        </span>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
-                        <span class="text-sm">
-                            Moderate Risk {{ number_format(($moderateRisk / $totalAssessments) * 100, 1) }}%
-                        </span>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                        <span class="text-sm">
-                            High Risk {{ number_format(($highRisk / $totalAssessments) * 100, 1) }}%
-                        </span>
-                    </div>
-                </div>
-            @else
-                <div class="flex items-center justify-center h-40 text-gray-400">No data available</div>
-            @endif
-        </div>
-
-        <!-- Recent Assessments -->
-        <div class="bg-white border border-gray-200 rounded-lg p-6 h-full flex flex-col" style="max-height: 480px;">
-            <h3 class="text-xl font-bold text-green-800 mb-2">Recent Assessments</h3>
-            <p class="text-gray-600 mb-6">Latest burnout assessments submitted</p>
-            @if(isset($recentAssessments) && $recentAssessments->count() > 0)
-                <div class="space-y-4">
-                    @foreach($recentAssessments->take(5) as $assessment)
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                            <p class="font-medium text-gray-900">Assessment #{{ $assessment->id }}</p>
-                            <p class="text-sm text-gray-500">{{ $assessment->created_at->format('Y-m-d H:i') }}</p>
+        <!-- Main Content Area - Two Column Layout -->
+        <main class="flex-1 overflow-y-auto p-3">
+            <div class="grid grid-cols-12 gap-6">
+                <!-- LEFT COLUMN (5 cols) -->
+                <div class="col-span-5 space-y-4">
+                    <!-- Total Assessments -->
+                    <div class="rounded-xl shadow-sm p-6 bg-white border border-gray-200">
+                        <div class="flex items-center gap-6">
+                            <!-- Left: Total Assessments -->
+                            <div class="flex-1 flex flex-col items-center justify-center border-r border-gray-300">
+                                <div class="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-indigo-100">
+                                    <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-sm mb-1 text-gray-500">Total Assessments</h3>
+                            </div>
+                            
+                            <!-- Right: Burnout Categories Breakdown -->
+                            <div class="flex-1 flex flex-col justify-center">
+                                <h3 class="text-sm font-semibold mb-3 text-neutral-800">Total Each Categories</h3>
+                                <div class="space-y-2">
+                                    <!-- High Burnout -->
+                                    <div class="flex items-center justify-between py-1">
+                                        <div class="flex items-center">
+                                            <div class="w-3 h-3 rounded-full mr-2 bg-red-500"></div>
+                                            <span class="text-xs text-neutral-800">High Burnout</span>
+                                        </div>
+                                    </div>
+                                    <!-- Exhaustion -->
+                                    <div class="flex items-center justify-between py-1">
+                                        <div class="flex items-center">
+                                            <div class="w-3 h-3 rounded-full mr-2 bg-orange-500"></div>
+                                            <span class="text-xs text-neutral-800">Exhaustion</span>
+                                        </div>
+                                    </div>
+                                    <!-- Disengagement -->
+                                    <div class="flex items-center justify-between py-1">
+                                        <div class="flex items-center">
+                                            <div class="w-3 h-3 rounded-full mr-2 bg-yellow-500"></div>
+                                            <span class="text-xs text-neutral-800">Disengagement</span>
+                                        </div>
+                                    </div>
+                                    <!-- Low Burnout -->
+                                    <div class="flex items-center justify-between py-1">
+                                        <div class="flex items-center">
+                                            <div class="w-3 h-3 rounded-full mr-2 bg-green-500"></div>
+                                            <span class="text-xs text-neutral-800">Low Burnout</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <span class="px-3 py-1 rounded-full text-xs font-medium {{ $assessment->risk_badge_color }}">
-                            {{ $assessment->formatted_risk }}
-                        </span>
                     </div>
-                    @endforeach
+
+                    <!-- Pie Charts Grid (2x3) -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Burnout Categories Results -->
+                        <div class="rounded-xl shadow-sm p-6 bg-white border border-gray-200">
+                            <h4 class="text-sm font-semibold mb-4 text-center text-neutral-800">Burnout Categories</h4>
+                            <canvas id="burnoutChart" class="max-h-45"></canvas>
+                    </div>
+
+                        <!-- Age Distribution -->
+                        <div class="rounded-xl shadow-sm p-6 bg-white border border-gray-200">
+                            <h4 class="text-sm font-semibold mb-4 text-center text-neutral-800">Age</h4>
+                            <canvas id="ageChart" class="max-h-45"></canvas>
+                    </div>
+
+                        <!-- Gender Distribution -->
+                        <div class="rounded-xl shadow-sm p-6 bg-white border border-gray-200">
+                            <h4 class="text-sm font-semibold mb-4 text-center text-neutral-800">Gender</h4>
+                            <canvas id="genderChart" class="max-h-45"></canvas>
                 </div>
-            @else
-                <div class="flex items-center justify-center h-24 text-gray-400">No data available</div>
-            @endif
+
+                        <!-- Year Level Distribution -->
+                        <div class="rounded-xl shadow-sm p-6 bg-white border border-gray-200">
+                            <h4 class="text-sm font-semibold mb-4 text-center text-neutral-800">Year Level</h4>
+                            <canvas id="yearChart" class="max-h-45"></canvas>
+        </div>
+
+                        <!-- Program Distribution -->
+                        <div class="col-span-2 rounded-xl shadow-sm p-6 bg-white border border-gray-200">
+                            <h4 class="text-sm font-semibold mb-4 text-center text-neutral-800">Program</h4>
+                            <canvas id="programChart" class="max-h-45"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN (7 cols) -->
+                <div class="col-span-7 space-y-6">
+                    <!-- Latest Submissions -->
+                    <div class="rounded-xl shadow-sm p-5 bg-white border border-gray-200">
+                        <h3 class="text-base font-semibold mb-3 flex items-center text-neutral-800">
+                            Latest Submissions
+                        </h3>
+                        <div class="space-y-1" id="latestSubmissions">
+                            <p class="text-sm text-center py-4 text-gray-500">Loading...</p>
         </div>
     </div>
 
-    <!-- Charts Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 w-full flex-1">
-        <!-- Department Breakdown -->
-        <div class="bg-white border border-gray-200 rounded-lg p-6 h-full flex flex-col" style="max-height: 480px;">
-            <h3 class="text-xl font-bold text-green-800 mb-2">Burnout Trends by Department</h3>
-            <p class="text-gray-600 mb-6">Assessment distribution by academic department</p>
-            @if(isset($departmentData) && count($departmentData['labels']) > 0)
-                <canvas id="departmentChart" width="400" height="300"></canvas>
-            @else
-                <div class="flex items-center justify-center h-full text-gray-400">No data available</div>
-            @endif
-        </div>
-
-        <!-- Trend Over Time -->
-        <div class="bg-white border border-gray-200 rounded-lg p-6 h-full flex flex-col" style="max-height: 480px;">
-            <h3 class="text-xl font-bold text-green-800 mb-2">Burnout Trends Over Time</h3>
-            <p class="text-gray-600 mb-6">Monthly assessment trends by risk level</p>
-            @if(isset($trendData) && count($trendData['labels']) > 0)
-                <canvas id="trendChart" width="400" height="300"></canvas>
-            @else
-                <div class="flex items-center justify-center h-full text-gray-400">No data available</div>
-            @endif
-        </div>
-    </div>
-
-    <!-- Action Items -->
-    <div class="bg-white border border-gray-200 rounded-lg p-6 w-full flex flex-col" style="max-height: 400px;">
-        <h3 class="text-xl font-bold text-green-800 mb-2">Action Items</h3>
-        <p class="text-gray-600 mb-6">Recommended actions based on current data</p>
-        @if($totalAssessments > 0)
-        <div class="space-y-4">
-            @if($highRisk > 0)
-            <div class="flex items-start space-x-3 p-4 bg-red-50 rounded-lg border-l-4 border-red-400">
-                <svg class="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                </svg>
-                <div>
-                    <h4 class="font-semibold text-red-800">High Priority: {{ $highRisk }} students at high burnout risk</h4>
-                    <p class="text-sm text-red-600">Immediate counseling intervention recommended</p>
+                    <!-- Question Statistics -->
+                    <div class="rounded-xl shadow-sm p-5 bg-white border border-gray-200 2xl:min-h-[890px] flex flex-col">
+                            <!-- Column Headers -->
+                        <div class="grid grid-cols-11 gap-4 items-center mb-2">
+                            <div class="col-span-5 text-xl font-semibold text-neutral-800">Question Statistics</div>
+                                <div class="col-span-6 text-xs text-center font-semibold uppercase text-gray-500">Response Distribution</div>
                 </div>
-            </div>
-            @endif
-
-            @if($moderateRisk > 0)
-            <div class="flex items-start space-x-3 p-4 bg-orange-50 rounded-lg border-l-4 border-orange-400">
-                <svg class="w-5 h-5 text-orange-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                </svg>
-                <div>
-                    <h4 class="font-semibold text-orange-800">Medium Priority: {{ $moderateRisk }} students at moderate risk</h4>
-                    <p class="text-sm text-orange-600">Preventive workshops and stress management programs suggested</p>
-                </div>
-            </div>
-            @endif
-
-            <div class="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                <svg class="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                <div>
-                    <h4 class="font-semibold text-blue-800">Trend Alert: Monitor department-specific patterns</h4>
-                    <p class="text-sm text-blue-600">Consider department-specific interventions and workload assessment</p>
-                </div>
+                            <!-- Likert Scale -->
+                        <div class="grid grid-cols-11 gap-4 items-center mb-3 pb-2 border-b border-gray-200">
+                                <div class="col-span-5"></div>
+                                <div class="col-span-6">
+                                    <div class="text-[10px] text-center text-gray-500">
+                                        Strongly Agree | Agree | Disagree | Strongly Disagree
             </div>
         </div>
-        @else
-        <div class="flex items-center justify-center h-24 text-gray-400">No action items available.</div>
-        @endif
-    </div>
 </div>
-</template>
-<template id="dataMonitoringSectionTemplate">
-<div class="flex flex-col h-full min-h-screen p-6 md:p-10 lg:p-12 xl:p-16" style="max-width: 1600px; margin: 0 auto;">
-    <div class="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-        <div class="flex flex-col md:flex-row md:items-end md:space-x-6 space-y-4 md:space-y-0">
-            <div class="flex-1">
-                <input id="dmSearchInput" type="text" placeholder="Search keywords" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-200" />
-            </div>
-            <div class="flex flex-wrap gap-4 mt-4 md:mt-0">
-                <select id="dmGradeFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Grade Level</option>
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                </select>
-                <input id="dmAgeFilter" type="number" min="0" placeholder="Age" class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-24" />
-                <select id="dmGenderFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                </select>
-                <select id="dmDeptFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Department / Program</option>
-                </select>
-                <select id="dmRiskFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Risk Level</option>
-                    <option value="Low">Low</option>
-                    <option value="Moderate">Moderate</option>
-                    <option value="High">High</option>
-                </select>
-                <select id="dmTimeFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Time Period</option>
-                    <option value="7days">Last 7 days</option>
-                    <option value="month">This month</option>
-                    <option value="custom">Last 6 months</option>
-                    <option value="custom">1</option>
-                </select>
-                <select id="dmOlbiSort" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">OLBI Score</option>
-                    <option value="desc">Highest - Lowest</option>
-                    <option value="asc">Lowest - Highest</option>
-                </select>
-                <select id="dmConfSort" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    <option value="">Confidence (%)</option>
-                    <option value="desc">Highest - Lowest</option>
-                    <option value="asc">Lowest - Highest</option>
-                </select>
+
+                        <!-- Questions Container -->
+                        <div class="space-y-4 mb-4 flex-1 overflow-y-auto" id="questionsList"></div>
+                        
+                        <!-- Pagination Controls -->
+                        <div class="flex justify-end items-center space-x-2 mt-6">
+                            <button id="prevPageBtn" onclick="changeQuestionPage(-1)" class="flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-white text-neutral-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                            </button>
+                            <button id="nextPageBtn" onclick="changeQuestionPage(1)" class="flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-white text-neutral-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
             </div>
         </div>
     </div>
-    <div class="bg-white border border-gray-200 rounded-lg p-6">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm" id="dmTable">
-                <thead>
-                    <tr class="bg-green-50">
-                        <th class="px-4 py-2 text-left">Name</th>
-                        <th class="px-4 py-2 text-left">Gender</th>
-                        <th class="px-4 py-2 text-left">Age</th>
-                        <th class="px-4 py-2 text-left">Academic Program</th>
-                        <th class="px-4 py-2 text-left">Grade/Year</th>
-                        <th class="px-4 py-2 text-left">Burnout Risk</th>
-                        <th class="px-4 py-2 text-left">OLBI Score</th>
-                        <th class="px-4 py-2 text-left">Confidence (%)</th>
-                        <th class="px-4 py-2 text-left">Last Update</th>
-                        <th class="px-4 py-2 text-left">View Profile</th>
-                    </tr>
-                </thead>
-                <tbody id="dmTableBody">
-                    <tr><td colspan="10" class="text-center text-gray-400 py-8">Loading data...</td></tr>
-                </tbody>
-            </table>
         </div>
-    </div>
-</div>
-</template>
+        </main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Section switching logic
-    const sectionContainer = document.getElementById('adminSectionContainer');
-    const dashboardBtn = document.getElementById('sidebarDashboardBtn');
-    const dataMonitoringBtn = document.getElementById('sidebarDataMonitoringBtn');
-    const dashboardTemplate = document.getElementById('dashboardSectionTemplate');
-    const dataMonitoringTemplate = document.getElementById('dataMonitoringSectionTemplate');
-    function showSection(section) {
-        if(section === 'dashboard') {
-            sectionContainer.innerHTML = dashboardTemplate.innerHTML;
-        } else if(section === 'data-monitoring') {
-            sectionContainer.innerHTML = dataMonitoringTemplate.innerHTML;
-            loadDataMonitoring();
-        }
-    }
-    if(dashboardBtn && dataMonitoringBtn) {
-        dashboardBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            showSection('dashboard');
-        });
-        dataMonitoringBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            showSection('data-monitoring');
-        });
-    }
-    // Show dashboard by default
-    showSection('dashboard');
-    // Data Monitoring logic
-    window.loadDataMonitoring = function() {
-        fetch('/admin/data-monitoring')
-            .then(res => res.json())
-            .then(data => renderDMTable(data))
-            .catch(() => {
-                document.getElementById('dmTableBody').innerHTML = '<tr><td colspan="10" class="text-center text-red-400 py-8">Failed to load data.</td></tr>';
-            });
-        // TODO: Add filter/search event listeners and AJAX calls
-    };
-    function renderDMTable(data) {
-        const tbody = document.getElementById('dmTableBody');
-        if(!data || !Array.isArray(data) || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-gray-400 py-8">No data available.</td></tr>';
-            return;
-        }
-        tbody.innerHTML = data.map(row => `
-            <tr>
-                <td class="px-4 py-2">${row.name || '-'}</td>
-                <td class="px-4 py-2">${row.gender || '-'}</td>
-                <td class="px-4 py-2">${row.age || '-'}</td>
-                <td class="px-4 py-2">${row.program || '-'}</td>
-                <td class="px-4 py-2">${row.grade || '-'}</td>
-                <td class="px-4 py-2">${riskBadge(row.risk)}</td>
-                <td class="px-4 py-2">${row.olbi_score ?? '-'}</td>
-                <td class="px-4 py-2">${row.confidence ?? '-'}</td>
-                <td class="px-4 py-2">${row.last_update || '-'}</td>
-                <td class="px-4 py-2"><button class="text-blue-600 hover:underline">🔍 View</button></td>
-            </tr>
-        `).join('');
-    }
-    function riskBadge(risk) {
-        if(risk === 'High') return '<span class="text-red-700 font-bold">🔴 High</span>';
-        if(risk === 'Moderate') return '<span class="text-yellow-700 font-bold">🟡 Moderate</span>';
-        if(risk === 'Low') return '<span class="text-green-700 font-bold">🟢 Low</span>';
-        return '-';
-    }
-
-    function loadHighRiskStudents() {
-        fetch('/admin/high-risk-students')
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.getElementById('highRiskTableBody');
-                if (!data || !Array.isArray(data) || data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-8">No high risk students found.</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = data.map(row => `
-                    <tr>
-                        <td class="px-4 py-2 text-center">${row.name}</td>
-                        <td class="px-4 py-2 text-center">${row.program}</td>
-                        <td class="px-4 py-2 text-center">${row.risk}</td>
-                        <td class="px-4 py-2 text-center">${row.score}</td>
-                    </tr>
-                `).join('');
-            })
-            .catch(() => {
-                document.getElementById('highRiskTableBody').innerHTML = '<tr><td colspan="5" class="text-center text-red-400 py-8">Failed to load data.</td></tr>';
-            });
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-        loadHighRiskStudents();
-    });
+    loadDashboardData();
+    initializeCharts();
+    loadQuestionStatistics();
 });
+
+function loadDashboardData() {
+    // Clear temporary/mock latest submissions
+    const container = document.getElementById('latestSubmissions');
+    container.innerHTML = '<p class="text-sm text-center py-4 text-gray-500">Unavailable</p>';
+}
+
+function initializeCharts() {
+    const chartConfig = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { 
+                    font: { size: 12 }, 
+                    padding: 10,
+                    boxWidth: 15
+                }
+            }
+        }
+    };
+
+    // Burnout Categories Chart (cleared temporary/dynamic data)
+    new Chart(document.getElementById('burnoutChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['High', 'Exhausted', 'Disengaged', 'Low'],
+            datasets: [{
+                data: [0, 0, 0, 0],
+                backgroundColor: ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe']
+            }]
+        },
+        options: chartConfig
+    });
+
+    // Age Chart (cleared temporary data)
+    new Chart(document.getElementById('ageChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['18-20', '21-23', '24-26', '27+'],
+            datasets: [{
+                data: [0, 0, 0, 0],
+                backgroundColor: ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe']
+            }]
+        },
+        options: chartConfig
+    });
+
+    // Gender Chart (cleared temporary data)
+    new Chart(document.getElementById('genderChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Male', 'Female'],
+            datasets: [{
+                data: [0, 0],
+                backgroundColor: ['#6366f1', '#c7d2fe']
+            }]
+        },
+        options: chartConfig
+    });
+
+    // Program Chart (cleared temporary data)
+    new Chart(document.getElementById('programChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['CS', 'Eng', 'Bus', 'Other'],
+            datasets: [{
+                data: [0, 0, 0, 0],
+                backgroundColor: ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe']
+            }]
+        },
+        options: chartConfig
+    });
+
+    // Year Level Chart (cleared temporary data)
+    new Chart(document.getElementById('yearChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['1st', '2nd', '3rd', '4th', '5th'],
+            datasets: [{
+                data: [0, 0, 0, 0, 0],
+                backgroundColor: ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff']
+            }]
+        },
+        options: chartConfig
+    });
+}
+
+// Question pagination state
+let currentQuestionPage = 1;
+const questionsPerPage = 10;
+let allQuestions = [];
+
+function loadQuestionStatistics() {
+    // Clear temporary/mock question statistics
+    const container = document.getElementById('questionsList');
+    if (container) {
+        container.innerHTML = '<p class="text-sm text-center py-4 text-gray-500">Unavailable</p>';
+    }
+}
+
+function renderQuestionsPage() {
+    const startIdx = (currentQuestionPage - 1) * questionsPerPage;
+    const endIdx = startIdx + questionsPerPage;
+    const pageQuestions = allQuestions.slice(startIdx, endIdx);
+    
+    renderStackedBarQuestions('questionsList', pageQuestions);
+    updatePaginationButtons();
+}
+
+function changeQuestionPage(direction) {
+    const totalPages = Math.ceil(allQuestions.length / questionsPerPage);
+    currentQuestionPage += direction;
+    
+    if (currentQuestionPage < 1) currentQuestionPage = 1;
+    if (currentQuestionPage > totalPages) currentQuestionPage = totalPages;
+    
+    renderQuestionsPage();
+}
+
+function updatePaginationButtons() {
+    const totalPages = Math.ceil(allQuestions.length / questionsPerPage);
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    
+    prevBtn.disabled = currentQuestionPage === 1;
+    nextBtn.disabled = currentQuestionPage === totalPages;
+}
+
+function renderStackedBarQuestions(containerId, questions) {
+    const container = document.getElementById(containerId);
+    const colors = ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe'];
+    const labels = ['Strongly Agree', 'Agree', 'Disagree', 'Strongly Disagree'];
+    
+    container.innerHTML = questions.map((q, index) => {
+        // Generate random but realistic percentages
+        const values = [0, 0, 0, 0];
+        const total = values.reduce((a, b) => a + b, 0);
+        
+        // Create array of segments with their data
+        const segments = values.map((v, i) => ({
+            value: v,
+            percentage: ((v / total) * 100).toFixed(1),
+            label: labels[i],
+            index: i
+        }));
+        
+        // Sort by percentage (highest to lowest) to assign colors
+        const sortedSegments = [...segments].sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage));
+        
+        // Assign colors based on sorted order (highest = darkest)
+        const colorMap = {};
+        sortedSegments.forEach((seg, idx) => {
+            colorMap[seg.index] = colors[idx];
+        });
+        
+        return `
+        <div class="grid grid-cols-11 gap-4 items-center">
+            <div class="col-span-5 text-sm pr-4 text-neutral-800">
+                <span class="font-semibold text-neutral-800">${q.id}.</span> ${q.text}
+            </div>
+            <div class="col-span-6 relative h-10 rounded-lg overflow-hidden shadow-sm bg-gray-50">
+                <div class="absolute inset-0 flex">
+                    ${segments.map((seg, i) => {
+                        const showPct = parseFloat(seg.percentage);
+                        let displayText = '';
+                        let fontSize = 'text-xs';
+                        
+                        // Determine text color based on assigned background color
+                        const assignedColor = colorMap[i];
+                        const isLightBackground = assignedColor === '#a5b4fc' || assignedColor === '#c7d2fe';
+                        const textColor = isLightBackground ? 'text-neutral-800' : 'text-white';
+                        
+                        if (showPct >= 7) {
+                            displayText = seg.percentage + '%';
+                        } else if (showPct >= 4) {
+                            displayText = Math.round(showPct) + '%';
+                            fontSize = 'text-[10px]';
+                        }
+                        
+                        return `
+                        <div class="flex items-center justify-center ${fontSize} font-semibold relative group ${textColor}" 
+                             style="width: ${seg.percentage}%; background-color: ${assignedColor};"
+                             title="${seg.label}: ${seg.value} responses (${seg.percentage}%)">
+                            <span class="relative z-10">${displayText}</span>
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block text-xs rounded py-1 px-2 whitespace-nowrap z-50 bg-neutral-800 text-white">
+                                ${seg.label}<br>
+                                Count: ${seg.value}<br>
+                                ${seg.percentage}%
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+
+function generateRealisticValues() { return [0, 0, 0, 0]; }
+
+function exportToExcel() {
+    alert('Export to Excel functionality - Would export question statistics data to Excel format');
+    // Implementation would use SheetJS (xlsx)
+}
+
+function exportToCSV() {
+    alert('Export to CSV functionality - Would export question statistics data to CSV format');
+    // Implementation would generate CSV file
+}
+
+function exportToPDF() {
+    alert('Export to PDF functionality - Would export question statistics data to PDF format');
+    // Implementation would use jsPDF
+}
 </script>
 @endsection

@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     function reloadDMTable() {
         const params = getDMParams();
-        const url = new URL('/admin/data-monitoring', window.location.origin);
+        const url = new URL('/admin/report', window.location.origin);
         Object.entries(params).forEach(([k,v]) => { if(v) url.searchParams.append(k,v); });
         fetch(url)
             .then(res => res.json())
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         attachDMListeners();
         reloadDMTable();
         // Populate department filter
-        fetch('/admin/data-monitoring/programs')
+        fetch('/admin/report/programs')
             .then(res => res.json())
             .then(programs => {
                 const deptSel = document.getElementById('dmDeptFilter');

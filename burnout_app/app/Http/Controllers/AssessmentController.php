@@ -127,14 +127,14 @@ class AssessmentController extends Controller
         $exhaustion = $json['exhaustion'] ?? null;
         $disengagement = $json['disengagement'] ?? null;
 
-        // Map prediction labels to database enum values
+        // prediction labels to database enum values
         $overallRisk = 'unknown';
         if ($prediction) {
             $label = strtolower($prediction);
             if (in_array($label, ['low', 'moderate', 'high'])) {
                 $overallRisk = $label;
             } elseif (in_array($label, ['disengaged', 'exhausted'])) {
-                $overallRisk = 'moderate'; // Map disengaged and exhausted to moderate
+                $overallRisk = 'moderate'; // disengaged and exhausted to moderate
             }
         }
         $assessment->update([
@@ -221,20 +221,20 @@ class AssessmentController extends Controller
         // 4. Prepare input for model in training data order: D1P,D2N,D3P,D4N,D5P,D6N,D7P,D8N,E1N,E2P,E3N,E4P,E5N,E6P,E7N,E8P
         $modelInput = [
             $responses['Q1'],  // D1P
-            $responses['Q3'],  // D2N (already reversed)
+            $responses['Q3'],  // D2N 
             $responses['Q5'],  // D3P
-            $responses['Q7'],  // D4N (already reversed)
+            $responses['Q7'],  // D4N 
             $responses['Q9'],  // D5P
-            $responses['Q11'], // D6N (already reversed)
+            $responses['Q11'], // D6N 
             $responses['Q13'], // D7P
-            $responses['Q15'], // D8N (already reversed)
-            $responses['Q2'],  // E1N (already reversed)
+            $responses['Q15'], // D8N 
+            $responses['Q2'],  // E1N 
             $responses['Q4'],  // E2P
-            $responses['Q6'],  // E3N (already reversed)
+            $responses['Q6'],  // E3N 
             $responses['Q8'],  // E4P
-            $responses['Q10'], // E5N (already reversed)
+            $responses['Q10'], // E5N 
             $responses['Q12'], // E6P
-            $responses['Q14'], // E7N (already reversed)
+            $responses['Q14'], // E7N 
             $responses['Q16'], // E8P
         ];
 

@@ -3,153 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Burnalytix - Burnout Assessment Tool')</title>
+    <title>@yield('title', 'Burnalytics')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Ensure links are always clickable */
+        nav a, nav button {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            position: relative;
+            z-index: 10;
+        }
+        /* Prevent any overlay issues */
+        .sidebar nav, .sidebar .px-2 {
+            position: relative;
+            z-index: 10;
+        }
+        /* Ensure smooth transitions don't block clicks */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Replaced custom admin container with Tailwind utilities */
+    </style>
+    <script>
+        // Ensure navigation links work immediately
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remove any potential event blockers on navigation links
+            document.querySelectorAll('nav a').forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    // Ensure the default link behavior is not prevented
+                    if (this.href && !e.defaultPrevented) {
+                        return true;
+                    }
+                }, true); // Use capture phase to run before other handlers
+            });
+        });
+    </script>
 </head>
-<body class="min-h-screen bg-gradient-to-b from-green-50 to-white">
+<body class="@if(request()->routeIs('admin.*')) bg-gray-50 @else min-h-screen bg-gradient-to-b from-indigo-50 to-white @endif">
+    
     @if(request()->routeIs('admin.*'))
-    <!-- Sidebar for admin pages only -->
-    <div class="flex min-h-screen">
-        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col py-8 px-4 space-y-6 items-center">
-            <div class="mb-8 text-center w-full">
-                <h2 class="text-2xl font-bold text-green-700">Burnalytix</h2>
-                <p class="text-sm text-green-600">@yield('subtitle', 'Burnout Assessment Tool')</p>
+        <!-- Admin Layout with Sidebar -->
+        <div class="flex h-screen bg-gray-50">
+            <!-- Sidebar -->
+            <div class="sidebar w-48 flex flex-col bg-gray-50 border-r border-gray-200">
+                <div class="p-4">
+                    <h1 class="text-xl items-center py-5 text-center border-b border-gray-200 font-bold text-indigo-500">Burnalytics</h1>
             </div>
-            <nav class="flex flex-col space-y-4 mt-16 w-full items-center">
-                <a href="{{ route('admin.dashboard') }}" id="sidebarDashboardBtn" data-section="dashboard" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
+                <nav class="flex-1 px-2 py-2">
+                    <a href="{{ route('admin.dashboard') }}" class="flex items-center px-3 py-4 text-xs font-medium transition border-b border-gray-200 rounded-lg @if(request()->routeIs('admin.dashboard')) text-white bg-indigo-500 @else text-neutral-800 hover:bg-indigo-100 @endif">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
                     Dashboard
                 </a>
-                <a href="#" id="sidebarDataMonitoringBtn" data-section="data-monitoring" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
-                    Data Monitoring
-                </a>
-                <button id="importExportBtn" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm ">
-                    Import/Export
-                </button>
-                <a href="{{ route('assessment.index') }}" class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
-                    Predict
-                </a>
-                <button class="sidebar-btn w-full text-center px-4 py-2 rounded-lg font-medium border-2 border-green-200 text-green-700 bg-white hover:bg-green-50 hover:border-green-400 focus:outline-none focus:bg-green-100 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 relative overflow-hidden block shadow-sm">
+                    <a href="{{ route('admin.report') }}" class="flex items-center px-3 py-4 text-xs font-medium transition border-b border-gray-200 rounded-lg @if(request()->routeIs('admin.report')) text-white bg-indigo-500 @else text-neutral-800 hover:bg-indigo-100 @endif">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h18M3 6h18M3 18h18"></path>
+                        </svg>
+                        View Data
+                    </a>
+                    <a href="{{ route('admin.questions') }}" class="flex items-center px-3 py-4 text-xs font-medium transition border-b border-gray-200 rounded-lg @if(request()->routeIs('admin.questions')) text-white bg-indigo-500 @else text-neutral-800 hover:bg-indigo-100 @endif">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Questions
+                    </a>
+                    <a href="{{ route('admin.files') }}" class="flex items-center px-3 py-4 text-xs font-medium transition border-b border-gray-200 rounded-lg @if(request()->routeIs('admin.files')) text-white bg-indigo-500 @else text-neutral-800 hover:bg-indigo-100 @endif">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                        </svg>
+                        Files
+                    </a>
+                </nav>
+                
+                <!-- Bottom Section: Settings and Logout -->
+                <div class="px-2 border-t border-gray-200">
+                    <a href="{{ route('admin.settings') }}" class="flex items-center px-3 py-4 text-xs font-medium transition border-b border-gray-200 rounded-lg @if(request()->routeIs('admin.settings')) text-white bg-indigo-500 @else text-neutral-800 hover:bg-indigo-100 @endif">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
                     Settings
-                </button>
-            </nav>
-        </aside>
-        <div class="flex-1 flex flex-col min-h-screen">
-            <!-- Header removed for admin pages -->
-            <!-- Main Content -->
-            <main class="flex-1">
-                <div id="adminSectionContainer">
-                    @yield('content')
-                </div>
-            </main>
-        </div>
-    </div>
-    <!-- Import/Export Modal -->
-    <div id="importExportModal" class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" style="background: transparent; display:none;">
-        <div class="bg-white rounded-lg shadow-lg max-w-lg w-full p-8 relative flex flex-col items-center justify-center">
-            <button id="closeImportExportModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
-            <h2 class="text-2xl font-bold text-black-700 mb-6 text-center w-full">Import/Export Data</h2>
-            <div class="flex flex-col items-center w-full gap-8">
-                <!-- Import Data -->
-                <div class="flex flex-col items-center w-full">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Import Data</h3>
-                    <form action="{{ route('admin.import') }}" method="POST" enctype="multipart/form-data" id="importForm" class="flex flex-col items-center w-full">
+                    </a>
+                    <form action="{{ route('logout') }}" method="POST">
                         @csrf
-                        <input type="file" name="import_file" accept=".csv,.xlsx" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-200 mb-4 text-center" />
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors w-40 mx-auto">Upload</button>
+                        <button type="submit" class="w-full flex items-center px-3 py-4 text-xs font-medium transition text-neutral-800 hover:bg-red-50 hover:text-red-600">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            Logout
+                        </button>
                     </form>
                 </div>
-                <!-- Export Data -->
-                <div class="flex flex-col items-center w-full">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Export Data</h3>
-                    <button type="button" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium w-40 mx-auto" disabled>Download</button>
                 </div>
+
+            <!-- Main Content for Admin Pages -->
+            <div class="flex-1 flex flex-col overflow-hidden w-full max-w-screen-2xl 2xl:max-w-[1920px] mx-auto">
+                <!-- Unified Header -->
+                <header class="bg-white border-b border-gray-200">
+                    <div class="flex items-center justify-between px-8 py-4">
+                        <h2 class="text-xl font-semibold text-neutral-800">
+                            @if(request()->routeIs('admin.dashboard'))
+                                Dashboard
+                            @elseif(request()->routeIs('admin.report'))
+                                View Data
+                            @elseif(request()->routeIs('admin.questions'))
+                                Questions
+                            @elseif(request()->routeIs('admin.files'))
+                                Files
+                            @elseif(request()->routeIs('admin.settings'))
+                                Settings
+                            @endif
+                        </h2>
+                        @yield('header-actions')
+                    </div>
+                </header>
+                
+                @yield('content')
             </div>
         </div>
     </div>
     @else
-    <!-- No sidebar for non-admin pages -->
-    <!-- Header -->
+    
+        <!-- Non-Admin Layout with Header -->
     <header class="bg-white shadow-sm border-b">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-3">
                     <div>
-                        <h1 class="text-xl font-bold text-gray-900">Burnalytix</h1>
-                        <p class="text-sm text-green-600">@yield('subtitle', 'Burnout Assessment Tool')</p>
+                        <h1 class="text-xl font-bold text-gray-900">Burnalytics</h1>
+                        <p class="text-sm text-indigo-500">@yield('subtitle', 'Burnout Assessment Tool')</p>
                     </div>
                 </div>
                 <nav class="flex items-center space-x-8">
-                    <a href="#" class="text-gray-600 hover:text-green-600 transition-all duration-200 transform hover:scale-105">Home</a>
-                    <a href="#" class="text-gray-600 hover:text-green-600 transition-all duration-200 transform hover:scale-105">About</a>
+                        <a href="{{ route('home') }}" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">Home</a>
+                    <a href="#" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">About</a>
                     @if(request()->routeIs('home') || request()->routeIs('assessment.*'))
-                        <a href="{{ route('assessment.index') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg font-medium shadow hover:bg-green-700 transition-all duration-200 transform hover:scale-105">New Assessment</a>
+                        <a href="{{ route('assessment.index') }}" class="bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium shadow hover:bg-indigo-600 transition-all duration-200 transform hover:scale-105">New Assessment</a>
                     @endif
                 </nav>
             </div>
         </div>
     </header>
-    <!-- Main Content -->
+
+        <!-- Main Content for Non-Admin Pages -->
     <main>
         @yield('content')
     </main>
     @endif
-    <style>
-.ripple {
-    position: absolute;
-    border-radius: 50%;
-    transform: scale(0);
-    animation: ripple 0.6s linear;
-    background-color: rgba(16, 185, 129, 0.3); /* green-500 with opacity */
-    pointer-events: none;
-    z-index: 10;
-}
-@keyframes ripple {
-    to {
-        transform: scale(2.5);
-        opacity: 0;
-    }
-}
-</style>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Sidebar ripple effect for engagement
-    function createRipple(event) {
-        const button = event.currentTarget;
-        const circle = document.createElement('span');
-        const diameter = Math.max(button.clientWidth, button.clientHeight);
-        const radius = diameter / 2;
-        circle.style.width = circle.style.height = `${diameter}px`;
-        circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
-        circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
-        circle.classList.add('ripple');
-        const ripple = button.getElementsByClassName('ripple')[0];
-        if (ripple) {
-            ripple.remove();
-        }
-        button.appendChild(circle);
-    }
-    document.querySelectorAll('.sidebar-btn').forEach(btn => {
-        btn.addEventListener('click', createRipple);
-    });
-
-    const importExportBtn = document.getElementById('importExportBtn');
-    const importExportModal = document.getElementById('importExportModal');
-    const closeImportExportModal = document.getElementById('closeImportExportModal');
-    if(importExportBtn && importExportModal && closeImportExportModal) {
-        importExportBtn.addEventListener('click', function() {
-            importExportModal.style.display = 'flex';
-        });
-        closeImportExportModal.addEventListener('click', function() {
-            importExportModal.style.display = 'none';
-        });
-        importExportModal.addEventListener('click', function(e) {
-            if(e.target === importExportModal) {
-                importExportModal.style.display = 'none';
-            }
-        });
-    }
-});
-</script>
 </body>
 </html>

@@ -31,13 +31,11 @@ composer run dev
 Run Flask:
 
 cd c:\Burnout-Prediction\random_forest
-cd random_forest
 
 python -m pip install -r requirements.txt
 
-pyhton app.py
+python app.py
 
 
-on browser:
+open on browser:
 http://localhost:8000/assessment
-Note: eto lang buksan niyo kasi di pa maayos yung homepage at iba
