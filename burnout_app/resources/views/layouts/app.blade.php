@@ -38,6 +38,18 @@
                     }
                 }, true); // Use capture phase to run before other handlers
             });
+            
+            // Handle logout confirmation
+            const logoutForm = document.getElementById('logout-form');
+            if (logoutForm) {
+                logoutForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    if (confirm('Are you sure you want to logout?')) {
+                        this.submit();
+                    }
+                });
+            }
         });
     </script>
 </head>
@@ -62,7 +74,7 @@
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h18M3 6h18M3 18h18"></path>
                         </svg>
-                        View Data
+                        View Report
                     </a>
                     <a href="{{ route('admin.questions') }}" class="flex items-center px-3 py-4 text-xs font-medium transition border-b border-gray-200 rounded-lg @if(request()->routeIs('admin.questions')) text-white bg-indigo-500 @else text-neutral-800 hover:bg-indigo-100 @endif">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +99,7 @@
                         </svg>
                     Settings
                     </a>
-                    <form action="{{ route('logout') }}" method="POST">
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST">
                         @csrf
                         <button type="submit" class="w-full flex items-center px-3 py-4 text-xs font-medium transition text-neutral-800 hover:bg-red-50 hover:text-red-600">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,7 +120,7 @@
                             @if(request()->routeIs('admin.dashboard'))
                                 Dashboard
                             @elseif(request()->routeIs('admin.report'))
-                                View Data
+                                View Report
                             @elseif(request()->routeIs('admin.questions'))
                                 Questions
                             @elseif(request()->routeIs('admin.files'))

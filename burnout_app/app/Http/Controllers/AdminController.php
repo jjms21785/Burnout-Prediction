@@ -7,50 +7,150 @@ use App\Models\Assessment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\QuestionController;
 
 class AdminController extends Controller
 {
     public function dashboard()
     {
         $totalAssessments = Assessment::count();
-        $highRisk = Assessment::where('overall_risk', 'high')->count();
-        $moderateRisk = Assessment::where('overall_risk', 'moderate')->count();
-        $lowRisk = Assessment::where('overall_risk', 'low')->count();
+        
+        // Burnout categories - calculate based on exhaustion/disengagement scores
+        // Matching Python logic:
+        // High exhaustion = exhaustion_score >= 18 (2.25 average * 8)
+        // High disengagement = disengagement_score >= 17 (2.1 average * 8, rounded)
+        // Category 0 (Low): neither high
+        // Category 1 (Disengaged): high disengagement only
+        // Category 2 (Exhausted): high exhaustion only
+        // Category 3 (High Burnout): both high
+        
+        // High exhaustion threshold: 2.25 * 8 = 18
+        // High disengagement threshold: 2.1 * 8 = 16.8, round to 17
+        $highExhaustionThreshold = 18; // 2.25 average * 8
+        $highDisengagementThreshold = 17; // 2.1 average * 8 (rounded)
+        
+        // Low Burnout (Category 0): neither high exhaustion nor high disengagement
+        // Must have both scores available to be categorized
+        $lowBurnout = Assessment::whereNotNull('exhaustion_score')
+            ->whereNotNull('disengagement_score')
+            ->where(function($q) use ($highExhaustionThreshold, $highDisengagementThreshold) {
+                $q->where('exhaustion_score', '<', $highExhaustionThreshold)
+                  ->where('disengagement_score', '<', $highDisengagementThreshold);
+            })
+            ->count();
+        
+        // Disengaged (Category 1): high disengagement but NOT high exhaustion
+        // Must have both scores available
+        $disengagement = Assessment::whereNotNull('exhaustion_score')
+            ->whereNotNull('disengagement_score')
+            ->where('disengagement_score', '>=', $highDisengagementThreshold)
+            ->where('exhaustion_score', '<', $highExhaustionThreshold)
+            ->count();
+        
+        // Exhausted (Category 2): high exhaustion but NOT high disengagement
+        // Must have both scores available
+        $exhaustion = Assessment::whereNotNull('exhaustion_score')
+            ->whereNotNull('disengagement_score')
+            ->where('exhaustion_score', '>=', $highExhaustionThreshold)
+            ->where('disengagement_score', '<', $highDisengagementThreshold)
+            ->count();
+        
+        // High Burnout (Category 3): both high exhaustion AND high disengagement
+        // Must have both scores available
+        $highBurnout = Assessment::whereNotNull('exhaustion_score')
+            ->whereNotNull('disengagement_score')
+            ->where('exhaustion_score', '>=', $highExhaustionThreshold)
+            ->where('disengagement_score', '>=', $highDisengagementThreshold)
+            ->count();
 
-        $recentAssessments = Assessment::with('user')
-            ->latest()
-            ->take(10)
-            ->get();
-
-        $riskDistribution = [
-            'low' => $lowRisk,
-            'moderate' => $moderateRisk,
-            'high' => $highRisk
-        ];
-
-        $monthlyTrends = Assessment::selectRaw('
-            strftime("%m", created_at) as month,
-            strftime("%Y", created_at) as year,
-            overall_risk,
+        // Age distribution
+        $ageDistribution = Assessment::selectRaw('
+            CASE 
+                WHEN age BETWEEN 18 AND 20 THEN "18-20"
+                WHEN age BETWEEN 21 AND 23 THEN "21-23"
+                WHEN age BETWEEN 24 AND 26 THEN "24-26"
+                ELSE "27+"
+            END as age_group,
             COUNT(*) as count
         ')
-        ->where('created_at', '>=', Carbon::now()->subMonths(6))
-        ->groupBy('month', 'year', 'overall_risk')
-        ->orderBy('year')
-        ->orderBy('month')
+        ->groupBy('age_group')
         ->get()
-        ->groupBy(['month', 'overall_risk']);
+        ->pluck('count', 'age_group')
+        ->toArray();
+
+        // Gender distribution
+        $genderDistribution = Assessment::selectRaw('gender, COUNT(*) as count')
+            ->groupBy('gender')
+            ->get()
+            ->pluck('count', 'gender')
+            ->toArray();
+
+        // Year level distribution
+        $yearDistribution = Assessment::selectRaw('year_level, COUNT(*) as count')
+            ->groupBy('year_level')
+            ->get()
+            ->pluck('count', 'year_level')
+            ->toArray();
+
+        // Program distribution
+        $programDistribution = Assessment::selectRaw('program, COUNT(*) as count')
+            ->groupBy('program')
+            ->get()
+            ->pluck('count', 'program')
+            ->toArray();
+
+        // Latest submissions
+        $latestSubmissions = Assessment::latest()
+            ->take(5)
+            ->get();
+
+        // Question statistics - get all answers from assessments
+        $questionStats = Assessment::whereNotNull('answers')
+        ->get()
+            ->map(function($assessment) {
+                $answers = is_array($assessment->answers) ? $assessment->answers : json_decode($assessment->answers, true);
+                return $answers ?? [];
+            })
+            ->filter();
+
+        // Get questions from QuestionController (Q1-Q30)
+        $questionController = new QuestionController();
+        $questionsData = $questionController->getQuestions();
+        
+        // Ensure questions are sorted by question number
+        usort($questionsData, function($a, $b) {
+            $aNum = intval(preg_replace('/[^0-9]/', '', $a['id']));
+            $bNum = intval(preg_replace('/[^0-9]/', '', $b['id']));
+            return $aNum - $bNum;
+        });
+        
+        // Extract Q1-Q30 questions text in order
+        $questionsList = [];
+        for ($i = 1; $i <= 30; $i++) {
+            $qId = 'Q' . $i;
+            $foundQuestion = collect($questionsData)->firstWhere('id', $qId);
+            if ($foundQuestion) {
+                $questionsList[] = $foundQuestion['text'];
+            } else {
+                // Fallback if question not found
+                $questionsList[] = "Question $i";
+            }
+        }
 
         return view('admin.dashboard', compact(
             'totalAssessments',
-            'highRisk',
-            'moderateRisk',
-            'lowRisk',
-            'recentAssessments',
-            'riskDistribution',
-            'monthlyTrends'
+            'highBurnout',
+            'exhaustion',
+            'disengagement',
+            'lowBurnout',
+            'ageDistribution',
+            'genderDistribution',
+            'yearDistribution',
+            'programDistribution',
+            'latestSubmissions',
+            'questionStats',
+            'questionsList'
         ));
     }
 
@@ -106,19 +206,23 @@ class AdminController extends Controller
             // Default sort
             $query->orderByDesc('created_at');
 
-            $assessments = $query->limit(100)->get();
+            // Get all assessments without limit to show all uploaded data
+            $assessments = $query->get();
 
             $data = $assessments->map(function($a) {
                 return [
-                    'name' => $a->name ?? '-',
-                    'gender' => $a->gender ?? '-',
-                    'age' => $a->age ?? '-',
-                    'program' => $a->program ?? '-',
-                    'grade' => $a->year_level ?? '-',
-                    'risk' => ucfirst($a->overall_risk ?? '-'),
-                    'olbi_score' => $a->exhaustion_score + $a->disengagement_score ?? '-',
-                    'confidence' => $a->confidence ? ($a->confidence . '%') : '-',
-                    'last_update' => $a->updated_at ? $a->updated_at->format('M d') : '-',
+                    'id' => $a->id,
+                    'name' => $a->name ?? 'Unavailable',
+                    'gender' => $a->gender ?? 'Unavailable',
+                    'age' => $a->age ?? 'Unavailable',
+                    'program' => $a->program ?? 'Unavailable',
+                    'grade' => $a->year_level ?? 'Unavailable',
+                    'risk' => $a->overall_risk ?? 'Unavailable',
+                    'exhaustion_score' => $a->exhaustion_score ?? null,
+                    'disengagement_score' => $a->disengagement_score ?? null,
+                    'olbi_score' => ($a->exhaustion_score ?? 0) + ($a->disengagement_score ?? 0),
+                    'confidence' => $a->confidence ?? null,
+                    'last_update' => $a->updated_at ? $a->updated_at->format('M d') : 'Unavailable',
                 ];
             });
 
@@ -135,237 +239,65 @@ class AdminController extends Controller
         return response()->json($programs);
     }
 
-    private function importAssessmentRow($data)
-    {
-        // Map columns, use placeholder if missing
-        Assessment::create([
-            'name' => $data['name'] ?? 'N/A',
-            'age' => $data['age'] ?? null,
-            'gender' => $data['gender'] ?? 'N/A',
-            'program' => $data['program'] ?? ($data['department'] ?? 'N/A'),
-            'year_level' => $data['year_level'] ?? ($data['grade'] ?? 'N/A'),
-            'overall_risk' => strtolower($data['overall_risk'] ?? $data['risk'] ?? 'unknown'),
-            'exhaustion_score' => $data['exhaustion_score'] ?? ($data['olbi_score'] ?? 0),
-            'disengagement_score' => $data['disengagement_score'] ?? 0,
-            'confidence' => $data['confidence'] ?? null,
-            'answers' => [],
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-        ]);
-    }
-
     public function questions()
     {
-        // Define the OLBI questions
-        $questions = [
-            'disengagement' => [
-                ['id' => 'D1P', 'text' => 'I always find new and interesting aspects in my studies', 'type' => 'positive'],
-                ['id' => 'D2N', 'text' => 'It happens more and more often that I talk about my studies in a negative way', 'type' => 'negative'],
-                ['id' => 'D3P', 'text' => 'I increasingly engage myself in my studies', 'type' => 'positive'],
-                ['id' => 'D4N', 'text' => 'I feel more and more disengaged from my studies', 'type' => 'negative'],
-                ['id' => 'D5P', 'text' => 'I find my studies to be a positive challenge', 'type' => 'positive'],
-                ['id' => 'D6N', 'text' => 'Over time, one can become disconnected from studying', 'type' => 'negative'],
-                ['id' => 'D7P', 'text' => 'I find my studies to be full of meaning and purpose', 'type' => 'positive'],
-                ['id' => 'D8N', 'text' => 'Sometimes I feel sickened by my study tasks', 'type' => 'negative'],
-            ],
-            'exhaustion' => [
-                ['id' => 'E1N', 'text' => 'There are days when I feel tired before I arrive at university', 'type' => 'negative'],
-                ['id' => 'E2P', 'text' => 'After my studies, I have enough energy for my leisure activities', 'type' => 'positive'],
-                ['id' => 'E3N', 'text' => 'My studies emotionally drain me', 'type' => 'negative'],
-                ['id' => 'E4P', 'text' => 'After studying, I usually feel fresh and vigorous', 'type' => 'positive'],
-                ['id' => 'E5N', 'text' => 'I can tolerate the pressure of my studies very well', 'type' => 'negative'],
-                ['id' => 'E6P', 'text' => 'During my studies I usually feel fit and strong', 'type' => 'positive'],
-                ['id' => 'E7N', 'text' => 'I feel exhausted when I go home from university', 'type' => 'negative'],
-                ['id' => 'E8P', 'text' => 'Usually, I can manage the amount of my course-work well', 'type' => 'positive'],
-            ]
-        ];
+        // Use QuestionController to get questions (shared source)
+        $questionController = new \App\Http\Controllers\QuestionController();
+        $questions = $questionController->getQuestions();
         
         return view('admin.questions', compact('questions'));
     }
 
-    public function updateQuestions(Request $request)
-    {
-        // In a real application, you would store questions in a database
-        // For now, we'll just return a success message
-        // You could store them in a config file or database table
-        
-        $questions = $request->input('questions');
-        
-        // TODO: Save questions to database or config file
-        // For now, we'll just simulate success
-        
-        return back()->with('success', 'Questions updated successfully!');
-    }
-
-    public function files()
-    {
-        $totalRecords = Assessment::count();
-        return view('admin.files', compact('totalRecords'));
-    }
-
-    public function importData(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|mimes:csv,xlsx,xls|max:10240', // 10MB max
-        ]);
-
-        $file = $request->file('file');
-        $imported = 0;
-        $errors = [];
-
-        try {
-            if (in_array($file->getClientOriginalExtension(), ['csv'])) {
-                $handle = fopen($file->getRealPath(), 'r');
-                $header = fgetcsv($handle);
-                
-                while (($row = fgetcsv($handle)) !== false) {
-                    try {
-                        $data = array_combine($header, $row);
-                        $this->importAssessmentRow($data);
-                        $imported++;
-                    } catch (\Exception $e) {
-                        $errors[] = "Row error: " . $e->getMessage();
-                    }
-                }
-                fclose($handle);
-            } elseif (in_array($file->getClientOriginalExtension(), ['xlsx', 'xls'])) {
-                $rows = Excel::toArray([], $file)[0];
-                $header = array_map('strtolower', $rows[0]);
-                
-                foreach (array_slice($rows, 1) as $row) {
-                    try {
-                        $data = array_combine($header, $row);
-                        $this->importAssessmentRow($data);
-                        $imported++;
-                    } catch (\Exception $e) {
-                        $errors[] = "Row error: " . $e->getMessage();
-                    }
-                }
-            }
-
-            $message = "$imported records imported successfully!";
-            if (count($errors) > 0) {
-                $message .= " (" . count($errors) . " errors occurred)";
-            }
-            
-            return back()->with('success', $message);
-        } catch (\Exception $e) {
-            Log::error('Import failed: ' . $e->getMessage());
-            return back()->with('error', 'Import failed: ' . $e->getMessage());
-        }
-    }
-
-    public function exportData(Request $request)
-    {
-        $format = $request->input('format', 'csv');
-        $assessments = Assessment::all();
-
-        if ($format === 'csv') {
-            $filename = 'assessments_export_' . date('Y-m-d_His') . '.csv';
-            $headers = [
-                'Content-Type' => 'text/csv',
-                'Content-Disposition' => "attachment; filename=\"$filename\"",
-            ];
-
-            $callback = function() use ($assessments) {
-                $file = fopen('php://output', 'w');
-                
-                // CSV Header
-                fputcsv($file, [
-                    'ID', 'Name', 'Age', 'Gender', 'Program', 'Year Level',
-                    'Overall Risk', 'Exhaustion Score', 'Disengagement Score',
-                    'Confidence', 'Created At', 'Updated At'
-                ]);
-
-                // Data rows
-                foreach ($assessments as $assessment) {
-                    fputcsv($file, [
-                        $assessment->id,
-                        $assessment->name,
-                        $assessment->age,
-                        $assessment->gender,
-                        $assessment->program,
-                        $assessment->year_level,
-                        $assessment->overall_risk,
-                        $assessment->exhaustion_score,
-                        $assessment->disengagement_score,
-                        $assessment->confidence,
-                        $assessment->created_at,
-                        $assessment->updated_at,
-                    ]);
-                }
-
-                fclose($file);
-            };
-
-            return response()->stream($callback, 200, $headers);
-        } elseif ($format === 'xlsx') {
-            // For Excel export, we'll use a simple approach
-            // In production, you might want to use Laravel Excel package
-            $filename = 'assessments_export_' . date('Y-m-d_His') . '.xlsx';
-            
-            // Create a simple Excel-compatible format using CSV with .xlsx extension
-            // Note: For proper Excel, you'd need Laravel Excel or similar
-            return $this->exportData(new Request(['format' => 'csv']));
-        }
-        
-        return back()->with('error', 'Invalid export format');
-    }
-
     public function settings()
     {
-        // Load current settings (from config or database)
-        $settings = [
-            'site_name' => config('app.name', 'Burnalytics'),
-            'admin_email' => 'admin@burnalytix.com',
-            'records_per_page' => 20,
-            'enable_notifications' => true,
-            'data_retention_days' => 365,
-        ];
-        
-        return view('admin.settings', compact('settings'));
+        return view('admin.settings');
     }
 
-    public function updateSettings(Request $request)
+    public function clearAllData(Request $request)
     {
-        $request->validate([
-            'site_name' => 'required|string|max:255',
-            'admin_email' => 'required|email',
-            'records_per_page' => 'required|integer|min:10|max:100',
-            'data_retention_days' => 'required|integer|min:30|max:3650',
-        ]);
-
-        // TODO: Save settings to database or config
-        // For now, we'll just return success
-        
-        return back()->with('success', 'Settings updated successfully!');
-    }
-
-    public function downloadFile($filename)
-    {
-        $filePath = storage_path('app/imports/' . $filename);
-        
-        if (!file_exists($filePath)) {
-            return back()->with('error', 'File not found.');
-        }
-
-        return response()->download($filePath);
-    }
-
-    public function deleteFile($filename)
-    {
-        $filePath = storage_path('app/imports/' . $filename);
-        
-        if (!file_exists($filePath)) {
-            return back()->with('error', 'File not found.');
-        }
-
         try {
-            unlink($filePath);
-            return back()->with('success', 'File deleted successfully!');
+            // Delete all assessments from the database
+            $deletedCount = Assessment::count();
+            Assessment::truncate();
+            
+            return redirect()->route('admin.settings')->with('success', "All assessment data has been permanently deleted. {$deletedCount} record(s) were removed.");
         } catch (\Exception $e) {
-            Log::error('File deletion failed: ' . $e->getMessage());
-            return back()->with('error', 'Failed to delete file: ' . $e->getMessage());
+            Log::error('Clear all data failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to clear data: ' . $e->getMessage());
+        }
+    }
+
+    public function updateAssessment(Request $request, $id)
+    {
+        try {
+            $assessment = Assessment::findOrFail($id);
+            
+            $assessment->update([
+                'name' => $request->input('name', $assessment->name),
+                'gender' => $request->input('gender', $assessment->gender),
+                'age' => $request->input('age', $assessment->age),
+                'program' => $request->input('program', $assessment->program),
+                'year_level' => $request->input('year_level', $assessment->year_level),
+                'overall_risk' => $request->input('overall_risk', $assessment->overall_risk),
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Assessment updated successfully']);
+        } catch (\Exception $e) {
+            Log::error('Assessment update failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to update assessment: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteAssessment($id)
+    {
+        try {
+            $assessment = Assessment::findOrFail($id);
+            $assessment->delete();
+
+            return response()->json(['success' => true, 'message' => 'Assessment deleted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Assessment deletion failed: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to delete assessment: ' . $e->getMessage()], 500);
         }
     }
 }

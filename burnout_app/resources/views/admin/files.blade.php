@@ -5,12 +5,6 @@
 @section('content')
 <!-- Main Content Area -->
 <main class="flex-1 overflow-y-auto p-3">
-    @if(session('success'))
-    <div class="mb-4 rounded-lg p-3 bg-green-100 border border-green-200">
-        <p class="text-xs font-medium text-green-800">{{ session('success') }}</p>
-    </div>
-    @endif
-
     @if(session('error'))
     <div class="mb-4 rounded-lg p-3 bg-red-100 border border-red-200">
         <p class="text-xs font-medium text-red-800">{{ session('error') }}</p>
@@ -77,29 +71,6 @@
                     </tr>
                 </thead>
                 <tbody id="fileTableBody">
-                    @php
-                    $files = [];
-                    $importPath = storage_path('app/imports');
-                    if (is_dir($importPath)) {
-                        $allFiles = scandir($importPath);
-                        foreach ($allFiles as $file) {
-                            if ($file !== '.' && $file !== '..' && is_file($importPath . '/' . $file)) {
-                                $files[] = [
-                                    'name' => $file,
-                                    'path' => $importPath . '/' . $file,
-                                    'size' => filesize($importPath . '/' . $file),
-                                    'date' => filemtime($importPath . '/' . $file),
-                                    'extension' => pathinfo($file, PATHINFO_EXTENSION)
-                                ];
-                            }
-                        }
-                        // Sort by date, newest first
-                        usort($files, function($a, $b) {
-                            return $b['date'] - $a['date'];
-                        });
-                    }
-                    @endphp
-
                     @forelse($files as $file)
                     <tr class="border-b border-gray-200 hover:bg-gray-50">
                         <td class="px-3 py-2">
@@ -127,7 +98,7 @@
                         </td>
                         <td class="px-3 py-2">
                             <div class="flex items-center gap-2">
-                                <button onclick="downloadFile('{{ $file['name'] }}')" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium transition">
+                                <button onclick="downloadFile('{{ $file['name'] }}')" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium underline transition">
                                     Download
                                 </button>
                                 <button onclick="deleteFile('{{ $file['name'] }}')" class="text-red-600 hover:text-red-800 text-xs font-medium transition">
@@ -152,65 +123,16 @@
     </div>
 </main>
 
+<!-- Pass configuration to JavaScript - must be before vite script -->
 <script>
-function toggleExportMenu() {
-    const menu = document.getElementById('exportMenu');
-    menu.classList.toggle('hidden');
-}
-
-// Close export menu when clicking outside
-document.addEventListener('click', function(event) {
-    const exportBtn = document.getElementById('exportBtn');
-    const exportMenu = document.getElementById('exportMenu');
-    if (exportBtn && !exportBtn.contains(event.target) && !exportMenu.contains(event.target)) {
-        exportMenu.classList.add('hidden');
-    }
-});
-
-function handleFileImport() {
-    const form = document.getElementById('importForm');
-    const fileInput = document.getElementById('importFileInput');
-    
-    if (fileInput.files.length > 0) {
-        if (confirm('Are you sure you want to import this file?')) {
-            form.submit();
-        } else {
-            fileInput.value = '';
-        }
-    }
-}
-
-function exportData(format) {
-    window.location.href = "{{ route('admin.export-data') }}?format=" + format;
-}
-
-function downloadFile(filename) {
-    // Create a form to download the file
-    const form = document.createElement('form');
-    form.method = 'GET';
-    form.action = '/files/download/' + encodeURIComponent(filename);
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-}
-
-function deleteFile(filename) {
-    if (confirm('Are you sure you want to delete "' + filename + '"? This action cannot be undone.')) {
-        // Create a form to delete the file
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/files/delete/' + encodeURIComponent(filename);
-        
-        // Add CSRF token
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        form.appendChild(csrfInput);
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
+    (function() {
+        window.filesConfig = {
+            exportRoute: '{{ route("admin.export-data") }}',
+            downloadRoute: '{{ route("admin.download-file", ":filename") }}',
+            deleteRoute: '{{ route("admin.delete-file", ":filename") }}',
+            csrfToken: '{{ csrf_token() }}'
+        };
+    })();
 </script>
+@vite('resources/js/files.js')
 @endsection

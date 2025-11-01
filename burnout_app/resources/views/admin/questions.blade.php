@@ -17,14 +17,14 @@
             </div>
             @endif
 
-            <form id="questionsForm" method="POST" action="{{ route('admin.questions.update') }}" onsubmit="handleFormSubmit(event)">
+            <form id="questionsForm" method="POST" action="{{ route('admin.questions.update') }}">
                 @csrf
                 
                 <!-- All Questions (Arranged Numerically) -->
                 <div class="rounded-xl shadow-sm p-4 mb-4 bg-white border border-gray-200">
                     <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
                         <!-- Description -->
-                        <p class="text-xs text-gray-600 flex-1 mr-4">
+                        <p class="text-xs font-bold text-gray-500 flex-1 mr-4">
                             Manage and edit all assessment questions. Click on any question text to modify it.
                         </p>
                         <!-- Buttons -->
@@ -43,23 +43,11 @@
                     
                     <div class="space-y-2">
                         @php
-                            // Merge and sort all questions by their numeric ID
-                            $allQuestions = array_merge(
-                                array_map(fn($q) => array_merge($q, ['category' => 'disengagement']), $questions['disengagement']),
-                                array_map(fn($q) => array_merge($q, ['category' => 'exhaustion']), $questions['exhaustion'])
-                            );
-                            
-                            // Sort by extracting number from ID (D1P -> 1, D2N -> 2, E1N -> 1, etc.)
+                            // Ensure questions are sorted by their numeric ID (Q1-Q30)
+                            $allQuestions = $questions;
                             usort($allQuestions, function($a, $b) {
-                                $aPrefix = substr($a['id'], 0, 1);
-                                $bPrefix = substr($b['id'], 0, 1);
-                                $aNum = intval(substr($a['id'], 1));
-                                $bNum = intval(substr($b['id'], 1));
-                                
-                                // Sort D questions first, then E questions
-                                if ($aPrefix !== $bPrefix) {
-                                    return $aPrefix === 'D' ? -1 : 1;
-                                }
+                                $aNum = intval(preg_replace('/[^0-9]/', '', $a['id']));
+                                $bNum = intval(preg_replace('/[^0-9]/', '', $b['id']));
                                 return $aNum - $bNum;
                             });
                         @endphp
@@ -68,7 +56,7 @@
                         <div class="flex items-start space-x-2">
                             <div class="flex-shrink-0 pt-1.5">
                                 <span class="text-xs font-semibold text-gray-600">
-                                    {{ $index + 1 }}.
+                                    {{ preg_replace('/[^0-9]/', '', $question['id']) }}.
                                 </span>
                             </div>
                             <div class="flex-1">
@@ -79,8 +67,7 @@
                                     data-original="{{ $question['text'] }}"
                                 >{{ $question['text'] }}</textarea>
                                 <input type="hidden" name="questions[{{ $index }}][id]" value="{{ $question['id'] }}">
-                                <input type="hidden" name="questions[{{ $index }}][type]" value="{{ $question['type'] }}">
-                                <input type="hidden" name="questions[{{ $index }}][category]" value="{{ $question['category'] }}">
+                                <input type="hidden" name="questions[{{ $index }}][type]" value="{{ $question['type'] ?? 'neutral' }}">
                             </div>
                         </div>
                         @endforeach
@@ -108,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function resetForm() {
-    if (confirm('Are you sure you want to reset all changes?')) {
+    if (confirm('Reset all changes to default values?')) {
         window.location.reload();
     }
 }
@@ -119,13 +106,8 @@ function cancelChanges() {
     }
 }
 
-function handleFormSubmit(event) {
-    // Form will submit normally, then reload
-    // The page will refresh automatically after the form submission completes
-    setTimeout(function() {
-        window.location.reload();
-    }, 100);
-}
+// Form submission is handled by Laravel automatically
+// No JavaScript intervention needed
 </script>
 @endsection
 
