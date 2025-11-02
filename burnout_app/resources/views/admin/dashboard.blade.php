@@ -103,23 +103,19 @@
                         </h3>
                         <div class="space-y-1" id="latestSubmissions">
                             @if(isset($latestSubmissions) && $latestSubmissions->count() > 0)
-                                @foreach($latestSubmissions as $assessment)
+                                @foreach($latestSubmissions as $item)
                                 <div class="grid grid-cols-12 gap-4 items-center p-2 border-b border-gray-100 hover:bg-gray-50">
                                     <div class="col-span-4 flex flex-col">
-                                        <p class="text-xs font-medium text-neutral-800 truncate">{{ $assessment->name ?? 'Unavailable' }}</p>
-                                        <p class="text-[10px] text-gray-500 truncate">{{ $assessment->program ?? 'Unavailable' }}</p>
+                                        <p class="text-xs font-medium text-neutral-800 truncate">{{ $item['assessment']->name ?? 'Unavailable' }}</p>
+                                        <p class="text-[10px] text-gray-500 truncate">{{ $item['assessment']->program ?? 'Unavailable' }}</p>
                                     </div>
-                                    <div class="col-span-2 text-[10px] text-gray-500">{{ $assessment->year_level ?? 'Unavailable' }}</div>
+                                    <div class="col-span-2 text-[10px] text-gray-500">{{ $item['assessment']->year_level ?? 'Unavailable' }}</div>
                                     <div class="col-span-2 flex justify-center">
-                                        <span class="px-2 py-0.5 text-[10px] font-medium rounded 
-                                            @if($assessment->overall_risk === 'high') bg-red-100 text-red-800
-                                            @elseif($assessment->overall_risk === 'moderate') bg-orange-100 text-orange-800
-                                            @else bg-green-100 text-green-800
-                                            @endif">
-                                            {{ ucfirst($assessment->overall_risk ?? 'Unknown') }}
+                                        <span class="px-2 py-0.5 text-[10px] font-medium rounded {{ $item['categoryColor'] }}">
+                                            {{ $item['category'] }}
                                         </span>
                                     </div>
-                                    <div class="col-span-4 text-[10px] text-gray-500 text-right">{{ $assessment->created_at ? $assessment->created_at->format('M d, Y') : 'Unavailable' }}</div>
+                                    <div class="col-span-4 text-[10px] text-gray-500 text-right">{{ $item['assessment']->created_at ? $item['assessment']->created_at->format('M d, Y') : 'Unavailable' }}</div>
                                 </div>
                                 @endforeach
                             @else

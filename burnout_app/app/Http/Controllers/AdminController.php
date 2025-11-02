@@ -32,36 +32,35 @@ class AdminController extends Controller
         
         // Low Burnout (Category 0): neither high exhaustion nor high disengagement
         // Must have both scores available to be categorized
-        $lowBurnout = Assessment::whereNotNull('exhaustion_score')
-            ->whereNotNull('disengagement_score')
-            ->where(function($q) use ($highExhaustionThreshold, $highDisengagementThreshold) {
-                $q->where('exhaustion_score', '<', $highExhaustionThreshold)
-                  ->where('disengagement_score', '<', $highDisengagementThreshold);
-            })
+        // Use only new column names
+        $lowBurnout = Assessment::whereNotNull('Exhaustion')
+            ->whereNotNull('Disengagement')
+            ->where('Exhaustion', '<', $highExhaustionThreshold)
+            ->where('Disengagement', '<', $highDisengagementThreshold)
             ->count();
         
         // Disengaged (Category 1): high disengagement but NOT high exhaustion
         // Must have both scores available
-        $disengagement = Assessment::whereNotNull('exhaustion_score')
-            ->whereNotNull('disengagement_score')
-            ->where('disengagement_score', '>=', $highDisengagementThreshold)
-            ->where('exhaustion_score', '<', $highExhaustionThreshold)
+        $disengagement = Assessment::whereNotNull('Exhaustion')
+            ->whereNotNull('Disengagement')
+            ->where('Disengagement', '>=', $highDisengagementThreshold)
+            ->where('Exhaustion', '<', $highExhaustionThreshold)
             ->count();
         
         // Exhausted (Category 2): high exhaustion but NOT high disengagement
         // Must have both scores available
-        $exhaustion = Assessment::whereNotNull('exhaustion_score')
-            ->whereNotNull('disengagement_score')
-            ->where('exhaustion_score', '>=', $highExhaustionThreshold)
-            ->where('disengagement_score', '<', $highDisengagementThreshold)
+        $exhaustion = Assessment::whereNotNull('Exhaustion')
+            ->whereNotNull('Disengagement')
+            ->where('Exhaustion', '>=', $highExhaustionThreshold)
+            ->where('Disengagement', '<', $highDisengagementThreshold)
             ->count();
         
         // High Burnout (Category 3): both high exhaustion AND high disengagement
         // Must have both scores available
-        $highBurnout = Assessment::whereNotNull('exhaustion_score')
-            ->whereNotNull('disengagement_score')
-            ->where('exhaustion_score', '>=', $highExhaustionThreshold)
-            ->where('disengagement_score', '>=', $highDisengagementThreshold)
+        $highBurnout = Assessment::whereNotNull('Exhaustion')
+            ->whereNotNull('Disengagement')
+            ->where('Exhaustion', '>=', $highExhaustionThreshold)
+            ->where('Disengagement', '>=', $highDisengagementThreshold)
             ->count();
 
         // Age distribution
@@ -79,38 +78,58 @@ class AdminController extends Controller
         ->pluck('count', 'age_group')
         ->toArray();
 
-        // Gender distribution
-        $genderDistribution = Assessment::selectRaw('gender, COUNT(*) as count')
-            ->groupBy('gender')
+        // Gender distribution - use new column name
+        $genderDistribution = Assessment::selectRaw('sex, COUNT(*) as count')
+            ->whereNotNull('sex')
+            ->groupBy('sex')
             ->get()
-            ->pluck('count', 'gender')
+            ->pluck('count', 'sex')
+            ->filter(function($value, $key) {
+                return !empty($key) && $value > 0;
+            })
             ->toArray();
 
-        // Year level distribution
-        $yearDistribution = Assessment::selectRaw('year_level, COUNT(*) as count')
-            ->groupBy('year_level')
+        // Year level distribution - use new column name
+        $yearDistribution = Assessment::selectRaw('year, COUNT(*) as count')
+            ->whereNotNull('year')
+            ->groupBy('year')
             ->get()
-            ->pluck('count', 'year_level')
+            ->pluck('count', 'year')
+            ->filter(function($value, $key) {
+                return !empty($key) && $value > 0;
+            })
             ->toArray();
 
-        // Program distribution
-        $programDistribution = Assessment::selectRaw('program, COUNT(*) as count')
-            ->groupBy('program')
+        // Program distribution - use new column name
+        $programDistribution = Assessment::selectRaw('college, COUNT(*) as count')
+            ->whereNotNull('college')
+            ->groupBy('college')
             ->get()
-            ->pluck('count', 'program')
+            ->pluck('count', 'college')
+            ->filter(function($value, $key) {
+                return !empty($key) && $value > 0;
+            })
             ->toArray();
 
-        // Latest submissions
+        // Latest submissions with calculated categories
         $latestSubmissions = Assessment::latest()
             ->take(5)
-            ->get();
+            ->get()
+            ->map(function($assessment) {
+                $categoryData = $this->calculateBurnoutCategory($assessment);
+                return [
+                    'assessment' => $assessment,
+                    'category' => $categoryData['category'],
+                    'categoryColor' => $categoryData['color']
+                ];
+            });
 
         // Question statistics - get all answers from assessments
         $questionStats = Assessment::whereNotNull('answers')
         ->get()
             ->map(function($assessment) {
-                $answers = is_array($assessment->answers) ? $assessment->answers : json_decode($assessment->answers, true);
-                return $answers ?? [];
+                // Use raw_answers accessor for backward compatibility
+                return $assessment->raw_answers ?? [];
             })
             ->filter();
 
@@ -160,34 +179,34 @@ class AdminController extends Controller
         if ($request->ajax() || $request->wantsJson()) {
             $query = Assessment::query();
 
-            // Search
+            // Search - use new column names
             if ($search = $request->input('search')) {
                 $query->where(function($q) use ($search) {
                     $q->where('name', 'like', "%$search%")
-                      ->orWhere('program', 'like', "%$search%")
-                      ->orWhere('year_level', 'like', "%$search%")
-                      ->orWhere('gender', 'like', "%$search%")
+                      ->orWhere('college', 'like', "%$search%")
+                      ->orWhere('year', 'like', "%$search%")
+                      ->orWhere('sex', 'like', "%$search%")
                       ->orWhere('age', 'like', "%$search%")
-                      ->orWhere('overall_risk', 'like', "%$search%")
+                      ->orWhere('Burnout_Category', 'like', "%$search%")
                       ;
                 });
             }
 
-            // Filters
+            // Filters - use new column names
             if ($grade = $request->input('grade')) {
-                $query->where('year_level', $grade);
+                $query->where('year', $grade);
             }
             if ($age = $request->input('age')) {
                 $query->where('age', $age);
             }
             if ($gender = $request->input('gender')) {
-                $query->where('gender', $gender);
+                $query->where('sex', $gender);
             }
             if ($dept = $request->input('program')) {
-                $query->where('program', $dept);
+                $query->where('college', $dept);
             }
             if ($risk = $request->input('risk')) {
-                $query->where('overall_risk', strtolower($risk));
+                $query->where('Burnout_Category', strtolower($risk));
             }
             if ($time = $request->input('time')) {
                 if ($time === '7days') {
@@ -196,9 +215,10 @@ class AdminController extends Controller
                     $query->whereMonth('created_at', now()->month);
                 } // Custom can be added
             }
-            // Sorting
+            // Sorting - use new column name
             if ($request->input('olbi_sort')) {
-                $query->orderBy('exhaustion_score', $request->input('olbi_sort') === 'desc' ? 'desc' : 'asc');
+                $sortDirection = $request->input('olbi_sort') === 'desc' ? 'desc' : 'asc';
+                $query->orderBy('Exhaustion', $sortDirection);
             }
             if ($request->input('conf_sort')) {
                 $query->orderBy('confidence', $request->input('conf_sort') === 'desc' ? 'desc' : 'asc');
@@ -210,16 +230,19 @@ class AdminController extends Controller
             $assessments = $query->get();
 
             $data = $assessments->map(function($a) {
+                // Use accessors for backward compatibility (accessors handle the mapping)
+                // Accessors map: gender -> sex, program -> college, year_level -> year, etc.
+                
                 return [
                     'id' => $a->id,
                     'name' => $a->name ?? 'Unavailable',
-                    'gender' => $a->gender ?? 'Unavailable',
+                    'gender' => $a->gender ?? 'Unavailable', // Accessor maps sex -> gender
                     'age' => $a->age ?? 'Unavailable',
-                    'program' => $a->program ?? 'Unavailable',
-                    'grade' => $a->year_level ?? 'Unavailable',
-                    'risk' => $a->overall_risk ?? 'Unavailable',
-                    'exhaustion_score' => $a->exhaustion_score ?? null,
-                    'disengagement_score' => $a->disengagement_score ?? null,
+                    'program' => $a->program ?? 'Unavailable', // Accessor maps college -> program
+                    'grade' => $a->year_level ?? 'Unavailable', // Accessor maps year -> year_level
+                    'risk' => $a->overall_risk ?? 'Unavailable', // Accessor maps Burnout_Category -> overall_risk
+                    'exhaustion_score' => $a->exhaustion_score ?? null, // Accessor maps Exhaustion -> exhaustion_score
+                    'disengagement_score' => $a->disengagement_score ?? null, // Accessor maps Disengagement -> disengagement_score
                     'olbi_score' => ($a->exhaustion_score ?? 0) + ($a->disengagement_score ?? 0),
                     'confidence' => $a->confidence ?? null,
                     'last_update' => $a->updated_at ? $a->updated_at->format('M d') : 'Unavailable',
@@ -272,14 +295,41 @@ class AdminController extends Controller
         try {
             $assessment = Assessment::findOrFail($id);
             
-            $assessment->update([
+            // Map input to correct database column names
+            $updateData = [
                 'name' => $request->input('name', $assessment->name),
-                'gender' => $request->input('gender', $assessment->gender),
                 'age' => $request->input('age', $assessment->age),
-                'program' => $request->input('program', $assessment->program),
-                'year_level' => $request->input('year_level', $assessment->year_level),
-                'overall_risk' => $request->input('overall_risk', $assessment->overall_risk),
-            ]);
+            ];
+            
+            // Map gender to sex column
+            if ($request->has('gender')) {
+                $updateData['sex'] = $request->input('gender');
+            } elseif ($assessment->sex) {
+                $updateData['sex'] = $assessment->sex;
+            }
+            
+            // Map program to college column
+            if ($request->has('program')) {
+                $updateData['college'] = $request->input('program');
+            } elseif ($assessment->college) {
+                $updateData['college'] = $assessment->college;
+            }
+            
+            // Map year_level to year column
+            if ($request->has('year_level')) {
+                $updateData['year'] = $request->input('year_level');
+            } elseif ($assessment->year) {
+                $updateData['year'] = $assessment->year;
+            }
+            
+            // Map overall_risk to Burnout_Category column
+            if ($request->has('overall_risk')) {
+                $updateData['Burnout_Category'] = $request->input('overall_risk');
+            } elseif ($assessment->Burnout_Category) {
+                $updateData['Burnout_Category'] = $assessment->Burnout_Category;
+            }
+            
+            $assessment->update($updateData);
 
             return response()->json(['success' => true, 'message' => 'Assessment updated successfully']);
         } catch (\Exception $e) {
@@ -299,5 +349,59 @@ class AdminController extends Controller
             Log::error('Assessment deletion failed: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to delete assessment: ' . $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Calculate burnout category based on Exhaustion and Disengagement scores
+     * 
+     * @param \App\Models\Assessment $assessment
+     * @return array ['category' => string, 'color' => string]
+     */
+    private function calculateBurnoutCategory($assessment)
+    {
+        $exhaustion = $assessment->Exhaustion ?? $assessment->exhaustion_score ?? null;
+        $disengagement = $assessment->Disengagement ?? $assessment->disengagement_score ?? null;
+        $highExhaustionThreshold = 18; // 2.25 average * 8
+        $highDisengagementThreshold = 17; // 2.1 average * 8
+        
+        $category = 'Unknown';
+        $categoryColor = 'bg-gray-100 text-gray-800';
+        
+        if ($exhaustion !== null && $disengagement !== null) {
+            $highExhaustion = $exhaustion >= $highExhaustionThreshold;
+            $highDisengagement = $disengagement >= $highDisengagementThreshold;
+            
+            if (!$highExhaustion && !$highDisengagement) {
+                $category = 'Low Burnout';
+                $categoryColor = 'bg-green-100 text-green-800';
+            } elseif (!$highExhaustion && $highDisengagement) {
+                $category = 'Disengaged';
+                $categoryColor = 'bg-orange-100 text-orange-800';
+            } elseif ($highExhaustion && !$highDisengagement) {
+                $category = 'Exhausted';
+                $categoryColor = 'bg-orange-100 text-orange-800';
+            } else {
+                $category = 'High Burnout';
+                $categoryColor = 'bg-red-100 text-red-800';
+            }
+        } elseif ($assessment->overall_risk || $assessment->Burnout_Category) {
+            // Fallback to stored category if scores not available
+            $storedCategory = strtolower($assessment->overall_risk ?? $assessment->Burnout_Category ?? '');
+            if ($storedCategory === 'high') {
+                $category = 'High Burnout';
+                $categoryColor = 'bg-red-100 text-red-800';
+            } elseif ($storedCategory === 'moderate') {
+                $category = 'Moderate';
+                $categoryColor = 'bg-orange-100 text-orange-800';
+            } elseif ($storedCategory === 'low') {
+                $category = 'Low Burnout';
+                $categoryColor = 'bg-green-100 text-green-800';
+            }
+        }
+        
+        return [
+            'category' => $category,
+            'color' => $categoryColor
+        ];
     }
 }

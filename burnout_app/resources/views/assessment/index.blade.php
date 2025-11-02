@@ -35,8 +35,11 @@
                             @foreach($genders as $gender)
                                 <option value="{{ $gender }}">{{ $gender }}</option>
                             @endforeach
+                            <option value="Others">Others</option>
                         </select>
+                        <input type="text" name="gender_other" id="gender_other" placeholder="Please specify" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 mt-2 hidden">
                         @error('gender')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
+                        @error('gender_other')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
                     </div>
                     <div>
                         <label for="program" class="block text-gray-700 text-sm mb-2">College</label>
@@ -45,8 +48,11 @@
                             @foreach($programs as $program)
                                 <option value="{{ $program }}">{{ $program }}</option>
                             @endforeach
+                            <option value="Others">Others</option>
                         </select>
+                        <input type="text" name="program_other" id="program_other" placeholder="Please specify" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 mt-2 hidden">
                         @error('program')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
+                        @error('program_other')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
                     </div>
                     <div>
                         <label for="year_level" class="block text-gray-700 text-sm mb-2">Year Level</label>
@@ -55,8 +61,11 @@
                             @foreach($year_levels as $level)
                                 <option value="{{ $level }}">{{ $level }}</option>
                             @endforeach
+                            <option value="Others">Others</option>
                         </select>
+                        <input type="text" name="year_level_other" id="year_level_other" placeholder="Please specify" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 mt-2 hidden">
                         @error('year_level')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
+                        @error('year_level_other')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div class="text-center pt-6">
@@ -150,5 +159,5 @@
     </div>
 </form>
 
-<script src="{{ asset('js/assessment.js') }}"></script>
+@vite(['resources/js/assessment.js'])
 @endsection

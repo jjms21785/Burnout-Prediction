@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Assessment;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\ResultController;
 
 class AssessmentController extends Controller
 {
@@ -46,9 +48,9 @@ class AssessmentController extends Controller
             'first_name' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z ]*$/'],
             'last_name' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z ]*$/'],
             'age' => ['required', 'integer', 'min:10', 'max:100'],
-            'gender' => ['required', 'string', 'max:50'],
+            'gender' => ['required', 'string', 'max:255'], // Increased max for "Others" custom values
             'program' => ['required', 'string', 'max:255'],
-            'year_level' => ['required', 'string', 'max:32', 'regex:/^[A-Za-z0-9 ]+$/'],
+            'year_level' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9 ]+$/'], // Increased max for "Others" custom values
             'answers' => 'required|array|size:30',
             'answers.*' => 'required|integer|min:0|max:4'
         ], [
@@ -73,13 +75,15 @@ class AssessmentController extends Controller
             $validated['name'] = trim($firstName . ' ' . $lastName);
         }
 
+        // Create assessment initially without interpretation data
+        // Map form fields to database column names
         $assessment = Assessment::create([
             'name' => $validated['name'],
             'age' => $validated['age'],
-            'gender' => $validated['gender'],
-            'program' => $validated['program'],
-            'year_level' => $validated['year_level'],
-            'answers' => json_encode($validated['answers']),
+            'sex' => $validated['gender'], // Map gender -> sex
+            'college' => $validated['program'], // Map program -> college
+            'year' => $validated['year_level'], // Map year_level -> year
+            'answers' => json_encode($validated['answers']), // Store as JSON string (no cast)
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent()
         ]);
@@ -99,51 +103,113 @@ class AssessmentController extends Controller
         $exhaustionScore = array_sum(array_intersect_key($responses, array_flip($exhaustionItems)));
         $disengagementScore = array_sum(array_intersect_key($responses, array_flip($disengagementItems)));
 
-        // Prepare input for model - using OLBI questions in order: Disengagement then Exhaustion
-        // Disengagement: Q15, Q18, Q19, Q22, Q24, Q26, Q27, Q30
-        // Exhaustion: Q16, Q17, Q20, Q21, Q23, Q25, Q28, Q29
-        $modelInput = [
-            $responses['Q15'], // D1
-            $responses['Q18'], // D2
-            $responses['Q19'], // D3
-            $responses['Q22'], // D4
-            $responses['Q24'], // D5
-            $responses['Q26'], // D6
-            $responses['Q27'], // D7
-            $responses['Q30'], // D8
-            $responses['Q16'], // E1
-            $responses['Q17'], // E2
-            $responses['Q20'], // E3
-            $responses['Q21'], // E4
-            $responses['Q23'], // E5
-            $responses['Q25'], // E6
-            $responses['Q28'], // E7
-            $responses['Q29'], // E8
-        ];
+        // Prepare all 30 answers for Flask (0-indexed array)
+        $allAnswers = [];
+        for ($i = 1; $i <= 30; $i++) {
+            $allAnswers[] = $responses['Q' . $i] ?? 0;
+        }
 
-        $response = Http::post('http://127.0.0.1:5000/predict', ['input' => $modelInput]);
-        $json = $response->json();
-        $prediction = strtolower($json['label'] ?? '');
-        $confidence = $json['confidence'] ?? null;
-        $exhaustion = $json['exhaustion'] ?? null;
-        $disengagement = $json['disengagement'] ?? null;
+        // Send all 30 answers to Flask for prediction and interpretation
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json'
+            ])->post('http://127.0.0.1:5000/predict', [
+                'all_answers' => $allAnswers
+            ]);
+            
+            if ($response->failed()) {
+                throw new \Exception('Flask service unavailable');
+            }
+            
+            $json = $response->json();
+            
+            // Process Python response using ResultController
+            $processedData = ResultController::processPythonResponse($json);
+            
+            // Extract processed data
+            $prediction = strtolower($processedData['predicted_label'] ?? '');
+            $exhaustionCategory = $processedData['exhaustion_category'] ?? null;
+            $disengagementCategory = $processedData['disengagement_category'] ?? null;
+            $interpretations = $processedData['interpretations'] ?? null;
+            $recommendations = $processedData['recommendations'] ?? null;
+            $barGraph = $processedData['bar_graph'] ?? null;
+            $dataAvailable = $processedData['data_available'] ?? false;
+            
+            // Calculate exhaustion and disengagement scores from bar graph percentages
+            // Bar graph has percentages, we need to reverse calculate scores
+            $exhaustion = null;
+            $disengagement = null;
+            if ($barGraph) {
+                // Reverse calculate: percentage * 4 / 100 = average
+                // Then average * 8 = total score
+                if (isset($barGraph['Exhaustion'])) {
+                    $exhaustionAvg = ($barGraph['Exhaustion'] / 100) * 4;
+                    $exhaustion = round($exhaustionAvg * 8);
+                }
+                if (isset($barGraph['Disengagement'])) {
+                    $disengagementAvg = ($barGraph['Disengagement'] / 100) * 4;
+                    $disengagement = round($disengagementAvg * 8);
+                }
+            }
+            
+        } catch (\Exception $e) {
+            // Fallback if Flask is unavailable - calculate categories locally
+            $exhaustionAverage = count($exhaustionItems) > 0 ? $exhaustionScore / count($exhaustionItems) : 0;
+            $disengagementAverage = count($disengagementItems) > 0 ? $disengagementScore / count($disengagementItems) : 0;
+            
+            $prediction = 'unknown';
+            $confidence = null;
+            $exhaustion = $exhaustionScore;
+            $disengagement = $disengagementScore;
+            $exhaustionCategory = $exhaustionAverage >= 2.25 ? 'High' : 'Low';
+            $disengagementCategory = $disengagementAverage >= 2.10 ? 'High' : 'Low';
+            $interpretationData = null;
+            $interpretations = null;
+            $recommendations = null;
+            $barGraph = null;
+            $dataAvailable = false;
+        }
 
-        // prediction labels to database enum values
+        // Map Python prediction labels to database enum values
         $overallRisk = 'unknown';
         if ($prediction) {
             $label = strtolower($prediction);
-            if (in_array($label, ['low', 'moderate', 'high'])) {
-                $overallRisk = $label;
+            // Map Python labels: Non-Burnout -> low, Disengaged/Exhausted -> moderate, BURNOUT -> high
+            if (in_array($label, ['low', 'moderate', 'high', 'non-burnout', 'non burnout'])) {
+                if (in_array($label, ['non-burnout', 'non burnout'])) {
+                    $overallRisk = 'low';
+                } else {
+                    $overallRisk = $label;
+                }
             } elseif (in_array($label, ['disengaged', 'exhausted'])) {
-                $overallRisk = 'moderate'; // disengaged and exhausted to moderate
+                $overallRisk = 'moderate';
+            } elseif ($label === 'burnout') {
+                $overallRisk = 'high';
             }
         }
+        
+        // Store interpretation data - map to database column names
         $assessment->update([
-            'overall_risk' => $overallRisk,
-            'confidence' => is_array($confidence) ? max($confidence) : ($confidence ?: null),
-            'exhaustion_score' => $exhaustion,
-            'disengagement_score' => $disengagement
+            'Burnout_Category' => $overallRisk, // Map overall_risk -> Burnout_Category
+            'Exhaustion' => $exhaustion, // Map exhaustion_score -> Exhaustion
+            'Disengagement' => $disengagement, // Map disengagement_score -> Disengagement
+            // Store confidence if your database has this column
+            // 'confidence' => is_array($confidence) ? max($confidence) : ($confidence ?: null),
         ]);
+        
+        // Store interpretation data in the answers field
+        // Update answers to include both responses, interpretations, and bar graph data
+        // Manually encode to JSON since $casts is removed
+        $assessment->answers = json_encode([
+            'responses' => $validated['answers'],
+            'interpretations' => $interpretations,
+            'recommendations' => $recommendations,
+            'bar_graph' => $barGraph ?? null,
+            'python_response' => $json ?? null,
+            'data_available' => $dataAvailable ?? false
+        ]);
+        $assessment->save();
 
         return redirect()->route('assessment.results', $assessment->id);
     }
@@ -155,9 +221,9 @@ class AssessmentController extends Controller
             'first_name' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z ]*$/'],
             'last_name' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z ]*$/'],
             'age' => ['required', 'integer', 'min:10', 'max:100'],
-            'gender' => ['required', 'string', 'max:50'],
+            'gender' => ['required', 'string', 'max:255'], // Increased max for "Others" custom values
             'program' => ['required', 'string', 'max:255'],
-            'year_level' => ['required', 'string', 'max:32', 'regex:/^[A-Za-z0-9 ]+$/'],
+            'year_level' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9 ]+$/'], // Increased max for "Others" custom values
             'answers' => 'required|array|size:30',
             'answers.*' => 'required|integer|min:0|max:4'
         ], [
@@ -166,12 +232,12 @@ class AssessmentController extends Controller
             'year_level.regex' => 'Year level may only contain letters, numbers, and spaces.'
         ]);
 
-        // Collect responses from answers array
+        // Collect responses from answers array (all 30 questions)
         $answers = $validated['answers'];
         $responses = [];
         $original_responses = [];
         
-        for ($i = 0; $i < 16; $i++) {
+        for ($i = 0; $i < 30; $i++) {
             $responses["Q" . ($i + 1)] = (int) ($answers[$i] ?? 0);
             $original_responses["Q" . ($i + 1)] = (int) ($answers[$i] ?? 0);
         }
@@ -215,130 +281,293 @@ class AssessmentController extends Controller
         // 5. Total score is the sum of exhaustion and disengagement items
         $totalScore = $exhaustionScore + $disengagementScore;
 
-        // Prepare input for model - using OLBI questions in order: Disengagement then Exhaustion
-        // Disengagement: Q15, Q18, Q19, Q22, Q24, Q26, Q27, Q30
-        // Exhaustion: Q16, Q17, Q20, Q21, Q23, Q25, Q28, Q29
-        $modelInput = [
-            $responses['Q15'], // D1
-            $responses['Q18'], // D2
-            $responses['Q19'], // D3
-            $responses['Q22'], // D4
-            $responses['Q24'], // D5
-            $responses['Q26'], // D6
-            $responses['Q27'], // D7
-            $responses['Q30'], // D8
-            $responses['Q16'], // E1
-            $responses['Q17'], // E2
-            $responses['Q20'], // E3
-            $responses['Q21'], // E4
-            $responses['Q23'], // E5
-            $responses['Q25'], // E6
-            $responses['Q28'], // E7
-            $responses['Q29'], // E8
-        ];
+        // Prepare all 30 answers for Flask (0-indexed array)
+        // Use validated answers directly to ensure correct order
+        $allAnswers = [];
+        for ($i = 0; $i < 30; $i++) {
+            $allAnswers[] = (int) ($validated['answers'][$i] ?? 0);
+        }
+        
+        // Validate we have exactly 30 answers
+        if (count($allAnswers) !== 30) {
+            Log::error('Invalid answers count', [
+                'count' => count($allAnswers),
+                'answers' => $validated['answers'] ?? null
+            ]);
+            return back()->withErrors(['answers' => 'Invalid number of answers. Please ensure all 30 questions are answered.'])->withInput();
+        }
 
-        // 5. Python API prediction
+        // Python API prediction with all interpretations
         $apiUrl = 'http://127.0.0.1:5000/predict';
-        $labels = ['Non-Burnout', 'Disengaged', 'Exhausted', 'BURNOUT'];
+        $labels = ['Low', 'Moderate', 'High'];
         $errorMsg = null;
         $predictedLabel = null;
         $confidence = null;
+        $interpretations = null;
+        $recommendations = null;
+        $barGraph = null;
+        $dataAvailable = false;
+        $pythonResponse = null;
+        
         try {
-            $response = \Illuminate\Support\Facades\Http::post($apiUrl, ['input' => $modelInput]);
+            // Log the request being sent to Flask for debugging
+            Log::info('Sending request to Flask API', [
+                'url' => $apiUrl,
+                'answers_count' => count($allAnswers),
+                'first_5_answers' => array_slice($allAnswers, 0, 5)
+            ]);
+            
+            $response = \Illuminate\Support\Facades\Http::timeout(10)->withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json'
+            ])->post($apiUrl, [
+                'all_answers' => $allAnswers
+            ]);
+            
+            // Log the response for debugging
+            Log::info('Flask API response', [
+                'status' => $response->status(),
+                'success' => $response->successful(),
+                'body_preview' => substr($response->body(), 0, 200)
+            ]);
+            
             if ($response->failed()) {
-                $errorMsg = 'Prediction service unavailable.';
+                $errorMsg = 'Prediction service unavailable. Response status: ' . $response->status();
+                $errorBody = $response->body();
+                Log::error('Flask API failed', [
+                    'status' => $response->status(),
+                    'body' => $errorBody
+                ]);
+                
+                // If it's a 400 error, it might be a data format issue
+                if ($response->status() === 400) {
+                    $errorMsg = 'Invalid data format sent to prediction service. Please try again.';
+                }
             } else {
-                $result = $response->json();
-                $predictedLabel = $result['label'] ?? null;
-                $confidence = $result['confidence'] ?? null;
-                $totalScore = $exhaustionScore + $disengagementScore;
-                $exhaustionScore = $exhaustionScore;
-                $disengagementScore = $disengagementScore;
+                $pythonResponse = $response->json();
+                
+                // Validate Python response structure
+                if (!is_array($pythonResponse) || !isset($pythonResponse['PredictedResult'])) {
+                    Log::error('Invalid Python response structure', [
+                        'response' => $pythonResponse
+                    ]);
+                    throw new \Exception('Invalid response format from prediction service');
+                }
+                
+                // Process Python response using ResultController (same as store method)
+                $processedData = ResultController::processPythonResponse($pythonResponse);
+                
+                // Extract processed data
+                $predictedLabel = $processedData['predicted_label'] ?? null;
+                $exhaustionCategory = $processedData['exhaustion_category'] ?? $exhaustionCategory;
+                $disengagementCategory = $processedData['disengagement_category'] ?? $disengagementCategory;
+                $interpretations = $processedData['interpretations'] ?? null;
+                $recommendations = $processedData['recommendations'] ?? null;
+                $barGraph = $processedData['bar_graph'] ?? null;
+                $dataAvailable = $processedData['data_available'] ?? false;
+                
+                // Calculate exhaustion and disengagement scores from bar graph percentages if available
+                if ($barGraph) {
+                    if (isset($barGraph['Exhaustion'])) {
+                        $exhaustionAvg = ($barGraph['Exhaustion'] / 100) * 4;
+                        $exhaustionScore = round($exhaustionAvg * 8);
+                    }
+                    if (isset($barGraph['Disengagement'])) {
+                        $disengagementAvg = ($barGraph['Disengagement'] / 100) * 4;
+                        $disengagementScore = round($disengagementAvg * 8);
+                    }
+                }
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            $errorMsg = 'Could not connect to prediction service. Please ensure the Flask API is running on http://127.0.0.1:5000';
+            Log::error('Flask connection error', ['error' => $e->getMessage()]);
+            // Fallback: Calculate categories locally when Flask is unavailable
+            if (!$dataAvailable) {
+                // Categories already calculated above, just need to set dataAvailable flag
+                // but keep interpretations/recommendations as null since we don't have Python response
             }
         } catch (\Exception $e) {
             $errorMsg = 'Prediction error: ' . $e->getMessage();
+            Log::error('Flask API error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Fallback: Calculate categories locally when Flask is unavailable
+            if (!$dataAvailable) {
+                // Categories already calculated above, just need to set dataAvailable flag
+                // but keep interpretations/recommendations as null since we don't have Python response
+            }
         }
 
         // Map prediction labels to database enum values
         $overallRisk = 'unknown';
         if ($predictedLabel) {
             $label = strtolower($predictedLabel);
-            if (in_array($label, ['Non-Burnout', 'Disengaged', 'Exhausted', 'BURNOUT'])) {
-                $overallRisk = $label;
-            } elseif (in_array($label, ['Disengaged', 'Exhausted'])) {
-                $overallRisk = 'Disengaged'; // Map disengaged and exhausted to moderate
-            } elseif (in_array($label, ['Exhausted'])) {
-                $overallRisk = 'Exhausted'; // Map exhausted to exhausted
-            } elseif (in_array($label, ['BURNOUT'])) {
-                $overallRisk = 'BURNOUT'; // Map burnout to burnout
+            // Map Python labels: Non-Burnout -> low, Disengaged/Exhausted -> moderate, BURNOUT -> high
+            if (in_array($label, ['low', 'moderate', 'high', 'non-burnout', 'non burnout'])) {
+                if (in_array($label, ['non-burnout', 'non burnout'])) {
+                    $overallRisk = 'low';
+                } else {
+                    $overallRisk = $label;
+                }
+            } elseif (in_array($label, ['disengaged', 'exhausted'])) {
+                $overallRisk = 'moderate';
+            } elseif ($label === 'burnout') {
+                $overallRisk = 'high';
             }
         }
 
-        // Save assessment to database
+        // Save assessment to database with interpretation data
+        // Map form fields to database column names
         $assessment = Assessment::create([
             'name' => $name,
             'age' => $age,
-            'gender' => $gender,
-            'program' => $program,
-            'year_level' => $year_level,
-            'answers' => json_encode($original_responses),
-            'overall_risk' => $overallRisk,
-            'confidence' => is_array($confidence) ? max($confidence) : ($confidence ?: null),
-            'exhaustion_score' => $exhaustionScore,
-            'disengagement_score' => $disengagementScore,
+            'sex' => $gender, // Map gender -> sex
+            'college' => $program, // Map program -> college
+            'year' => $year_level, // Map year_level -> year
+            'answers' => json_encode([
+                'responses' => $original_responses,
+                'interpretations' => $interpretations,
+                'recommendations' => $recommendations
+            ]),
+            'Burnout_Category' => $overallRisk, // Map overall_risk -> Burnout_Category
+            'Exhaustion' => $exhaustionScore, // Map exhaustion_score -> Exhaustion
+            'Disengagement' => $disengagementScore, // Map disengagement_score -> Disengagement
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent()
         ]);
+
+        // Process result data for view using ResultController
+        $resultData = ResultController::processResultForView(
+            $dataAvailable,
+            $exhaustionCategory,
+            $disengagementCategory,
+            $barGraph,
+            $errorMsg
+        );
 
         return view('assessment.result', compact(
             'responses', 'original_responses', 'name', 'age', 'gender', 'program', 'year_level',
             'totalScore', 'predictedLabel', 'confidence', 'labels',
             'exhaustionScore', 'disengagementScore', 'exhaustionItems', 'disengagementItems', 'errorMsg', 'overallRisk',
-            'exhaustionAverage', 'disengagementAverage', 'exhaustionCategory', 'disengagementCategory'
-        ));
+            'exhaustionAverage', 'disengagementAverage', 'exhaustionCategory', 'disengagementCategory',
+            'interpretations', 'recommendations', 'barGraph', 'dataAvailable'
+        ))->with($resultData);
     }
 
     public function results($id)
     {
         $assessment = Assessment::findOrFail($id);
         
-        // Decode the stored answers and apply reversal logic
-        $original_responses = json_decode($assessment->answers, true);
+        // Use model accessors for backward compatibility
+        $original_responses = $assessment->raw_answers ?? [];
+        
+        // Try to get processed data from stored Python response
+        $answersData = $assessment->answers;
+        if (is_string($answersData)) {
+            $answersData = json_decode($answersData, true) ?? [];
+        }
+        
+        // If we have stored Python response, reprocess it
+        $pythonResponse = $answersData['python_response'] ?? null;
+        $exhaustionCategory = null;
+        $disengagementCategory = null;
+        $dataAvailable = false;
+        
+        if ($pythonResponse) {
+            $processedData = ResultController::processPythonResponse($pythonResponse);
+            $interpretations = $processedData['interpretations'] ?? $assessment->interpretations;
+            $recommendations = $processedData['recommendations'] ?? $assessment->recommendations;
+            $barGraph = $processedData['bar_graph'] ?? ($answersData['bar_graph'] ?? null);
+            $exhaustionCategory = $processedData['exhaustion_category'] ?? null;
+            $disengagementCategory = $processedData['disengagement_category'] ?? null;
+            $dataAvailable = $processedData['data_available'] ?? false;
+        } else {
+            // Fallback to stored interpretations/recommendations
+            $interpretations = $assessment->interpretations;
+            $recommendations = $assessment->recommendations;
+            $barGraph = $answersData['bar_graph'] ?? null;
+            // Try to get categories from stored data or calculate from scores
+            if (isset($exhaustionAverage)) {
+                $exhaustionCategory = $exhaustionAverage >= 2.25 ? 'High' : 'Low';
+            }
+            if (isset($disengagementAverage)) {
+                $disengagementCategory = $disengagementAverage >= 2.10 ? 'High' : 'Low';
+            }
+        }
+        
         $responses = [];
         
         // Convert to Q1, Q2, etc. format
-        foreach ($original_responses as $i => $answer) {
-            $responses['Q' . ($i + 1)] = (int) $answer;
+        // Handle both 0-indexed array [0=>1, 1=>2] and Q-keyed array ['Q1'=>1, 'Q2'=>2]
+        if (!empty($original_responses)) {
+            // Check if it's Q-keyed format
+            if (isset($original_responses['Q1'])) {
+                // Already in Q1, Q2 format
+                $responses = $original_responses;
+            } else {
+                // 0-indexed array format
+                foreach ($original_responses as $i => $answer) {
+                    $responses['Q' . ($i + 1)] = (int) $answer;
+                }
+            }
         }
         
-        // Calculate scores, averages, and categories using only OLBI questions (Q15-Q30)
-        // Exhaustion: Q16, Q17, Q20, Q21, Q23, Q25, Q28, Q29
-        // Disengagement: Q15, Q18, Q19, Q22, Q24, Q26, Q27, Q30
+        // Get stored scores from database or calculate from responses
+        // Map database columns: Exhaustion, Disengagement (or legacy exhaustion_score, disengagement_score)
         $exhaustionItems = ['Q16', 'Q17', 'Q20', 'Q21', 'Q23', 'Q25', 'Q28', 'Q29'];
         $disengagementItems = ['Q15', 'Q18', 'Q19', 'Q22', 'Q24', 'Q26', 'Q27', 'Q30'];
-        $exhaustionScore = array_sum(array_intersect_key($responses, array_flip($exhaustionItems)));
-        $disengagementScore = array_sum(array_intersect_key($responses, array_flip($disengagementItems)));
+        
+        // Prefer stored values, calculate if not available
+        $exhaustionScore = $assessment->Exhaustion ?? $assessment->exhaustion_score ?? null;
+        $disengagementScore = $assessment->Disengagement ?? $assessment->disengagement_score ?? null;
+        
+        if ($exhaustionScore === null || $disengagementScore === null) {
+            // Calculate from responses if not stored
+            $exhaustionScore = array_sum(array_intersect_key($responses, array_flip($exhaustionItems)));
+            $disengagementScore = array_sum(array_intersect_key($responses, array_flip($disengagementItems)));
+        }
         
         $exhaustionAverage = count($exhaustionItems) > 0 ? $exhaustionScore / count($exhaustionItems) : 0;
         $disengagementAverage = count($disengagementItems) > 0 ? $disengagementScore / count($disengagementItems) : 0;
         
-        $exhaustionCategory = $exhaustionAverage >= 2.25 ? 'High' : 'Low';
-        $disengagementCategory = $disengagementAverage >= 2.10 ? 'High' : 'Low';
+        // Use categories from processed data if available, otherwise calculate from averages
+        if (!isset($exhaustionCategory) || !isset($disengagementCategory)) {
+            $exhaustionCategory = $exhaustionAverage >= 2.25 ? 'High' : 'Low';
+            $disengagementCategory = $disengagementAverage >= 2.10 ? 'High' : 'Low';
+        }
         
         $totalScore = $exhaustionScore + $disengagementScore;
         
         // Pass demographic data to the view
+        // Map database columns to view variables
         $name = $assessment->name;
         $age = $assessment->age;
-        $gender = $assessment->gender;
-        $program = $assessment->program;
-        $year_level = $assessment->year_level;
+        $gender = $assessment->sex ?? $assessment->gender ?? 'Unknown'; // Map sex -> gender for view
+        $program = $assessment->college ?? $assessment->program ?? 'Unknown'; // Map college -> program for view
+        $year_level = $assessment->year ?? $assessment->year_level ?? 'Unknown'; // Map year -> year_level for view
+        $predictedLabel = ucfirst($assessment->Burnout_Category ?? $assessment->overall_risk ?? 'Unknown');
+        
+        // Get data availability flag from stored data or ResultController validation
+        if (!isset($dataAvailable)) {
+            $dataAvailable = $answersData['data_available'] ?? false;
+        }
+
+        // Process result data for view using ResultController
+        $resultData = ResultController::processResultForView(
+            $dataAvailable,
+            $exhaustionCategory,
+            $disengagementCategory,
+            $barGraph,
+            null // No error message for stored results
+        );
         
         return view('assessment.result', compact(
             'assessment', 'responses', 'original_responses', 
             'name', 'age', 'gender', 'program', 'year_level',
             'exhaustionScore', 'disengagementScore', 'totalScore',
-            'exhaustionAverage', 'disengagementAverage', 'exhaustionCategory', 'disengagementCategory'
-        ));
+            'exhaustionAverage', 'disengagementAverage', 'exhaustionCategory', 'disengagementCategory',
+            'interpretations', 'recommendations', 'predictedLabel', 'barGraph', 'dataAvailable'
+        ))->with($resultData);
     }
 }

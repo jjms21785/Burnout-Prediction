@@ -208,12 +208,16 @@ class FileController extends Controller
         // Category 3 (BURNOUT): HIGH exhaustion AND HIGH disengagement
         $getBurnoutCategory = function($assessment) {
             // If we have scores, calculate Category directly
-            if ($assessment->exhaustion_score !== null && $assessment->disengagement_score !== null) {
+            // Use new column names with fallback to old names
+            $exhaustionScore = $assessment->Exhaustion ?? $assessment->exhaustion_score ?? null;
+            $disengagementScore = $assessment->Disengagement ?? $assessment->disengagement_score ?? null;
+            
+            if ($exhaustionScore !== null && $disengagementScore !== null) {
                 $highExhaustionThreshold = 18; // 2.25 average * 8
                 $highDisengagementThreshold = 17; // 2.1 average * 8
                 
-                $highExhaustion = $assessment->exhaustion_score >= $highExhaustionThreshold;
-                $highDisengagement = $assessment->disengagement_score >= $highDisengagementThreshold;
+                $highExhaustion = $exhaustionScore >= $highExhaustionThreshold;
+                $highDisengagement = $disengagementScore >= $highDisengagementThreshold;
                 
                 if (!$highExhaustion && !$highDisengagement) {
                     return 0; // Non-Burnout
@@ -227,10 +231,11 @@ class FileController extends Controller
             }
             
             // Fallback: map from overall_risk (less accurate)
-            if (empty($assessment->overall_risk) || $assessment->overall_risk === 'unavailable') {
+            $overallRisk = $assessment->Burnout_Category ?? $assessment->overall_risk ?? null;
+            if (empty($overallRisk) || $overallRisk === 'unavailable') {
                 return 'unavailable';
             }
-            $risk = strtolower($assessment->overall_risk);
+            $risk = strtolower($overallRisk);
             if ($risk === 'low') return 0;
             if ($risk === 'moderate') return 1; // Can't distinguish 1 vs 2, default to 1
             if ($risk === 'high') return 3; // BURNOUT
@@ -265,32 +270,40 @@ class FileController extends Controller
                 foreach ($assessments as $assessment) {
                     list($firstName, $lastName) = $splitName($assessment->name);
                     
+                    // Use new column names with fallback to old names
+                    $gender = $assessment->sex ?? $assessment->gender ?? null;
+                    $year = $assessment->year ?? $assessment->year_level ?? null;
+                    $program = $assessment->college ?? $assessment->program ?? null;
+                    $exhaustionScore = $assessment->Exhaustion ?? $assessment->exhaustion_score ?? null;
+                    $disengagementScore = $assessment->Disengagement ?? $assessment->disengagement_score ?? null;
+                    
                     $row = [
                         $getValue($firstName),
                         $getValue($lastName),
-                        $getValue($assessment->gender),
+                        $getValue($gender),
                         $getValue($assessment->age),
-                        $getValue($assessment->year_level),
-                        $getValue($assessment->program),
+                        $getValue($year),
+                        $getValue($program),
                     ];
                     
                     // Add Q1-Q30 from answers array
-                    $answers = is_array($assessment->answers) ? $assessment->answers : json_decode($assessment->answers, true) ?? [];
+                    // Use raw_answers accessor for backward compatibility (handles both old and new formats)
+                    $answers = $assessment->raw_answers ?? [];
                     for ($i = 1; $i <= 30; $i++) {
                         $qIndex = $i - 1; // Array is 0-indexed
                         $row[] = $getValue($answers[$qIndex] ?? null);
                     }
                     
                     // Add Exhaustion and Disengagement (as averages, dividing by 8 if score exists)
-                    if ($assessment->exhaustion_score !== null) {
-                        $exhaustion = number_format($assessment->exhaustion_score / 8.0, 3, '.', '');
+                    if ($exhaustionScore !== null) {
+                        $exhaustion = number_format($exhaustionScore / 8.0, 3, '.', '');
                         $row[] = (float)$exhaustion;
                     } else {
                         $row[] = 'unavailable';
                     }
                     
-                    if ($assessment->disengagement_score !== null) {
-                        $disengagement = number_format($assessment->disengagement_score / 8.0, 3, '.', '');
+                    if ($disengagementScore !== null) {
+                        $disengagement = number_format($disengagementScore / 8.0, 3, '.', '');
                         $row[] = (float)$disengagement;
                     } else {
                         $row[] = 'unavailable';
@@ -555,12 +568,12 @@ class FileController extends Controller
         Assessment::create([
             'name' => $name,
             'age' => $age,
-            'gender' => $gender,
-            'program' => $program,
-            'year_level' => $yearLevel,
-            'overall_risk' => $overallRisk,
-            'exhaustion_score' => $exhaustionScore,
-            'disengagement_score' => $disengagementScore,
+            'sex' => $gender, // Map gender -> sex
+            'college' => $program, // Map program -> college
+            'year' => $yearLevel, // Map year_level -> year
+            'Burnout_Category' => $overallRisk, // Map overall_risk -> Burnout_Category
+            'Exhaustion' => $exhaustionScore, // Map exhaustion_score -> Exhaustion
+            'Disengagement' => $disengagementScore, // Map disengagement_score -> Disengagement
             'confidence' => $confidence,
             'answers' => $answers,
             'ip_address' => request()->ip(),

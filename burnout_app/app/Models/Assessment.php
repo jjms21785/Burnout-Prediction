@@ -10,42 +10,31 @@ class Assessment extends Model
     use HasFactory;
 
     protected $fillable = [
+        // Demographic fields (database columns)
+        'sex',
+        'age',
+        'year',
+        'college',
+        // Question answers - can be stored as JSON 'answers' column or individual Q1-Q30 columns
         'answers',
-        'overall_risk',
+        // For individual question columns, add them dynamically or handle in accessors
+        // Calculated scores (database column names)
+        'Exhaustion',
+        'Disengagement',
+        'Burnout_Category',
+        // Additional fields for tracking
         'ip_address',
         'user_agent',
+        'name', // For backward compatibility
+        // Legacy field names for backward compatibility (if database still has them)
+        'gender', 'program', 'year_level',
+        'exhaustion_score', 'disengagement_score', 'overall_risk',
         'confidence',
-        'exhaustion_score',
-        'disengagement_score',
-        'name',
-        'age',
-        'gender',
-        'program',
-        'year_level'
     ];
-
-    protected $casts = [
-        'answers' => 'array',
-        'confidence' => 'float',
-        'exhaustion_score' => 'integer',
-        'disengagement_score' => 'integer',
-        'age' => 'integer',
-    ];
-
-    public function getRiskBadgeColorAttribute()
-    {
-        return match($this->overall_risk) {
-            'high' => 'bg-red-100 text-red-800',
-            'moderate' => 'bg-orange-100 text-orange-800',
-            'low' => 'bg-green-100 text-green-800',
-            default => 'bg-gray-100 text-gray-800'
-        };
-    }
-
-    public function getFormattedRiskAttribute()
-    {
-        return ucfirst($this->overall_risk) . ' Risk';
-    }
+    
+    // Note: $casts removed per user request
+    // If 'answers' is stored as JSON, you may need to handle encoding/decoding manually
+    // or add back: protected $casts = ['answers' => 'array'];
 
     public function user()
     {
@@ -54,6 +43,124 @@ class Assessment extends Model
 
     public static function getUniquePrograms()
     {
-        return self::query()->distinct()->pluck('program')->filter()->values();
+        // Use college column (preferred) or fallback to program for backward compatibility
+        return self::query()->distinct()
+            ->selectRaw('COALESCE(college, program) as college')
+            ->whereNotNull('college')
+            ->orWhereNotNull('program')
+            ->pluck('college')
+            ->filter()
+            ->values();
+    }
+
+    /**
+     * Get the raw answers array (for backward compatibility)
+     * Returns the responses array if in new format, or the answers directly if in old format
+     * Handles both JSON string (when $casts removed) and array formats
+     */
+    public function getRawAnswersAttribute()
+    {
+        $answers = $this->answers;
+        
+        // Decode JSON string if needed (when $casts is removed)
+        if (is_string($answers)) {
+            $answers = json_decode($answers, true) ?? [];
+        }
+        
+        // If answers is in new format with 'responses' key
+        if (is_array($answers) && isset($answers['responses'])) {
+            return $answers['responses'];
+        }
+        
+        // If it's already a flat array (old format)
+        return is_array($answers) ? $answers : [];
+    }
+
+    /**
+     * Get interpretations if available
+     * Handles both JSON string (when $casts removed) and array formats
+     */
+    public function getInterpretationsAttribute()
+    {
+        $answers = $this->answers;
+        
+        // Decode JSON string if needed (when $casts is removed)
+        if (is_string($answers)) {
+            $answers = json_decode($answers, true) ?? [];
+        }
+        
+        if (is_array($answers) && isset($answers['interpretations'])) {
+            return $answers['interpretations'];
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get recommendations if available
+     * Handles both JSON string (when $casts removed) and array formats
+     */
+    public function getRecommendationsAttribute()
+    {
+        $answers = $this->answers;
+        
+        // Decode JSON string if needed (when $casts is removed)
+        if (is_string($answers)) {
+            $answers = json_decode($answers, true) ?? [];
+        }
+        
+        if (is_array($answers) && isset($answers['recommendations'])) {
+            return $answers['recommendations'];
+        }
+        
+        return null;
+    }
+
+    /**
+     * Accessor for backward compatibility: gender -> sex
+     */
+    public function getGenderAttribute()
+    {
+        return $this->sex;
+    }
+
+    /**
+     * Accessor for backward compatibility: program -> college
+     */
+    public function getProgramAttribute()
+    {
+        return $this->college;
+    }
+
+    /**
+     * Accessor for backward compatibility: year_level -> year
+     */
+    public function getYearLevelAttribute()
+    {
+        return $this->year;
+    }
+
+    /**
+     * Accessor for backward compatibility: overall_risk -> Burnout_Category
+     */
+    public function getOverallRiskAttribute()
+    {
+        return $this->Burnout_Category;
+    }
+
+    /**
+     * Accessor for backward compatibility: exhaustion_score -> Exhaustion
+     */
+    public function getExhaustionScoreAttribute()
+    {
+        return $this->Exhaustion;
+    }
+
+    /**
+     * Accessor for backward compatibility: disengagement_score -> Disengagement
+     */
+    public function getDisengagementScoreAttribute()
+    {
+        return $this->Disengagement;
     }
 }

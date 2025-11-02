@@ -1,39 +1,38 @@
-# ============================================
-# test_single_response.py
-# ============================================
+# =========================================================
+# test_single_response.py (Simplified Output for Laravel)
+# =========================================================
 
 import pandas as pd
 import joblib
 import numpy as np
-import matplotlib.pyplot as plt
+import json
 
 # -----------------------------
 # Load trained model
 # -----------------------------
-model_path = 'random_forest/random_forest_model.pkl'
+model_path = 'random_forest/random_forest_burnout_model.pkl'
 rf_model = joblib.load(model_path)
 print(f"✅ Loaded model: {model_path}")
 
 # -----------------------------
-# Define the single test response (Q1–Q30)
+# Define response (Q1–Q30)
 # -----------------------------
 single_response = {
-    'Q1': 4, 'Q2': 3, 'Q3': 4, 'Q4': 2, 'Q5': 3, 'Q6': 4, 'Q7': 1, 'Q8': 2, 'Q9': 2, 'Q10': 1,
-    'Q11': 2, 'Q12': 1, 'Q13': 2, 'Q14': 2, 'Q15': 4, 'Q16': 4, 'Q17': 3, 'Q18': 3, 'Q19': 3, 'Q20': 4,
-    'Q21': 3, 'Q22': 3, 'Q23': 2, 'Q24': 4, 'Q25': 4, 'Q26': 3, 'Q27': 4, 'Q28': 4, 'Q29': 3, 'Q30': 4
+    'Q1': 4, 'Q2': 3, 'Q3': 3, 'Q4': 2, 'Q5': 3, 'Q6': 4, 'Q7': 3, 'Q8': 2, 'Q9': 2, 'Q10': 3,
+    'Q11': 2, 'Q12': 1, 'Q13': 2, 'Q14': 2, 'Q15': 4, 'Q16': 4, 'Q17': 3, 'Q18': 3, 'Q19': 3,
+    'Q20': 4, 'Q21': 3, 'Q22': 3, 'Q23': 2, 'Q24': 4, 'Q25': 4, 'Q26': 3, 'Q27': 4, 'Q28': 4,
+    'Q29': 3, 'Q30': 4
 }
 
-# Convert to DataFrame with same column order as training
 features = [f'Q{i}' for i in range(1, 31)]
 single_df = pd.DataFrame([single_response], columns=features)
 
 # -----------------------------
-# Predict category & probabilities
+# Predict category (optional)
 # -----------------------------
 predicted_category = rf_model.predict(single_df)[0]
 probabilities = rf_model.predict_proba(single_df)[0]
 
-# Category labels
 category_labels = {
     0: "Non-Burnout",
     1: "Disengaged",
@@ -41,59 +40,111 @@ category_labels = {
     3: "BURNOUT"
 }
 
-# -----------------------------
-# Display results
-# -----------------------------
-print("\n📋 Single Response Prediction")
+# Predicted Result interpretation
+predicted_result_map = {
+    0: "A1: Low Exhaustion interpretation",
+    1: "A2: High Exhaustion interpretation",
+    2: "B1: Low Disengagement interpretation",
+    3: "B2: High Disengagement interpretation"
+}
+
+predicted_result = predicted_result_map.get(predicted_category, "Unknown")
+
+print("\n📋 PREDICTED RESULT")
 print("-----------------------------")
-print(f"Predicted Category: {predicted_category} → {category_labels.get(predicted_category, 'Unknown')}")
+print(f"Predicted Category: {category_labels[predicted_category]} → {predicted_result}")
 
-# Map probabilities to actual classes
-model_probs = {cls: prob for cls, prob in zip(rf_model.classes_, probabilities)}
-print("\nPrediction Probabilities (per category):")
-for i, label in category_labels.items():
-    prob = model_probs.get(i, 0.0)  # Default to 0 if class wasn't trained
-    print(f"  {label} ({i}): {prob:.4f}")
+# =========================================================
+# RESPONSE RESULT: SCORING CALCULATIONS
+# =========================================================
 
-# Model confidence
-confidence = model_probs.get(predicted_category, 0.0)
-print(f"\nModel confidence: {confidence:.2%}")
+# --- Academic Performance (Q1–Q2)
+academic_score = single_response['Q1'] + single_response['Q2']
+academic_label = "D1: Academic Performance - Good/High" if academic_score >= 5 else "D2: Academic Performance - Struggling/Low"
 
-# -----------------------------
-# Input summary: Exhaustion & Disengagement
-# -----------------------------
+# --- Stress (Q3–Q6)
+stress_items = {'Q3': 1, 'Q4': -1, 'Q5': -1, 'Q6': 1}
+stress_score = 0
+for q, direction in stress_items.items():
+    val = single_response[q]
+    val = 4 - val if direction == -1 else val
+    stress_score += val
+
+stress_label = (
+    "D3: Stress Level - Low" if stress_score <= 4 else
+    "D4: Stress Level - Moderate" if 5 <= stress_score <= 8 else
+    "D5: Stress Level - High"
+)
+
+# --- Sleep Quality (Q7–Q14)
+sleep_items = [f"Q{i}" for i in range(7, 15)]
+sleep_score = sum(single_response[q] for q in sleep_items)
+sleep_label = (
+    "D6: Sleep Quality - Good" if sleep_score >= 24 else
+    "D7: Sleep Quality - Fair/Moderate" if 16 <= sleep_score < 24 else
+    "D8: Sleep Quality - Poor"
+)
+
+# --- Exhaustion and Disengagement (Q15–Q30)
 exhaustion_items = ['Q16','Q17','Q20','Q21','Q23','Q25','Q28','Q29']
 disengagement_items = ['Q15','Q18','Q19','Q22','Q24','Q26','Q27','Q30']
 
-exhaustion_score = single_df[exhaustion_items].mean(axis=1)[0]
-disengagement_score = single_df[disengagement_items].mean(axis=1)[0]
+exhaustion_score = np.mean([single_response[q] for q in exhaustion_items])
+disengagement_score = np.mean([single_response[q] for q in disengagement_items])
 
-print("\nInput Summary:")
-print(f"  Exhaustion score: {exhaustion_score:.2f}")
-print(f"  Disengagement score: {disengagement_score:.2f}")
-print(f"  Questions responses: {list(single_response.values())}")
+# Cutoffs
+ex_high = exhaustion_score >= 2.25
+dis_high = disengagement_score >= 2.1
 
-# -----------------------------
-# Top 10 important features
-# -----------------------------
-feature_importances = rf_model.feature_importances_
-importance_df = pd.DataFrame({
-    'Feature': features,
-    'Importance': feature_importances
-})
-importance_df = importance_df.sort_values(by='Importance', ascending=False).head(10)
+# Interpretations (A/B format)
+exhaustion_label = "A2: High Exhaustion interpretation" if ex_high else "A1: Low Exhaustion interpretation"
+disengagement_label = "B2: High Disengagement interpretation" if dis_high else "B1: Low Disengagement interpretation"
 
-print("\nTop contributing features:")
-print(importance_df.to_string(index=False))
+# =========================================================
+# Normalize for Bar Graph (%)
+# =========================================================
+bar_data = {
+    "Academic Performance": round((academic_score / 8) * 100, 2),
+    "Stress": round((stress_score / 16) * 100, 2),
+    "Sleep": round((sleep_score / 32) * 100, 2),
+    "Exhaustion": round((exhaustion_score / 4) * 100, 2),
+    "Disengagement": round((disengagement_score / 4) * 100, 2),
+}
 
-# -----------------------------
-# Probability bar chart
-# -----------------------------
-plt.figure(figsize=(6,4))
-plt.bar(category_labels.values(),
-        [model_probs.get(i, 0.0) for i in range(4)],
-        color='skyblue')
-plt.ylabel("Probability")
-plt.title("Prediction Probabilities per Category")
-plt.ylim(0, 1)
-plt.show()
+# =========================================================
+# COMPILE RESULTS (Laravel JSON)
+# =========================================================
+result_payload = {
+    "PredictedResult": {
+        "predicted_category": int(predicted_category),
+        "label": category_labels[predicted_category],
+        "interpretation": predicted_result
+    },
+    "ResponseResult": {
+        "Interpretations": {
+            "Academic": academic_label,
+            "Stress": stress_label,
+            "Sleep": sleep_label,
+            "Exhaustion": exhaustion_label,
+            "Disengagement": disengagement_label
+        }
+    },
+    "BarGraph": bar_data
+}
+
+# =========================================================
+# Display Results
+# =========================================================
+print("\n📊 RESPONSE RESULT")
+print("-----------------------------")
+for k, v in result_payload["ResponseResult"]["Interpretations"].items():
+    print(f"{k}: {v}")
+
+print("\n📈 BAR GRAPH DATA (Percentages)")
+for k, v in bar_data.items():
+    print(f"  {k}: {v}%")
+
+# Output as JSON for Laravel
+json_output = json.dumps(result_payload, indent=4)
+print("\n📦 JSON Output for Laravel:")
+print(json_output)

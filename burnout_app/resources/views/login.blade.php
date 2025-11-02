@@ -41,7 +41,7 @@
                     class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200"
                     required
                 >
-            </div>
+            </div>re
 
             <button 
                 type="submit"
@@ -50,11 +50,6 @@
                 Login
             </button>
         </form>
-
-        <p class="text-center text-gray-600 text-sm mt-3">
-            Don't have an account? 
-            <a href="{{ route('register') }}" class="text-indigo-500 hover:text-indigo-600 font-medium">Register here</a>
-        </p>
     </div>
 </div>
 @endsection

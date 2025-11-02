@@ -140,7 +140,7 @@
     @else
     
         <!-- Non-Admin Layout with Header -->
-    <header class="bg-white shadow-sm border-b">
+    <!-- <header class="bg-white shadow-sm border-b">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-3">
@@ -151,13 +151,10 @@
                 <nav class="flex items-center space-x-8">
                         <a href="{{ route('home') }}" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">Home</a>
                     <a href="#" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">About</a>
-                    @if(request()->routeIs('home') || request()->routeIs('assessment.*'))
-                        <a href="{{ route('assessment.index') }}" class="bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium shadow hover:bg-indigo-600 transition-all duration-200 transform hover:scale-105">New Assessment</a>
-                    @endif
                 </nav>
             </div>
         </div>
-    </header>
+    </header> -->
 
         <!-- Main Content for Non-Admin Pages -->
     <main>

@@ -61,14 +61,37 @@ function initializeCharts(dashboardData) {
 
     // Gender Chart
     const genderData = dashboardData.genderDistribution || {};
-    const genderLabels = Object.keys(genderData).length > 0 ? Object.keys(genderData) : ['Male', 'Female'];
-    const genderValues = genderLabels.map(g => genderData[g] || 0);
-    createDoughnutChart('genderChart', genderLabels, genderValues, ['#6366f1', '#c7d2fe']);
+    console.log('Gender Data:', genderData);
+    const genderKeys = Object.keys(genderData).filter(key => key && key.trim() !== '');
+    const hasGenderData = genderKeys.length > 0 && genderKeys.some(key => genderData[key] > 0);
+    
+    let genderLabels, genderValues;
+    if (hasGenderData) {
+        genderLabels = genderKeys.filter(key => key && key.trim() !== '');
+        genderValues = genderLabels.map(g => parseInt(genderData[g]) || 0);
+    } else {
+        genderLabels = ['No Data'];
+        genderValues = [1];
+    }
+    console.log('Gender Labels:', genderLabels, 'Values:', genderValues);
+    createDoughnutChart('genderChart', genderLabels, genderValues, ['#6366f1', '#c7d2fe', '#a5b4fc']);
 
     // Program Chart
     const programData = dashboardData.programDistribution || {};
-    const programLabels = Object.keys(programData).slice(0, 10);
-    const programValues = programLabels.map(p => programData[p] || 0);
+    console.log('Program Data:', programData);
+    const programKeys = Object.keys(programData).filter(key => key && key.trim() !== '');
+    const hasProgramData = programKeys.length > 0 && programKeys.some(key => programData[key] > 0);
+    
+    let programLabels, programValues;
+    if (hasProgramData) {
+        programLabels = programKeys.slice(0, 10).filter(key => key && key.trim() !== '');
+        programValues = programLabels.map(p => parseInt(programData[p]) || 0);
+    } else {
+        programLabels = ['No Data'];
+        programValues = [1];
+    }
+    console.log('Program Labels:', programLabels, 'Values:', programValues);
+    
     const programColors = ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff', '#ddd6fe', '#f3e8ff', '#fce7f3', '#fef3c7', '#ecfccb'];
     
     const programChartConfig = createChartConfig(false);
@@ -77,9 +100,9 @@ function initializeCharts(dashboardData) {
         new Chart(programCanvas, {
             type: 'doughnut',
             data: {
-                labels: programLabels.length > 0 ? programLabels : ['No Data'],
+                labels: programLabels,
                 datasets: [{
-                    data: programValues.length > 0 ? programValues : [0],
+                    data: programValues,
                     backgroundColor: programColors
                 }]
             },
@@ -90,13 +113,14 @@ function initializeCharts(dashboardData) {
     // Display custom legend for program chart
     const programLegend = document.getElementById('programLegend');
     if (programLegend) {
-        if (programLabels.length > 0) {
+        if (hasProgramData && programLabels.length > 0) {
             programLegend.innerHTML = programLabels.map((label, index) => {
                 const color = programColors[index] || '#6366f1';
+                const value = programValues[index] || 0;
                 return `
                     <div class="flex items-center py-1.5 mb-1">
                         <div class="w-3 h-3 rounded-full mr-2" style="background-color: ${color};"></div>
-                        <span class="text-xs text-neutral-800">${label}</span>
+                        <span class="text-xs text-neutral-800">${label} (${value})</span>
                     </div>
                 `;
             }).join('');
@@ -107,8 +131,19 @@ function initializeCharts(dashboardData) {
 
     // Year Level Chart
     const yearData = dashboardData.yearDistribution || {};
-    const yearLabels = Object.keys(yearData).length > 0 ? Object.keys(yearData) : ['1st Year', '2nd Year', '3rd Year', '4th Year'];
-    const yearValues = yearLabels.map(y => yearData[y] || 0);
+    console.log('Year Data:', yearData);
+    const yearKeys = Object.keys(yearData).filter(key => key && key.trim() !== '');
+    const hasYearData = yearKeys.length > 0 && yearKeys.some(key => yearData[key] > 0);
+    
+    let yearLabels, yearValues;
+    if (hasYearData) {
+        yearLabels = yearKeys.filter(key => key && key.trim() !== '');
+        yearValues = yearLabels.map(y => parseInt(yearData[y]) || 0);
+    } else {
+        yearLabels = ['No Data'];
+        yearValues = [1];
+    }
+    console.log('Year Labels:', yearLabels, 'Values:', yearValues);
     createDoughnutChart('yearChart', yearLabels, yearValues, ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff']);
 }
 

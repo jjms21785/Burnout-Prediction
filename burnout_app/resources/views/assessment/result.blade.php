@@ -4,28 +4,18 @@
 
 @section('content')
 @php
-    // Sample data - replace with actual assessment data
-    $exhaustionCategory = request('exhaustion', 'High'); // High or Low
-    $disengagementCategory = request('disengagement', 'High'); // High or Low
+    // Data is processed in ResultController, use processed values
+    $hasData = $dataAvailable ?? false;
+    $errorMessage = $errorMsg ?? null;
     
-    // Determine burnout category
-    if ($exhaustionCategory == 'Low' && $disengagementCategory == 'Low') {
-        $category = 'low';
-        $categoryName = 'Low Burnout';
-        $categoryCode = 'Healthy Functioning';
-    } elseif ($exhaustionCategory == 'High' && $disengagementCategory == 'Low') {
-        $category = 'exhausted';
-        $categoryName = 'Exhausted';
-        $categoryCode = 'High Exhaustion + Low Disengagement';
-    } elseif ($exhaustionCategory == 'Low' && $disengagementCategory == 'High') {
-        $category = 'disengaged';
-        $categoryName = 'Disengaged';
-        $categoryCode = 'Low Exhaustion + High Disengagement';
-    } else {
-        $category = 'high';
-        $categoryName = 'High Burnout';
-        $categoryCode = 'High Exhaustion + High Disengagement';
-    }
+    // Get processed result data from controller
+    $categoryName = $categoryName ?? 'Results Unavailable';
+    $categoryCode = $categoryCode ?? ($errorMessage ?? 'Assessment data not available. Please ensure the Flask API is running.');
+    $exhaustionPercent = $exhaustionPercent ?? 0;
+    $disengagementPercent = $disengagementPercent ?? 0;
+    $academicPercent = $academicPercent ?? 0;
+    $stressPercent = $stressPercent ?? 0;
+    $sleepPercent = $sleepPercent ?? 0;
 @endphp
 
 <div class="min-h-screen bg-gradient-to-b from-indigo-50 to-white py-8">
@@ -36,76 +26,166 @@
             
             <!-- Action Buttons - Top Right -->
             <div class="absolute top-4 right-4 flex flex-col gap-2 z-20">
-                <a href="{{ route('assessment.index') }}" class="inline-flex items-center px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow-lg hover:bg-indigo-50 hover:shadow-xl transition-all duration-200 transform hover:scale-105">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('assessment.index') }}" class="inline-flex items-center px-2 py-1.5 bg-white text-indigo-600 text-xs font-medium rounded-lg shadow hover:bg-indigo-50 hover:shadow-md transition-all duration-200">
+                    <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
-                    Retake Assessment
+                    Retake
                 </a>
-                <button onclick="exportToPDF()" class="inline-flex items-center px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow-lg hover:bg-indigo-50 hover:shadow-xl transition-all duration-200 transform hover:scale-105">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onclick="exportToPDF()" class="inline-flex items-center px-2 py-1.5 bg-white text-indigo-600 text-xs font-medium rounded-lg shadow hover:bg-indigo-50 hover:shadow-md transition-all duration-200">
+                    <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    Export to PDF
+                    Export PDF
                 </button>
             </div>
-            
+
+            <p class="text-sm font-semibold opacity-95 relative z-10">The result is:</p>
             <h1 class="text-4xl font-bold mb-2 relative z-10">{{ $categoryName }}</h1>
-            <p class="text-sm opacity-95 relative z-10">{{ $categoryCode }}</p>
+            <p class="text-[10px] opacity-95 relative z-10 mb-4">{{ $categoryCode }}</p>
+            
+            @if($hasData && isset($interpretations['combined_result']))
+                <div class="relative z-10 mt-4 pt-4 border-t border-white/20">
+                    <p class="text-sm opacity-95">{{ $interpretations['combined_result']['text'] ?? '' }}</p>
+                </div>
+            @endif
         </div>
                 
         <!-- Section 1: Full Width at Top -->
         <div class="mb-6">
-                <div class="bg-white rounded-xl p-7 shadow-sm border border-indigo-100">
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">
-                    Assessment Result
-                    </h2>
-
+            <div class="bg-white rounded-xl p-7 shadow-sm border border-indigo-100">
                 <!-- Assessment Breakdown by Category - Two Column Layout -->
-                <div class="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Left Column: Empty or for future content -->
-                            <div>
+                <div class="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    <!-- Left Column: Interpretations -->
+                    <div class="flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Interpretations</h3>
+                        @if($hasData && isset($interpretations) && is_array($interpretations))
+                            <div class="space-y-4 flex-1">
+                                <!-- Exhaustion -->
+                                @if(isset($interpretations['top_card']['exhaustion']))
+                                    <div class="mb-3">
+                                        <h5 class="font-semibold text-gray-900 mb-1 text-sm">{{ $interpretations['top_card']['exhaustion']['title'] ?? 'Exhaustion' }}</h5>
+                                        <p class="text-gray-700 text-xs">{{ $interpretations['top_card']['exhaustion']['text'] ?? 'Unavailable' }}</p>
+                                    </div>
+                                @endif
+                                
+                                <!-- Disengagement -->
+                                @if(isset($interpretations['top_card']['disengagement']))
+                                    <div class="mb-3">
+                                        <h5 class="font-semibold text-gray-900 mb-1 text-sm">{{ $interpretations['top_card']['disengagement']['title'] ?? 'Disengagement' }}</h5>
+                                        <p class="text-gray-700 text-xs">{{ $interpretations['top_card']['disengagement']['text'] ?? 'Unavailable' }}</p>
+                                    </div>
+                                @endif
+                                
+                                <!-- Academic Performance -->
+                                @if(isset($interpretations['breakdown']['academic']))
+                                    <div class="mb-3">
+                                        <h5 class="font-semibold text-gray-900 mb-1 text-sm">{{ $interpretations['breakdown']['academic']['title'] ?? 'Academic Performance' }}</h5>
+                                        <p class="text-gray-700 text-xs">{{ $interpretations['breakdown']['academic']['text'] ?? 'Unavailable' }}</p>
+                                    </div>
+                                @endif
+                                
+                                <!-- Stress -->
+                                @if(isset($interpretations['breakdown']['stress']))
+                                    <div class="mb-3">
+                                        <h5 class="font-semibold text-gray-900 mb-1 text-sm">{{ $interpretations['breakdown']['stress']['title'] ?? 'Stress Level' }}</h5>
+                                        <p class="text-gray-700 text-xs">{{ $interpretations['breakdown']['stress']['text'] ?? 'Unavailable' }}</p>
+                                    </div>
+                                @endif
+                                
+                                <!-- Sleep -->
+                                @if(isset($interpretations['breakdown']['sleep']))
+                                    <div class="mb-3">
+                                        <h5 class="font-semibold text-gray-900 mb-1 text-sm">{{ $interpretations['breakdown']['sleep']['title'] ?? 'Sleep Quality' }}</h5>
+                                        <p class="text-gray-700 text-xs">{{ $interpretations['breakdown']['sleep']['text'] ?? 'Unavailable' }}</p>
+                                    </div>
+                                @endif
                             </div>
+                        @else
+                            <p class="text-gray-600 text-sm">Unavailable</p>
+                        @endif
+                    </div>
 
-                    <!-- Right Column: Description and Chart -->
-                            <div>
+                    <!-- Right Column: Chart -->
+                    <div class="flex flex-col h-full">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">Breakdown by Category</h3>
-                        <div class="relative" style="height: 350px;">
-                            <canvas id="assessmentBreakdownChart"></canvas>
-                            </div>
+                        <div class="relative flex-1 w-full min-h-[300px]">
+                            @if($hasData && isset($barGraph) && is_array($barGraph))
+                                <canvas id="assessmentBreakdownChart"></canvas>
+                            @else
+                                <div class="flex items-center justify-center h-full">
+                                    <p class="text-gray-500 text-lg">Unavailable</p>
+                                </div>
+                            @endif
                         </div>
+                    </div>
                 </div>
             </div>
-                </div>
+        </div>
 
         <!-- Section 4: Full Width at Bottom -->
         <div>
-                <div class="bg-white rounded-xl p-7 shadow-sm border border-indigo-100">
+            <div class="bg-white rounded-xl p-7 shadow-sm border border-indigo-100">
                 <h2 class="text-2xl font-bold text-gray-900 mb-2">
-                        Recommendations
-                    </h2>
+                    Recommendations
+                </h2>
+                    
+                @if($hasData && isset($recommendations) && is_array($recommendations) && !empty($recommendations))
+                    <div class="space-y-4">
+                        @if(isset($recommendations['exhaustion']) && !empty($recommendations['exhaustion']))
+                            <div class="mb-4">
+                                <p class="text-gray-700 text-sm">{{ $recommendations['exhaustion'] }}</p>
+                            </div>
+                        @endif
+                        
+                        @if(isset($recommendations['disengagement']) && !empty($recommendations['disengagement']))
+                            <div class="mb-4">
+                                <p class="text-gray-700 text-sm">{{ $recommendations['disengagement'] }}</p>
+                            </div>
+                        @endif
+                        
+                        @if(isset($interpretations) && is_array($interpretations) && isset($interpretations['breakdown']))
+                            @if(isset($interpretations['breakdown']['academic']['recommendation']) && !empty($interpretations['breakdown']['academic']['recommendation']))
+                                <div class="mb-4">
+                                    <p class="text-gray-700 text-sm">{{ $interpretations['breakdown']['academic']['recommendation'] }}</p>
+                                </div>
+                            @endif
+                            
+                            @if(isset($interpretations['breakdown']['stress']['recommendation']) && !empty($interpretations['breakdown']['stress']['recommendation']))
+                                <div class="mb-4">
+                                    <p class="text-gray-700 text-sm">{{ $interpretations['breakdown']['stress']['recommendation'] }}</p>
+                                </div>
+                            @endif
+                            
+                            @if(isset($interpretations['breakdown']['sleep']['recommendation']) && !empty($interpretations['breakdown']['sleep']['recommendation']))
+                                <div class="mb-4">
+                                    <p class="text-gray-700 text-sm">{{ $interpretations['breakdown']['sleep']['recommendation'] }}</p>
+                                </div>
+                            @endif
+                        @endif
+                    </div>
+                @else
+                    <p class="text-gray-600 text-sm">Unavailable</p>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// PDF Export function (placeholder - implement with jsPDF or similar library)
+// PDF Export function
 function exportToPDF() {
-    // TODO: Implement PDF export functionality
-    // You can use libraries like jsPDF, html2pdf.js, or window.print()
-    alert('PDF export functionality will be implemented here. You can use libraries like jsPDF or html2pdf.js to generate PDFs.');
-    // Example: window.print() for browser print dialog
-    // Or use: html2pdf().from(document.body).save();
+    window.print();
 }
 
+@if($hasData && isset($barGraph) && is_array($barGraph))
 document.addEventListener('DOMContentLoaded', function() {
-    // Get assessment data - using sample data for now, replace with actual data
-    const exhaustionScore = {{ request('exhaustion_score', 65) }};
-    const disengagementScore = {{ request('disengagement_score', 55) }};
-    const academicPerformanceScore = {{ request('academic_performance_score', 72) }};
-    const stressScore = {{ request('stress_score', 62) }};
-    const sleepScore = {{ request('sleep_score', 45) }};
+    // Use actual data from Blade variables
+    const exhaustionPercent = {{ $exhaustionPercent }};
+    const disengagementPercent = {{ $disengagementPercent }};
+    const academicPercent = {{ $academicPercent }};
+    const stressPercent = {{ $stressPercent }};
+    const sleepPercent = {{ $sleepPercent }};
 
     const ctx = document.getElementById('assessmentBreakdownChart');
     if (!ctx) return;
@@ -117,25 +197,25 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 label: 'Percentage (%)',
                 data: [
-                    exhaustionScore,
-                    disengagementScore,
-                    academicPerformanceScore,
-                    stressScore,
-                    sleepScore
+                    exhaustionPercent,
+                    disengagementPercent,
+                    academicPercent,
+                    stressPercent,
+                    sleepPercent
                 ],
                 backgroundColor: [
-                    'rgba(251, 146, 60, 0.8)',  // Orange for Exhausted
-                    'rgba(234, 179, 8, 0.8)',   // Yellow for Disengaged
-                    'rgba(236, 72, 153, 0.8)',  // Pink/Magenta for Academic Performance
-                    'rgba(239, 68, 68, 0.8)',   // Red for Stress
-                    'rgba(147, 51, 234, 0.8)'   // Purple for Sleep
+                    'rgba(251, 146, 60, 0.8)',  // Tailwind orange-400 for Exhausted
+                    'rgba(234, 179, 8, 0.8)',   // Tailwind yellow-500 for Disengaged
+                    'rgba(236, 72, 153, 0.8)',  // Tailwind pink-500 for Academic Performance
+                    'rgba(239, 68, 68, 0.8)',   // Tailwind red-500 for Stress
+                    'rgba(147, 51, 234, 0.8)'   // Tailwind purple-600 for Sleep
                 ],
                 borderColor: [
-                    'rgb(251, 146, 60)',
-                    'rgb(234, 179, 8)',
-                    'rgb(236, 72, 153)',
-                    'rgb(239, 68, 68)',
-                    'rgb(147, 51, 234)'
+                    'rgb(251, 146, 60)',  // Tailwind orange-400
+                    'rgb(234, 179, 8)',   // Tailwind yellow-500
+                    'rgb(236, 72, 153)',  // Tailwind pink-500
+                    'rgb(239, 68, 68)',   // Tailwind red-500
+                    'rgb(147, 51, 234)'   // Tailwind purple-600
                 ],
                 borderWidth: 2,
                 borderRadius: {
@@ -217,5 +297,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+@endif
 </script>
 @endsection

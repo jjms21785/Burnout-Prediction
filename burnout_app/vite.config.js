@@ -10,7 +10,8 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/dashboard.js',
                 'resources/js/files.js',
-                'resources/js/report.js'
+                'resources/js/report.js',
+                'resources/js/assessment.js'
             ],
             refresh: true,
         }),
