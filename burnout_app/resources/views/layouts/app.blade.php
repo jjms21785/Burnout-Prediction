@@ -61,7 +61,7 @@
             <!-- Sidebar -->
             <div class="sidebar w-48 flex flex-col bg-gray-50 border-r border-gray-200">
                 <div class="p-4">
-                    <h1 class="text-xl items-center py-5 text-center border-b border-gray-200 font-bold text-indigo-500">Burnalytics</h1>
+                    <h1 class="text-2xl items-center py-5 text-center border-b border-gray-200 font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent">Burnalytics</h1>
             </div>
                 <nav class="flex-1 px-2 py-2">
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center px-3 py-4 text-xs font-medium transition border-b border-gray-200 rounded-lg @if(request()->routeIs('admin.dashboard')) text-white bg-indigo-500 @else text-neutral-800 hover:bg-indigo-100 @endif">
@@ -145,8 +145,7 @@
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-3">
                     <div>
-                        <h1 class="text-xl font-bold text-gray-900">Burnalytics</h1>
-                        <p class="text-sm text-indigo-500">@yield('subtitle', 'Burnout Assessment Tool')</p>
+                        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent">Burnalytics</h1>
                     </div>
                 </div>
                 <nav class="flex items-center space-x-8">

@@ -1,128 +1,89 @@
+# ============================================
+# train_random_forest.py
+# ============================================
+
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-from sklearn.preprocessing import LabelEncoder
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+import joblib
 
-# Read the training data
-df = pd.read_csv('random_forest/dataset/training_data.csv')
+# -----------------------------
+# Load dataset
+# -----------------------------
+file_path = 'random_forest/dataset/training_data.csv'
+df = pd.read_csv(file_path)
 
-print("Dataset Shape:", df.shape)
-print("\nFirst few rows:")
-print(df.head())
-print("\nBurnout Category Distribution:")
-print(df['Category'].value_counts().sort_index())
+print(f"✅ Loaded dataset: {file_path}")
+print(f"Total samples: {len(df)}")
 
-# Encode categorical variables (sex and college)
-le_sex = LabelEncoder()
-le_college = LabelEncoder()
+# -----------------------------
+# Identify label column
+# -----------------------------
+if 'Category' in df.columns:
+    target_col = 'Category'
+elif 'Burnout_Category' in df.columns:
+    target_col = 'Burnout_Category'
+else:
+    raise ValueError("No category column found! (Expected 'Category' or 'Burnout_Category')")
 
-df['sex_encoded'] = le_sex.fit_transform(df['sex'])
-df['college_encoded'] = le_college.fit_transform(df['college'])
+# -----------------------------
+# Feature selection
+# -----------------------------
+# Use only Q1–Q30 as features
+features = [f'Q{i}' for i in range(1, 31)]
 
-# Select features for training
-# Using all questions (Q1-Q30), age, year, sex, and college
-feature_columns = ['sex_encoded', 'age', 'year', 'college_encoded'] + [f'Q{i}' for i in range(1, 31)]
+# Check that all required columns exist
+missing = [col for col in features if col not in df.columns]
+if missing:
+    raise ValueError(f"Missing feature columns in CSV: {missing}")
 
-X = df[feature_columns]
-y = df['Category']
+X = df[features]
+y = df[target_col]
 
-# Split data into training and testing sets (80-20 split)
+# -----------------------------
+# Split into train/test
+# -----------------------------
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-print(f"\nTraining set size: {len(X_train)}")
-print(f"Testing set size: {len(X_test)}")
+print(f"\n📊 Train size: {len(X_train)} | Test size: {len(X_test)}")
 
-# Train Random Forest Classifier
-rf_model = RandomForestClassifier(
-    n_estimators=100,      # Number of trees
-    max_depth=10,          # Maximum depth of trees
-    min_samples_split=5,   # Minimum samples to split a node
-    min_samples_leaf=2,    # Minimum samples at leaf node
+# -----------------------------
+# Train Random Forest model
+# -----------------------------
+print("\n🌲 Training Random Forest model...")
+rf = RandomForestClassifier(
+    n_estimators=200,
+    max_depth=None,
+    min_samples_split=2,
+    min_samples_leaf=1,
     random_state=42,
-    n_jobs=-1              # Use all CPU cores
+    n_jobs=-1
 )
+rf.fit(X_train, y_train)
 
-print("\nTraining Random Forest model...")
-rf_model.fit(X_train, y_train)
+# -----------------------------
+# Evaluate model
+# -----------------------------
+y_pred = rf.predict(X_test)
 
-# Make predictions
-y_pred = rf_model.predict(X_test)
+print("\n✅ Model evaluation:")
+print("Accuracy:", round(accuracy_score(y_test, y_pred), 4))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
 
-# Evaluate the model
-accuracy = accuracy_score(y_test, y_pred)
-print(f"\n{'='*50}")
-print(f"Model Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
-print(f"{'='*50}")
+# -----------------------------
+# Feature importances
+# -----------------------------
+importances = pd.Series(rf.feature_importances_, index=features).sort_values(ascending=False)
+print("\n🔥 Top 10 important features:")
+print(importances.head(10))
 
-# Classification Report
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred, 
-                          target_names=['Non-Burnout', 'Disengaged', 'Exhausted', 'BURNOUT']))
-
-# Confusion Matrix
-cm = confusion_matrix(y_test, y_pred)
-print("\nConfusion Matrix:")
-print(cm)
-
-# Plot Confusion Matrix
-plt.figure(figsize=(8, 6))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-            xticklabels=['Non-Burnout', 'Disengaged', 'Exhausted', 'BURNOUT'],
-            yticklabels=['Non-Burnout', 'Disengaged', 'Exhausted', 'BURNOUT'])
-plt.title('Confusion Matrix')
-plt.ylabel('Actual')
-plt.xlabel('Predicted')
-plt.tight_layout()
-plt.savefig('random_forest/confusion_matrix.png', dpi=300, bbox_inches='tight')
-print("\nConfusion matrix saved as 'random_forest/confusion_matrix.png'")
-
-# Feature Importance
-feature_importance = pd.DataFrame({
-    'feature': feature_columns,
-    'importance': rf_model.feature_importances_
-}).sort_values('importance', ascending=False)
-
-print("\nTop 15 Most Important Features:")
-print(feature_importance.head(15))
-
-# Plot Feature Importance
-plt.figure(figsize=(10, 8))
-top_features = feature_importance.head(20)
-plt.barh(range(len(top_features)), top_features['importance'])
-plt.yticks(range(len(top_features)), top_features['feature'])
-plt.xlabel('Importance')
-plt.title('Top 20 Feature Importances')
-plt.gca().invert_yaxis()
-plt.tight_layout()
-plt.savefig('random_forest/feature_importance.png', dpi=300, bbox_inches='tight')
-print("\nFeature importance plot saved as 'random_forest/feature_importance.png'")
-
-# Save the model
-import joblib
-joblib.dump(rf_model, 'random_forest/rf_model.pkl')
-joblib.dump(le_sex, 'random_forest/le_sex.pkl')
-joblib.dump(le_college, 'random_forest/le_college.pkl')
-print("\nModel saved as 'random_forest/rf_model.pkl'")
-print("Label encoders saved for future predictions")
-
-# Example prediction on new data
-print("\n" + "="*50)
-print("Example: Making a prediction on the first test sample")
-print("="*50)
-sample = X_test.iloc[0:1]
-prediction = rf_model.predict(sample)
-probability = rf_model.predict_proba(sample)
-
-burnout_labels = ['Non-Burnout', 'Disengaged', 'Exhausted', 'BURNOUT']
-print(f"Predicted Category: {burnout_labels[prediction[0]]} ({prediction[0]})")
-print("\nPrediction Probabilities:")
-for i, label in enumerate(burnout_labels):
-    print(f"  {label}: {probability[0][i]:.4f} ({probability[0][i]*100:.2f}%)")
-
-print("\nTraining complete!")
+# -----------------------------
+# Save trained model
+# -----------------------------
+model_filename = 'random_forest/random_forest_burnout_model.pkl'
+joblib.dump(rf, model_filename)
+print(f"\n💾 Model saved as: {model_filename}")
