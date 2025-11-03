@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle "Others" option for gender, program, and year_level
+    // Handle "Others" option for program only (gender and year_level removed)
     function setupOthersOption(selectId, inputId) {
         const select = document.getElementById(selectId);
         const input = document.getElementById(inputId);
@@ -18,9 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    setupOthersOption('gender', 'gender_other');
     setupOthersOption('program', 'program_other');
-    setupOthersOption('year_level', 'year_level_other');
     
     // Two-step form logic
     const demographicStep = document.getElementById('demographicStep');
@@ -29,62 +27,48 @@ document.addEventListener('DOMContentLoaded', function() {
     if (nextBtn && demographicStep && questionsStep) {
         nextBtn.addEventListener('click', function() {
             // Validate demographic fields before proceeding
-            const firstName = document.getElementById('first_name');
-            const lastName = document.getElementById('last_name');
             const age = document.getElementById('age');
             const gender = document.getElementById('gender');
             const program = document.getElementById('program');
             const yearLevel = document.getElementById('year_level');
-            const genderOther = document.getElementById('gender_other');
             const programOther = document.getElementById('program_other');
-            const yearLevelOther = document.getElementById('year_level_other');
             
             let valid = true;
             
-            // Validate gender
-            if (!gender.value) {
+            // Validate gender (no "Others" option anymore)
+            if (!gender.value || gender.value === '') {
                 gender.classList.add('border-red-500');
                 valid = false;
             } else {
                 gender.classList.remove('border-red-500');
-                if (gender.value === 'Others' && !genderOther.value.trim()) {
-                    genderOther.classList.add('border-red-500');
-                    valid = false;
-                } else {
-                    genderOther.classList.remove('border-red-500');
-                }
             }
             
-            // Validate program
-            if (!program.value) {
+            // Validate program (has "Others" option)
+            if (!program.value || program.value === '') {
                 program.classList.add('border-red-500');
                 valid = false;
             } else {
                 program.classList.remove('border-red-500');
-                if (program.value === 'Others' && !programOther.value.trim()) {
-                    programOther.classList.add('border-red-500');
-                    valid = false;
-                } else {
-                    programOther.classList.remove('border-red-500');
+                if (program.value === 'Others') {
+                    if (programOther && !programOther.value.trim()) {
+                        programOther.classList.add('border-red-500');
+                        valid = false;
+                    } else if (programOther) {
+                        programOther.classList.remove('border-red-500');
+                    }
                 }
             }
             
-            // Validate year level
-            if (!yearLevel.value) {
+            // Validate year level (no "Others" option anymore)
+            if (!yearLevel.value || yearLevel.value === '') {
                 yearLevel.classList.add('border-red-500');
                 valid = false;
             } else {
                 yearLevel.classList.remove('border-red-500');
-                if (yearLevel.value === 'Others' && !yearLevelOther.value.trim()) {
-                    yearLevelOther.classList.add('border-red-500');
-                    valid = false;
-                } else {
-                    yearLevelOther.classList.remove('border-red-500');
-                }
             }
             
             // Validate age
-            if (!age.value) {
+            if (!age.value || age.value === '') {
                 age.classList.add('border-red-500');
                 valid = false;
             } else {
@@ -95,6 +79,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 demographicStep.style.display = 'none';
                 questionsStep.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                // Scroll to first invalid field
+                const firstInvalid = document.querySelector('.border-red-500');
+                if (firstInvalid) {
+                    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             }
         });
     }
@@ -159,15 +149,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show/hide Submit button (only on last section if all questions answered)
         if (sectionNumber === totalSections) {
             const allComplete = Object.keys(answers).length === totalQuestions;
-            console.log('Last section reached. Answers count:', Object.keys(answers).length, 'Required:', totalQuestions, 'Complete:', allComplete);
             if (allComplete) {
                 submitBtn.style.display = 'inline-block';
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                console.log('Submit button enabled');
             } else {
                 submitBtn.style.display = 'none';
-                console.log('Submit button hidden - not all questions answered');
             }
         } else {
             submitBtn.style.display = 'none';
@@ -223,13 +210,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateProgress();
                 showSection(currentSection);
                 autoAdvanceSection();
-                
-                // Debug: Log when all questions are answered
-                if (Object.keys(answers).length === totalQuestions) {
-                    console.log('All 30 questions answered! Submit button should be enabled.');
-                }
             } else {
-                console.error('Could not parse question index from name:', name);
+                
             }
         }
     });
@@ -288,9 +270,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     if (submitBtn) {
         submitBtn.addEventListener('click', function(e) {
-            console.log('Submit button clicked');
-            console.log('Answers count:', Object.keys(answers).length);
-            
             // Only validate, don't prevent default - let form submit naturally
             if (Object.keys(answers).length !== totalQuestions) {
                 e.preventDefault();
@@ -300,7 +279,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // If validation passes, let the button's type="submit" handle the submission
-            console.log('Submit button validation passed - form will submit');
         });
     }
 
@@ -308,27 +286,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('assessmentForm');
     if (form) {
         form.addEventListener('submit', function(e) {
-            console.log('Form submit event triggered');
-            console.log('Answers object:', answers);
-            console.log('Answers count:', Object.keys(answers).length);
-            
-            // Handle "Others" option values - replace "Others" with the text input value
-            const gender = document.getElementById('gender');
+            // Handle "Others" option values - replace "Others" with the text input value (only for program now)
             const program = document.getElementById('program');
-            const yearLevel = document.getElementById('year_level');
-            
-            if (gender && gender.value === 'Others') {
-                const genderOther = document.getElementById('gender_other');
-                if (genderOther && genderOther.value.trim()) {
-                    // Create a hidden input with the actual value
-                    const hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'hidden';
-                    hiddenInput.name = 'gender';
-                    hiddenInput.value = genderOther.value.trim();
-                    form.appendChild(hiddenInput);
-                    gender.disabled = true; // Disable the select to prevent it from being submitted
-                }
-            }
             
             if (program && program.value === 'Others') {
                 const programOther = document.getElementById('program_other');
@@ -339,18 +298,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     hiddenInput.value = programOther.value.trim();
                     form.appendChild(hiddenInput);
                     program.disabled = true;
-                }
-            }
-            
-            if (yearLevel && yearLevel.value === 'Others') {
-                const yearLevelOther = document.getElementById('year_level_other');
-                if (yearLevelOther && yearLevelOther.value.trim()) {
-                    const hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'hidden';
-                    hiddenInput.name = 'year_level';
-                    hiddenInput.value = yearLevelOther.value.trim();
-                    form.appendChild(hiddenInput);
-                    yearLevel.disabled = true;
                 }
             }
             
@@ -375,7 +322,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (radio) {
                         radio.checked = true;
                     } else {
-                        console.error('Radio button not found for question', i + 1, 'with name', radioName, 'and value', answers[i]);
                         missingAnswers.push(i + 1);
                         allChecked = false;
                     }
@@ -394,8 +340,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
             
-            console.log('Form submitting with', Object.keys(answers).length, 'answers');
-            console.log('All validation passed - form will submit to server');
             // Don't prevent default - allow form to submit naturally
         });
     }

@@ -24,14 +24,14 @@
                 <!-- Buttons -->
                 <div class="flex flex-col sm:flex-row gap-3 items-center lg:items-start">
                     <a href="{{ route('assessment.index') }}" class="group">
-                        <div class="flex items-center justify-center bg-white px-6 py-3 rounded-xl shadow-xl border border-gray-200 hover:scale-105 transition duration-200">
-                            <span class="text-base font-semibold text-gray-800">Take Assessment</span>
+                        <div class="flex items-center justify-center bg-indigo-500 px-6 py-3 rounded-xl shadow-xl border border-gray-200 hover:scale-105 transition duration-200">
+                            <span class="text-base font-semibold text-white">Take Assessment</span>
                         </div>
                     </a>
 
                     <a href="{{ route('admin.dashboard') }}" class="group">
-                        <div class="flex items-center justify-center bg-white px-6 py-3 rounded-xl shadow-xl border border-gray-200 hover:scale-105 transition duration-200">
-                            <span class="text-base font-semibold text-gray-800">Dashboard <span class="text-xs text-gray-500">(for admins only)</span></span>
+                        <div class="flex items-center justify-center bg-indigo-500 px-6 py-3 rounded-xl shadow-xl border border-gray-200 hover:scale-105 transition duration-200">
+                            <span class="text-base font-semibold text-white">Dashboard <span class="text-[10px] font-bold text-gray-50">(for admin)</span></span>
                         </div>
                     </a>
                 </div>
@@ -40,16 +40,12 @@
             <!-- RIGHT COLUMN: About Section -->
             <div class="flex flex-col justify-center">
                 <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-6">About Burnalytics</h2>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">About</h2>
                     <div class="space-y-4 text-gray-700">
                         <p class="leading-relaxed">
-                            Burnalytics is an academic burnout assessment system that uses machine learning technology to help identify and analyze burnout among students.
-                        </p>
-                        <p class="leading-relaxed">
-                            The OLBI-S (Oldenburg Burnout Inventory for Students) assessment combined with intepretations and recommendations to provide insights into burnout categories.
-                        </p>
-                        <p class="leading-relaxed">
-                            Through comprehensive data visualization, administrators can track trends, identify at-risk populations, and make decisions base on the results and data to anayalze burnout among students.
+                            Burnalytics is an academic burnout assessment system that uses machine learning technology to help identify and analyze burnout among students.<br>
+                            The OLBI-S (Oldenburg Burnout Inventory for Students) assessment combined with intepretations and recommendations to provide insights into burnout categories.<br>
+                            Through comprehensive data visualization, administrators can track trends, identify at-risk populations, and make decisions base on the results and data to anayalze burnout among students.<br>
                         </p>
                     </div>
                 </div>

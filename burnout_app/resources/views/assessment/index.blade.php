@@ -10,6 +10,17 @@
     
     <!-- Demographic Section -->
     <div class="max-w-xl mx-auto sm:px-6 lg:px-8 mt-8">
+        @if(session('error'))
+        <div class="mb-4 rounded-lg p-4 bg-red-100 border border-red-300">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
+                <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+            </div>
+        </div>
+        @endif
+        
         <div class="bg-white rounded-lg shadow-lg">
             <div id="demographicStep" class="p-6">
                 <div class="grid grid-cols-1 gap-4">
@@ -35,11 +46,8 @@
                             @foreach($genders as $gender)
                                 <option value="{{ $gender }}">{{ $gender }}</option>
                             @endforeach
-                            <option value="Others">Others</option>
                         </select>
-                        <input type="text" name="gender_other" id="gender_other" placeholder="Please specify" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 mt-2 hidden">
                         @error('gender')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
-                        @error('gender_other')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
                     </div>
                     <div>
                         <label for="program" class="block text-gray-700 text-sm mb-2">College</label>
@@ -61,11 +69,8 @@
                             @foreach($year_levels as $level)
                                 <option value="{{ $level }}">{{ $level }}</option>
                             @endforeach
-                            <option value="Others">Others</option>
                         </select>
-                        <input type="text" name="year_level_other" id="year_level_other" placeholder="Please specify" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 mt-2 hidden">
                         @error('year_level')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
-                        @error('year_level_other')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
                     </div>
                 </div>
                 <div class="text-center pt-6">

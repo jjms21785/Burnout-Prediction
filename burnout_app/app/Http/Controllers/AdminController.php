@@ -8,6 +8,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\QuestionController;
 
 class AdminController extends Controller
@@ -30,38 +32,27 @@ class AdminController extends Controller
         $highExhaustionThreshold = 18; // 2.25 average * 8
         $highDisengagementThreshold = 17; // 2.1 average * 8 (rounded)
         
-        // Low Burnout (Category 0): neither high exhaustion nor high disengagement
-        // Must have both scores available to be categorized
-        // Use only new column names
-        $lowBurnout = Assessment::whereNotNull('Exhaustion')
-            ->whereNotNull('Disengagement')
-            ->where('Exhaustion', '<', $highExhaustionThreshold)
-            ->where('Disengagement', '<', $highDisengagementThreshold)
-            ->count();
+        // Get all assessments and calculate categories (including those without scores)
+        $assessments = Assessment::all();
+        $lowBurnout = 0;
+        $disengagement = 0;
+        $exhaustion = 0;
+        $highBurnout = 0;
         
-        // Disengaged (Category 1): high disengagement but NOT high exhaustion
-        // Must have both scores available
-        $disengagement = Assessment::whereNotNull('Exhaustion')
-            ->whereNotNull('Disengagement')
-            ->where('Disengagement', '>=', $highDisengagementThreshold)
-            ->where('Exhaustion', '<', $highExhaustionThreshold)
-            ->count();
-        
-        // Exhausted (Category 2): high exhaustion but NOT high disengagement
-        // Must have both scores available
-        $exhaustion = Assessment::whereNotNull('Exhaustion')
-            ->whereNotNull('Disengagement')
-            ->where('Exhaustion', '>=', $highExhaustionThreshold)
-            ->where('Disengagement', '<', $highDisengagementThreshold)
-            ->count();
-        
-        // High Burnout (Category 3): both high exhaustion AND high disengagement
-        // Must have both scores available
-        $highBurnout = Assessment::whereNotNull('Exhaustion')
-            ->whereNotNull('Disengagement')
-            ->where('Exhaustion', '>=', $highExhaustionThreshold)
-            ->where('Disengagement', '>=', $highDisengagementThreshold)
-            ->count();
+        foreach ($assessments as $assessment) {
+            $categoryData = $this->calculateBurnoutCategoryWithScores($assessment);
+            $category = $categoryData['category'];
+            
+            if ($category === 'Low Burnout') {
+                $lowBurnout++;
+            } elseif ($category === 'Disengaged') {
+                $disengagement++;
+            } elseif ($category === 'Exhausted') {
+                $exhaustion++;
+            } elseif ($category === 'High Burnout') {
+                $highBurnout++;
+            }
+        }
 
         // Age distribution
         $ageDistribution = Assessment::selectRaw('
@@ -69,7 +60,7 @@ class AdminController extends Controller
                 WHEN age BETWEEN 18 AND 20 THEN "18-20"
                 WHEN age BETWEEN 21 AND 23 THEN "21-23"
                 WHEN age BETWEEN 24 AND 26 THEN "24-26"
-                ELSE "27+"
+                ELSE NULL
             END as age_group,
             COUNT(*) as count
         ')
@@ -273,7 +264,41 @@ class AdminController extends Controller
 
     public function settings()
     {
-        return view('admin.settings');
+        $user = Auth::user();
+        return view('admin.settings', compact('user'));
+    }
+
+    public function updateUserSettings(Request $request)
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'email' => ['required', 'email', 'unique:users,email,' . $user->id],
+            'current_password' => ['required'],
+            'new_password' => ['nullable', 'min:8', 'confirmed'],
+        ]);
+
+        // Verify current password
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'The current password is incorrect.'])->withInput();
+        }
+
+        try {
+            // Update email
+            $user->email = $request->email;
+            
+            // Update password if provided
+            if ($request->filled('new_password')) {
+                $user->password = Hash::make($request->new_password);
+            }
+            
+            $user->save();
+
+            return redirect()->route('admin.settings')->with('success', 'User settings updated successfully.');
+        } catch (\Exception $e) {
+            Log::error('User settings update failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update user settings: ' . $e->getMessage())->withInput();
+        }
     }
 
     public function clearAllData(Request $request)
@@ -353,16 +378,39 @@ class AdminController extends Controller
 
     /**
      * Calculate burnout category based on Exhaustion and Disengagement scores
+     * Includes calculation from answers if scores are missing
      * 
      * @param \App\Models\Assessment $assessment
      * @return array ['category' => string, 'color' => string]
      */
     private function calculateBurnoutCategory($assessment)
     {
+        return $this->calculateBurnoutCategoryWithScores($assessment);
+    }
+    
+    /**
+     * Calculate burnout category with automatic score calculation from answers if needed
+     * 
+     * @param \App\Models\Assessment $assessment
+     * @return array ['category' => string, 'color' => string]
+     */
+    private function calculateBurnoutCategoryWithScores($assessment)
+    {
         $exhaustion = $assessment->Exhaustion ?? $assessment->exhaustion_score ?? null;
         $disengagement = $assessment->Disengagement ?? $assessment->disengagement_score ?? null;
         $highExhaustionThreshold = 18; // 2.25 average * 8
         $highDisengagementThreshold = 17; // 2.1 average * 8
+        
+        // If scores are missing, try to calculate from answers
+        if ($exhaustion === null || $disengagement === null) {
+            $scores = $this->calculateScoresFromAnswers($assessment);
+            if ($exhaustion === null && isset($scores['exhaustion'])) {
+                $exhaustion = $scores['exhaustion'];
+            }
+            if ($disengagement === null && isset($scores['disengagement'])) {
+                $disengagement = $scores['disengagement'];
+            }
+        }
         
         $category = 'Unknown';
         $categoryColor = 'bg-gray-100 text-gray-800';
@@ -402,6 +450,50 @@ class AdminController extends Controller
         return [
             'category' => $category,
             'color' => $categoryColor
+        ];
+    }
+    
+    /**
+     * Calculate Exhaustion and Disengagement scores from Q1-Q30 answers
+     * 
+     * @param \App\Models\Assessment $assessment
+     * @return array ['exhaustion' => int|null, 'disengagement' => int|null]
+     */
+    private function calculateScoresFromAnswers($assessment)
+    {
+        $answers = $assessment->raw_answers ?? [];
+        
+        if (!is_array($answers) || count($answers) < 30) {
+            return ['exhaustion' => null, 'disengagement' => null];
+        }
+        
+        // Exhaustion: Q16, Q17, Q20, Q21, Q23, Q25, Q28, Q29 (indices 15, 16, 19, 20, 22, 24, 27, 28)
+        // Disengagement: Q15, Q18, Q19, Q22, Q24, Q26, Q27, Q30 (indices 14, 17, 18, 21, 23, 25, 26, 29)
+        $exhaustionItems = [15, 16, 19, 20, 22, 24, 27, 28];
+        $disengagementItems = [14, 17, 18, 21, 23, 25, 26, 29];
+        
+        $exhaustionScore = 0;
+        $disengagementScore = 0;
+        $hasExhaustionAnswers = false;
+        $hasDisengagementAnswers = false;
+        
+        foreach ($exhaustionItems as $idx) {
+            if (isset($answers[$idx]) && $answers[$idx] !== null && is_numeric($answers[$idx])) {
+                $exhaustionScore += (int)$answers[$idx];
+                $hasExhaustionAnswers = true;
+            }
+        }
+        
+        foreach ($disengagementItems as $idx) {
+            if (isset($answers[$idx]) && $answers[$idx] !== null && is_numeric($answers[$idx])) {
+                $disengagementScore += (int)$answers[$idx];
+                $hasDisengagementAnswers = true;
+            }
+        }
+        
+        return [
+            'exhaustion' => $hasExhaustionAnswers ? $exhaustionScore : null,
+            'disengagement' => $hasDisengagementAnswers ? $disengagementScore : null
         ];
     }
 }

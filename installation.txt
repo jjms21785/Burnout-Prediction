@@ -9,8 +9,7 @@ composer install
 npm install
 
 cp .env.example .env 
-(or copy rename the .env.example file to .env) 
-makikita yon sa loob ng burnout_app
+(copy rename the .env.example file to .env) 
 
 php artisan key:generate
 
@@ -30,6 +29,5 @@ python -m pip install -r requirements.txt
 
 python app.py
 
-
 open on browser:
-http://localhost:8000/assessment
+http://localhost:8000/a

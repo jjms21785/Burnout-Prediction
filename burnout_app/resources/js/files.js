@@ -18,24 +18,20 @@ function initializeFilesConfig() {
 
 initializeFilesConfig();
 
-// Close export menu
-document.addEventListener('DOMContentLoaded', function() {
-    initializeFilesConfig();
-    document.addEventListener('click', function(event) {
-        const exportBtn = document.getElementById('exportBtn');
-        const exportMenu = document.getElementById('exportMenu');
-        
-        if (exportBtn && exportMenu && !exportBtn.contains(event.target) && !exportMenu.contains(event.target)) {
-            exportMenu.classList.add('hidden');
-        }
-    });
-});
-
-// Toggle export menu 
-function toggleExportMenu() {
-    const menu = document.getElementById('exportMenu');
-    if (menu) {
-        menu.classList.toggle('hidden');
+// Show loading state
+function showLoadingState(message = 'Loading Data, please wait...') {
+    const tbody = document.getElementById('fileTableBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="px-3 py-8 text-center">
+                    <div class="flex flex-col items-center">
+                        <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                        <p class="text-xs text-gray-600">${message}</p>
+                    </div>
+                </td>
+            </tr>
+        `;
     }
 }
 
@@ -51,24 +47,40 @@ function handleFileImport() {
         const warningMessage = 'Are you sure you want to import this file?\n\nConsider Exporting or go Back Up the current data before adding new data.';
         
         if (confirm(warningMessage)) {
+            // Show loading state
+            showLoadingState('Loading Data, please wait...');
+            
             const formData = new FormData(form);
             
             fetch(form.action, {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
                 }
             })
             .then(response => {
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                }
+                // Fallback to redirect behavior
                 if (response.redirected) {
                     window.location.href = response.url;
                 } else {
                     window.location.reload();
                 }
+                return null;
+            })
+            .then(data => {
+                // Reload page regardless of success/error (loading will disappear)
+                window.location.reload();
             })
             .catch(error => {
                 console.error('Error:', error);
+                // Reload page (loading will disappear)
                 window.location.reload();
             });
         } else {
@@ -83,17 +95,23 @@ function exportData(format) {
         initializeFilesConfig();
     }
     
+    // Create download link directly
+    const exportUrl = filesConfig.exportRoute + '?format=' + format;
     const link = document.createElement('a');
-    link.href = filesConfig.exportRoute + '?format=' + format;
+    link.href = exportUrl;
+    link.download = '';
     link.style.display = 'none';
     document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
     
-    // Refresh page after a short delay to allow download to start
+    // Trigger download
+    link.click();
+    
+    // Clean up after download starts
     setTimeout(() => {
-        window.location.reload();
-    }, 500);
+        if (link.parentElement) {
+            document.body.removeChild(link);
+        }
+    }, 100);
 }
 
 // Download a specific file
@@ -119,6 +137,9 @@ function downloadFile(filename) {
 // Delete a specific file
 function deleteFile(filename) {
     if (confirm('Are you sure you want to delete "' + filename + '"? This action cannot be undone.')) {
+        // Show loading state
+        showLoadingState('Deleting File...');
+        
         if (!filesConfig.deleteRoute || !filesConfig.csrfToken) {
             initializeFilesConfig();
         }
@@ -149,7 +170,6 @@ function deleteFile(filename) {
 }
 
 // Export functions to global scope for onclick handlers
-window.toggleExportMenu = toggleExportMenu;
 window.handleFileImport = handleFileImport;
 window.exportData = exportData;
 window.downloadFile = downloadFile;

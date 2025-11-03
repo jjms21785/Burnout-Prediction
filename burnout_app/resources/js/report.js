@@ -19,7 +19,7 @@ const PROGRAMS = [
 ];
 
 const CATEGORIES = ['High Burnout', 'Exhausted', 'Disengaged', 'Low Burnout'];
-const YEAR_LEVELS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+const YEAR_LEVELS = ['First', 'Second', 'Third', 'Fourth'];
 
 // State management
 let assessmentsData = [];
@@ -229,7 +229,6 @@ function renderViewRow(item) {
             <td class="px-4 py-3 text-neutral-800">${item.category || 'Unavailable'}</td>
             <td class="px-4 py-3 text-center">
                 <div class="flex items-center justify-center space-x-1">
-                    <button onclick="viewAssessment('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-neutral-800 bg-gray-100 hover:bg-gray-200">View</button>
                     <button onclick="startEdit('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-neutral-800 bg-gray-100 hover:bg-gray-200">Edit</button>
                     <button onclick="deleteAssessment('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-white bg-red-500 hover:bg-red-600">Delete</button>
                 </div>
@@ -409,17 +408,6 @@ function applyFilters() {
     renderTable();
 }
 
-/**
- * View assessment details
- */
-function viewAssessment(id) {
-    const assessment = assessmentsData.find(a => String(a.id) === String(id));
-    if (assessment) {
-        alert(`Assessment Details:\n\nID: ${id}\nName: ${assessment.firstName} ${assessment.lastName}\nGender: ${assessment.gender}\nAge: ${assessment.age}\nProgram: ${assessment.program}\nYear Level: ${assessment.yearLevel}\nCategory: ${assessment.category}`);
-    } else {
-        alert('Assessment not found');
-    }
-}
 
 /**
  * Delete assessment
@@ -683,7 +671,6 @@ if (document.readyState === 'loading') {
 }
 
 // Export functions to global scope for onclick handlers
-window.viewAssessment = viewAssessment;
 window.deleteAssessment = deleteAssessment;
 window.startEdit = startEdit;
 window.cancelEdit = cancelEdit;

@@ -17,7 +17,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('login') }}" class="space-y-2.5">
+        <form method="POST" action="{{ route('login.post') }}" class="space-y-2.5">
             @csrf
 
             <div>
@@ -41,7 +41,7 @@
                     class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-200"
                     required
                 >
-            </div>re
+            </div>
 
             <button 
                 type="submit"

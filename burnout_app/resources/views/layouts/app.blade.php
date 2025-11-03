@@ -50,6 +50,35 @@
                     }
                 });
             }
+            
+            // Verify authentication status is preserved via session cookie
+            // This ensures session cookie is working across tabs
+            if (window.location.pathname.startsWith('/dashboard') || 
+                window.location.pathname.startsWith('/view') ||
+                window.location.pathname.startsWith('/questions') ||
+                window.location.pathname.startsWith('/files') ||
+                window.location.pathname.startsWith('/settings')) {
+                // On admin pages, verify session is still valid
+                fetch('/auth/check', {
+                    method: 'GET',
+                    credentials: 'same-origin', // Important: include cookies
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.authenticated) {
+                        // Session expired or invalid - redirect to login
+                        window.location.href = '/login';
+                    }
+                })
+                .catch(() => {
+                    // If check fails, rely on server-side middleware
+                    console.log('Auth check failed, relying on server-side validation');
+                });
+            }
         });
     </script>
 </head>

@@ -1,7 +1,43 @@
 import './bootstrap';
-import Chart from 'chart.js/auto';
 
+// Authentication check function
+function checkAuthentication() {
+    return fetch('/auth/check', {
+        method: 'GET',
+        credentials: 'same-origin', // Include cookies
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        return data.authenticated;
+    })
+    .catch(() => false);
+}
+
+// Check authentication on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if user is authenticated on page load
+    checkAuthentication().then(isAuthenticated => {
+        if (isAuthenticated) {
+            // User is authenticated - session cookie is working
+            // If on login page and authenticated, redirect to dashboard
+            if (window.location.pathname === '/login') {
+                window.location.href = '/dashboard';
+            }
+        } else {
+            // User is not authenticated
+            
+            // If on admin pages and not authenticated, redirect to login
+            const adminRoutes = ['/dashboard', '/view', '/questions', '/files', '/settings'];
+            const currentPath = window.location.pathname;
+            if (adminRoutes.some(route => currentPath.startsWith(route))) {
+                window.location.href = '/login';
+            }
+        }
+    }).catch(() => {});
     // Data Monitoring filter/search logic
     function getDMParams() {
         return {

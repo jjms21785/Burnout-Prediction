@@ -155,6 +155,28 @@ class FileController extends Controller
                 }
             }
 
+            // Check if this is an AJAX request
+            if ($request->ajax() || $request->wantsJson()) {
+                if (count($errors) > 0) {
+                    $errorMessage = count($errors) . " error(s) occurred during import: " . implode("; ", array_slice($errors, 0, 10));
+                    if (count($errors) > 10) {
+                        $errorMessage .= " (and " . (count($errors) - 10) . " more)";
+                    }
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage,
+                        'imported' => $imported,
+                        'errors' => $errors
+                    ]);
+                }
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => "Successfully imported $imported record(s).",
+                    'imported' => $imported
+                ]);
+            }
+            
             // Only return error message if there are errors
             if (count($errors) > 0) {
                 $errorMessage = count($errors) . " error(s) occurred during import: " . implode("; ", array_slice($errors, 0, 10));
@@ -165,9 +187,18 @@ class FileController extends Controller
             }
             
             // No errors - just refresh the page silently
-            return redirect()->route('admin.files');
+            return redirect()->route('admin.files')->with('success', "Successfully imported $imported record(s).");
         } catch (\Exception $e) {
             Log::error('Import failed: ' . $e->getMessage());
+            
+            // Check if this is an AJAX request
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Import failed: ' . $e->getMessage()
+                ]);
+            }
+            
             return redirect()->route('admin.files')->with('error', 'Import failed: ' . $e->getMessage());
         }
     }
@@ -242,13 +273,11 @@ class FileController extends Controller
             return 'unavailable';
         };
 
-        if ($format === 'csv' || $format === 'xlsx') {
-            $extension = $format === 'csv' ? 'csv' : 'xlsx';
-            $filename = 'burnalytics_data_' . date('Y-m-d') . '.' . $extension;
-            $contentType = $format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        if ($format === 'csv') {
+            $filename = 'burnalytics_data_' . date('Y-m-d') . '.csv';
             
             $headers = [
-                'Content-Type' => $contentType,
+                'Content-Type' => 'text/csv',
                 'Content-Disposition' => "attachment; filename=\"$filename\"",
             ];
 
@@ -548,6 +577,35 @@ class FileController extends Controller
             $exhaustionScore = round($olbiScore / 2);
             $disengagementScore = $olbiScore - $exhaustionScore;
         }
+        
+        // Calculate Exhaustion and Disengagement from Q1-Q30 answers if scores are missing
+        if (($exhaustionScore === null || $disengagementScore === null) && $hasAnswers) {
+            // Calculate scores from answers (0-indexed array)
+            // Exhaustion: Q16, Q17, Q20, Q21, Q23, Q25, Q28, Q29 (indices 15, 16, 19, 20, 22, 24, 27, 28)
+            // Disengagement: Q15, Q18, Q19, Q22, Q24, Q26, Q27, Q30 (indices 14, 17, 18, 21, 23, 25, 26, 29)
+            $exhaustionItems = [15, 16, 19, 20, 22, 24, 27, 28]; // Q16, Q17, Q20, Q21, Q23, Q25, Q28, Q29
+            $disengagementItems = [14, 17, 18, 21, 23, 25, 26, 29]; // Q15, Q18, Q19, Q22, Q24, Q26, Q27, Q30
+            
+            if ($exhaustionScore === null) {
+                $calculatedExhaustion = 0;
+                foreach ($exhaustionItems as $idx) {
+                    if (isset($answers[$idx]) && $answers[$idx] !== null && is_numeric($answers[$idx])) {
+                        $calculatedExhaustion += (int)$answers[$idx];
+                    }
+                }
+                $exhaustionScore = $calculatedExhaustion > 0 ? $calculatedExhaustion : null;
+            }
+            
+            if ($disengagementScore === null) {
+                $calculatedDisengagement = 0;
+                foreach ($disengagementItems as $idx) {
+                    if (isset($answers[$idx]) && $answers[$idx] !== null && is_numeric($answers[$idx])) {
+                        $calculatedDisengagement += (int)$answers[$idx];
+                    }
+                }
+                $disengagementScore = $calculatedDisengagement > 0 ? $calculatedDisengagement : null;
+            }
+        }
 
         $confidence = isset($data['confidence']) && $data['confidence'] !== 'unavailable' ? (float)$data['confidence'] : null;
 
@@ -565,6 +623,9 @@ class FileController extends Controller
             throw new \Exception('Missing required field: year_level/year');
         }
 
+        // Ensure answers are stored as JSON array (not JSON string if already array)
+        $answersJson = is_array($answers) ? json_encode($answers) : $answers;
+        
         Assessment::create([
             'name' => $name,
             'age' => $age,
@@ -572,10 +633,10 @@ class FileController extends Controller
             'college' => $program, // Map program -> college
             'year' => $yearLevel, // Map year_level -> year
             'Burnout_Category' => $overallRisk, // Map overall_risk -> Burnout_Category
-            'Exhaustion' => $exhaustionScore, // Map exhaustion_score -> Exhaustion
-            'Disengagement' => $disengagementScore, // Map disengagement_score -> Disengagement
+            'Exhaustion' => $exhaustionScore, // Map exhaustion_score -> Exhaustion (may be calculated from answers)
+            'Disengagement' => $disengagementScore, // Map disengagement_score -> Disengagement (may be calculated from answers)
             'confidence' => $confidence,
-            'answers' => $answers,
+            'answers' => $answersJson, // Store as JSON string
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
         ]);

@@ -58,7 +58,7 @@
                 <div class="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                     <!-- Left Column: Interpretations -->
                     <div class="flex flex-col">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Interpretations</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Interpretation</h3>
                         @if($hasData && isset($interpretations) && is_array($interpretations))
                             <div class="space-y-4 flex-1">
                                 <!-- Exhaustion -->
@@ -127,7 +127,7 @@
         <div>
             <div class="bg-white rounded-xl p-7 shadow-sm border border-indigo-100">
                 <h2 class="text-2xl font-bold text-gray-900 mb-2">
-                    Recommendations
+                    Recommendation
                 </h2>
                     
                 @if($hasData && isset($recommendations) && is_array($recommendations) && !empty($recommendations))
@@ -204,18 +204,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     sleepPercent
                 ],
                 backgroundColor: [
-                    'rgba(251, 146, 60, 0.8)',  // Tailwind orange-400 for Exhausted
-                    'rgba(234, 179, 8, 0.8)',   // Tailwind yellow-500 for Disengaged
-                    'rgba(236, 72, 153, 0.8)',  // Tailwind pink-500 for Academic Performance
-                    'rgba(239, 68, 68, 0.8)',   // Tailwind red-500 for Stress
-                    'rgba(147, 51, 234, 0.8)'   // Tailwind purple-600 for Sleep
+                    'rgba(99, 102, 241, 0.8)',
+                    'rgba(99, 102, 241, 0.8)',
+                    'rgba(99, 102, 241, 0.8)',
+                    'rgba(99, 102, 241, 0.8)',
+                    'rgba(99, 102, 241, 0.8)'
                 ],
                 borderColor: [
-                    'rgb(251, 146, 60)',  // Tailwind orange-400
-                    'rgb(234, 179, 8)',   // Tailwind yellow-500
-                    'rgb(236, 72, 153)',  // Tailwind pink-500
-                    'rgb(239, 68, 68)',   // Tailwind red-500
-                    'rgb(147, 51, 234)'   // Tailwind purple-600
+                    'rgb(99, 102, 241)',
+                    'rgb(99, 102, 241)',
+                    'rgb(99, 102, 241)',
+                    'rgb(99, 102, 241)',
+                    'rgb(99, 102, 241)'
                 ],
                 borderWidth: 2,
                 borderRadius: {

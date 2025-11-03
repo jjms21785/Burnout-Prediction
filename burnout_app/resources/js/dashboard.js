@@ -54,14 +54,23 @@ function initializeCharts(dashboardData) {
     ];
     createDoughnutChart('burnoutChart', burnoutLabels, burnoutData, colors);
 
-    // Age Chart
-    const ageLabels = ['18-20', '21-23', '24-26', '27+'];
-    const ageData = ageLabels.map(label => dashboardData.ageDistribution?.[label] || 0);
-    createDoughnutChart('ageChart', ageLabels, ageData, colors);
+    // Age Chart - only show age groups that have data
+    const ageData = dashboardData.ageDistribution || {};
+    const ageKeys = Object.keys(ageData).filter(key => key && key.trim() !== '');
+    const hasAgeData = ageKeys.length > 0 && ageKeys.some(key => ageData[key] > 0);
+    
+    let ageLabels, ageValues;
+    if (hasAgeData) {
+        ageLabels = ageKeys.filter(key => key && key.trim() !== '' && ageData[key] > 0);
+        ageValues = ageLabels.map(a => parseInt(ageData[a]) || 0);
+    } else {
+        ageLabels = ['No Data'];
+        ageValues = [1];
+    }
+    createDoughnutChart('ageChart', ageLabels, ageValues, colors);
 
     // Gender Chart
     const genderData = dashboardData.genderDistribution || {};
-    console.log('Gender Data:', genderData);
     const genderKeys = Object.keys(genderData).filter(key => key && key.trim() !== '');
     const hasGenderData = genderKeys.length > 0 && genderKeys.some(key => genderData[key] > 0);
     
@@ -73,12 +82,10 @@ function initializeCharts(dashboardData) {
         genderLabels = ['No Data'];
         genderValues = [1];
     }
-    console.log('Gender Labels:', genderLabels, 'Values:', genderValues);
     createDoughnutChart('genderChart', genderLabels, genderValues, ['#6366f1', '#c7d2fe', '#a5b4fc']);
 
     // Program Chart
     const programData = dashboardData.programDistribution || {};
-    console.log('Program Data:', programData);
     const programKeys = Object.keys(programData).filter(key => key && key.trim() !== '');
     const hasProgramData = programKeys.length > 0 && programKeys.some(key => programData[key] > 0);
     
@@ -90,7 +97,7 @@ function initializeCharts(dashboardData) {
         programLabels = ['No Data'];
         programValues = [1];
     }
-    console.log('Program Labels:', programLabels, 'Values:', programValues);
+    
     
     const programColors = ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff', '#ddd6fe', '#f3e8ff', '#fce7f3', '#fef3c7', '#ecfccb'];
     
@@ -116,11 +123,10 @@ function initializeCharts(dashboardData) {
         if (hasProgramData && programLabels.length > 0) {
             programLegend.innerHTML = programLabels.map((label, index) => {
                 const color = programColors[index] || '#6366f1';
-                const value = programValues[index] || 0;
                 return `
                     <div class="flex items-center py-1.5 mb-1">
                         <div class="w-3 h-3 rounded-full mr-2" style="background-color: ${color};"></div>
-                        <span class="text-xs text-neutral-800">${label} (${value})</span>
+                        <span class="text-xs text-neutral-800">${label}</span>
                     </div>
                 `;
             }).join('');
@@ -131,7 +137,6 @@ function initializeCharts(dashboardData) {
 
     // Year Level Chart
     const yearData = dashboardData.yearDistribution || {};
-    console.log('Year Data:', yearData);
     const yearKeys = Object.keys(yearData).filter(key => key && key.trim() !== '');
     const hasYearData = yearKeys.length > 0 && yearKeys.some(key => yearData[key] > 0);
     
@@ -143,7 +148,6 @@ function initializeCharts(dashboardData) {
         yearLabels = ['No Data'];
         yearValues = [1];
     }
-    console.log('Year Labels:', yearLabels, 'Values:', yearValues);
     createDoughnutChart('yearChart', yearLabels, yearValues, ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff']);
 }
 
@@ -327,18 +331,6 @@ function renderStackedBarQuestions(containerId, questions) {
     }).join('');
 }
 
-// Export functions (stubbed for future implementation)
-function exportToExcel() {
-    alert('Export to Excel functionality - Would export question statistics data to Excel format');
-}
-
-function exportToCSV() {
-    alert('Export to CSV functionality - Would export question statistics data to CSV format');
-}
-
-function exportToPDF() {
-    alert('Export to PDF functionality - Would export question statistics data to PDF format');
-}
 
 // Initialize dashboard when DOM is ready
 function initDashboard(dashboardData) {
@@ -353,9 +345,6 @@ function initDashboard(dashboardData) {
 
 // Expose functions globally for inline event handlers
 window.changeQuestionPage = changeQuestionPage;
-window.exportToExcel = exportToExcel;
-window.exportToCSV = exportToCSV;
-window.exportToPDF = exportToPDF;
 
 // Auto-initialize when DOM and data are ready
 document.addEventListener('DOMContentLoaded', function() {

@@ -9,33 +9,29 @@ use App\Http\Controllers\FileController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Testing
-Route::get('/login', function () {
-    return view('login');
-})->name('login');
+// Authentication routes
+use App\Http\Controllers\AuthController;
+
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/auth/check', [AuthController::class, 'checkAuth'])->name('auth.check');
 
 Route::get('/register', function () {
     return view('register');
 })->name('register');
 
 
-Route::post('/logout', function () {
-    return redirect()->route('login')->with('message', 'Logged out successfully');
-})->name('logout');
-
-Route::get('/result', function () {
-    return view('assessment.result');
-})->name('result');
-
-
 Route::get('/assessment', [AssessmentController::class, 'index'])->name('assessment.index');
 Route::post('/assessment', [AssessmentController::class, 'store'])->name('assessment.store');
 Route::get('/results/{id}', [AssessmentController::class, 'results'])->name('assessment.results');
 Route::post('/assessment/result', [AssessmentController::class, 'calculateBurnout'])->name('assessment.result');
+Route::get('/assessment/result', [AssessmentController::class, 'showResultError'])->name('assessment.result.error');
 
 
-// Admin routes 
-Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+// Admin routes - protected by auth middleware
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 Route::get('/view', [AdminController::class, 'report'])->name('admin.report');
 Route::get('/view/programs', [AdminController::class, 'reportPrograms'])->name('admin.report.programs');
 Route::get('/questions', [AdminController::class, 'questions'])->name('admin.questions');
@@ -46,6 +42,8 @@ Route::get('/files/export', [FileController::class, 'exportData'])->name('admin.
 Route::get('/files/download/{filename}', [FileController::class, 'downloadFile'])->name('admin.download-file');
 Route::post('/files/delete/{filename}', [FileController::class, 'deleteFile'])->name('admin.delete-file');
 Route::get('/settings', [AdminController::class, 'settings'])->name('admin.settings');
+Route::post('/settings/user-settings', [AdminController::class, 'updateUserSettings'])->name('admin.update-user');
 Route::post('/settings/clear-all-data', [AdminController::class, 'clearAllData'])->name('admin.clear-all-data');
 Route::post('/admin/assessments/{id}', [AdminController::class, 'updateAssessment'])->name('admin.assessment.update');
 Route::post('/admin/assessments/{id}/delete', [AdminController::class, 'deleteAssessment'])->name('admin.assessment.delete');
+});

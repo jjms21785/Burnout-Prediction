@@ -97,12 +97,27 @@
                 <!-- RIGHT COLUMN (7 cols) -->
                 <div class="col-span-7 space-y-4">
                     <!-- Latest Submissions -->
-                    <div class="rounded-xl shadow-sm p-5 bg-white border border-gray-200">
-                        <h3 class="text-base font-semibold mb-3 flex items-center text-neutral-800">
+                    <div class="rounded-xl shadow-sm p-3 bg-white border border-gray-200">
+                        <h3 class="text-base font-semibold flex items-center text-neutral-800">
                             Latest Submissions
                         </h3>
                         <div class="space-y-1" id="latestSubmissions">
                             @if(isset($latestSubmissions) && $latestSubmissions->count() > 0)
+                                <!-- Column Headers -->
+                                <div class="grid grid-cols-12 gap-4 items-center p-1 border-b-1 border-gray-200 bg-gray-50">
+                                    <div class="col-span-4">
+                                        <p class="text-xs font-semibold text-neutral-800">Name / Program</p>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <p class="text-xs font-semibold text-neutral-800">Year Level</p>
+                                    </div>
+                                    <div class="col-span-2 text-center">
+                                        <p class="text-xs font-semibold text-neutral-800">Category</p>
+                                    </div>
+                                    <div class="col-span-4 text-right">
+                                        <p class="text-xs font-semibold text-neutral-800">Date</p>
+                                    </div>
+                                </div>
                                 @foreach($latestSubmissions as $item)
                                 <div class="grid grid-cols-12 gap-4 items-center p-2 border-b border-gray-100 hover:bg-gray-50">
                                     <div class="col-span-4 flex flex-col">

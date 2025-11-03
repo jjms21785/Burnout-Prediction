@@ -6,8 +6,24 @@
 <!-- Main Content Area -->
 <main class="flex-1 overflow-y-auto p-3">
     @if(session('error'))
-    <div class="mb-4 rounded-lg p-3 bg-red-100 border border-red-200">
-        <p class="text-xs font-medium text-red-800">{{ session('error') }}</p>
+    <div class="mb-4 rounded-lg p-3 bg-red-100 border border-red-200" id="session-error">
+        <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+            </svg>
+            <p class="text-xs font-medium text-red-800">{{ session('error') }}</p>
+        </div>
+    </div>
+    @endif
+    
+    @if(session('success'))
+    <div class="mb-4 rounded-lg p-3 bg-green-100 border border-green-200" id="session-success">
+        <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <p class="text-xs font-medium text-green-800">{{ session('success') }}</p>
+        </div>
     </div>
     @endif
 
@@ -33,28 +49,10 @@
                         Import
                     </button>
 
-                    <!-- Export Button with Dropdown -->
-                    <div class="relative">
-                        <button id="exportBtn" onclick="toggleExportMenu()" class="flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition text-neutral-800 bg-gray-200 hover:bg-gray-300">
-                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
-                            </svg>
-                            Export
-                            <svg class="w-3.5 h-3.5 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div id="exportMenu" class="hidden absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                            <button onclick="exportData('csv')" class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-neutral-800 border-b border-gray-200">
-                                <span class="font-medium text-xs">CSV Format</span>
-                                <p class="text-[10px] text-gray-500">Comma-separated values</p>
-                            </button>
-                            <button onclick="exportData('xlsx')" class="block w-full text-left px-3 py-2 hover:bg-gray-100 text-neutral-800">
-                                <span class="font-medium text-xs">Excel Format</span>
-                                <p class="text-[10px] text-gray-500">Microsoft Excel file</p>
-                            </button>
-                        </div>
-                    </div>
+                    <!-- Export Button -->
+                    <button onclick="exportData('csv')" class="px-3 py-1.5 text-xs font-medium rounded-md transition text-neutral-800 bg-gray-200 hover:bg-gray-300">
+                        Export to CSV
+                    </button>
                 </div>
             </div>
         </div>
