@@ -7,37 +7,24 @@ use Illuminate\Support\Facades\Log;
 
 class QuestionController extends Controller
 {
-    /**
-     * Get all questions (Q1-Q30)
-     * Used by both admin questions editor and assessment form
-     * Returns a flat array of 30 questions in order
-     */
     public function getQuestions()
     {
-        // Try to load saved questions from file
         $questionsFile = storage_path('app/questions.json');
         if (file_exists($questionsFile)) {
             $savedQuestions = json_decode(file_get_contents($questionsFile), true);
-            // Check if it's the new format (flat array) or old format (categorized)
             if (is_array($savedQuestions)) {
-                // New format: flat array
                 if (isset($savedQuestions[0]) && is_array($savedQuestions[0])) {
                     return $savedQuestions;
                 }
-                // Old format: try to migrate
                 if (isset($savedQuestions['disengagement']) && isset($savedQuestions['exhaustion'])) {
                     return $this->migrateOldFormat($savedQuestions);
                 }
             }
         }
         
-        // Use default questions if no saved file exists
         return $this->getDefaultQuestions();
     }
     
-    /**
-     * Migrate old format (disengagement/exhaustion) to new flat format
-     */
     private function migrateOldFormat($oldQuestions)
     {
         $allQuestions = array_merge(
@@ -45,7 +32,6 @@ class QuestionController extends Controller
             $oldQuestions['exhaustion'] ?? []
         );
         
-        // Sort by question number
         usort($allQuestions, function($a, $b) {
             $aNum = intval(preg_replace('/[^0-9]/', '', $a['id']));
             $bNum = intval(preg_replace('/[^0-9]/', '', $b['id']));
@@ -55,24 +41,18 @@ class QuestionController extends Controller
         return $allQuestions;
     }
     
-    /**
-     * Get questions formatted for assessment form (with options)
-     */
     public function getQuestionsForAssessment()
     {
         $questions = $this->getQuestions();
         
-        // Ensure questions are sorted by question number
         usort($questions, function($a, $b) {
             $aNum = intval(preg_replace('/[^0-9]/', '', $a['id']));
             $bNum = intval(preg_replace('/[^0-9]/', '', $b['id']));
             return $aNum - $bNum;
         });
         
-        // Define all option sets
         $optionSets = $this->getOptionSets();
         
-        // Convert to assessment format with options
         $assessmentQuestions = [];
         foreach ($questions as $q) {
             $qNum = intval(preg_replace('/[^0-9]/', '', $q['id']));
@@ -82,12 +62,8 @@ class QuestionController extends Controller
         return $assessmentQuestions;
     }
     
-    /**
-     * Format a question for assessment view with appropriate options
-     */
     private function formatQuestionForAssessment($question, $questionNumber, $optionSets)
     {
-        // Determine which option set to use based on question number and type
         $options = $this->getOptionsForQuestion($questionNumber, $question['type'] ?? 'neutral', $optionSets);
         
         return [
@@ -99,12 +75,8 @@ class QuestionController extends Controller
         ];
     }
     
-    /**
-     * Get appropriate options for a question based on its number and type
-     */
     private function getOptionsForQuestion($questionNumber, $questionType, $optionSets)
     {
-        // Questions 1-2: Grade options
         if ($questionNumber <= 2) {
             if ($questionNumber == 1) {
                 return ['options' => $optionSets['grade'], 'gridCols' => 'md:grid-cols-5'];
@@ -112,36 +84,28 @@ class QuestionController extends Controller
                 return ['options' => $optionSets['comparison'], 'gridCols' => 'md:grid-cols-5'];
             }
         }
-        // Questions 3-6: Stress options
         elseif ($questionNumber >= 3 && $questionNumber <= 6) {
-            // Q4 and Q5 are positive (reversed), Q3 and Q6 are negative (normal)
             if ($questionNumber == 4 || $questionNumber == 5) {
                 return ['options' => $optionSets['stressReversed'], 'gridCols' => 'md:grid-cols-5'];
             } else {
                 return ['options' => $optionSets['stress'], 'gridCols' => 'md:grid-cols-5'];
             }
         }
-        // Questions 7-8: Sleep time options
         elseif ($questionNumber >= 7 && $questionNumber <= 8) {
             return ['options' => $optionSets['sleepTime'], 'gridCols' => 'md:grid-cols-5'];
         }
-        // Question 9: Nights options (now has 5 options)
         elseif ($questionNumber == 9) {
             return ['options' => $optionSets['nights'], 'gridCols' => 'md:grid-cols-5'];
         }
-        // Question 10: Quality options
         elseif ($questionNumber == 10) {
             return ['options' => $optionSets['quality'], 'gridCols' => 'md:grid-cols-5'];
         }
-        // Questions 11-13: Extent options
         elseif ($questionNumber >= 11 && $questionNumber <= 13) {
             return ['options' => $optionSets['extent'], 'gridCols' => 'md:grid-cols-5'];
         }
-        // Question 14: Duration options
         elseif ($questionNumber == 14) {
             return ['options' => $optionSets['duration'], 'gridCols' => 'md:grid-cols-5'];
         }
-        // Questions 15-30: OLBI options (use type to determine positive or negative scoring)
         else {
             if ($questionType === 'positive') {
                 return ['options' => $optionSets['olbiPositive'], 'gridCols' => 'md:grid-cols-4'];
@@ -151,9 +115,6 @@ class QuestionController extends Controller
         }
     }
     
-    /**
-     * Get all option sets used in the assessment
-     */
     public function getOptionSets()
     {
         return [
@@ -235,10 +196,6 @@ class QuestionController extends Controller
         ];
     }
     
-    /**
-     * Get default questions (used when no saved file exists)
-     * Returns a flat array of 30 questions in order Q1-Q30
-     */
     public function getDefaultQuestions()
     {
         return [
@@ -275,24 +232,15 @@ class QuestionController extends Controller
         ];
     }
     
-    /**
-     * Update questions (save to JSON file)
-     */
     public function updateQuestions(Request $request)
     {
         try {
             $questionsInput = $request->input('questions');
             
-            Log::info('Questions update request received', [
-                'questions_count' => is_array($questionsInput) ? count($questionsInput) : 0,
-            ]);
-            
             if (empty($questionsInput) || !is_array($questionsInput)) {
-                Log::warning('No questions data received or invalid format');
                 return back()->with('error', 'No questions data received. Please try again.');
             }
             
-            // Prepare questions array (flat structure)
             $savedQuestions = [];
             
             foreach ($questionsInput as $question) {
@@ -307,14 +255,12 @@ class QuestionController extends Controller
                 ];
             }
             
-            // Sort questions by ID (Q1, Q2, etc.)
             usort($savedQuestions, function($a, $b) {
                 $aNum = intval(preg_replace('/[^0-9]/', '', $a['id']));
                 $bNum = intval(preg_replace('/[^0-9]/', '', $b['id']));
                 return $aNum - $bNum;
             });
             
-            // Save to JSON file
             $questionsFile = storage_path('app/questions.json');
             $questionsDir = dirname($questionsFile);
             
@@ -332,16 +278,9 @@ class QuestionController extends Controller
                 throw new \Exception('Failed to write questions file. Check storage/app directory permissions.');
             }
             
-            // Verify the file was saved correctly
             if (!file_exists($questionsFile)) {
                 throw new \Exception('Questions file was not created.');
             }
-            
-            Log::info('Questions saved successfully', [
-                'file' => $questionsFile,
-                'bytes_written' => $bytesWritten,
-                'questions_count' => count($savedQuestions)
-            ]);
         
             return back()->with('success', 'Questions updated successfully!');
         } catch (\Exception $e) {
@@ -350,4 +289,3 @@ class QuestionController extends Controller
         }
     }
 }
-

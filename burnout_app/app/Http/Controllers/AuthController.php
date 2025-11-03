@@ -11,16 +11,12 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        // If user is already authenticated, redirect to dashboard
         if (Auth::check()) {
             return redirect()->route('admin.dashboard');
         }
         return view('login');
     }
     
-    /**
-     * Check authentication status (for JavaScript/frontend)
-     */
     public function checkAuth()
     {
         return response()->json([
@@ -42,8 +38,6 @@ class AuthController extends Controller
         
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            
-            // Explicitly ensure session cookie is set with proper configuration
             $request->session()->put('auth', true);
             
             return redirect()->intended(route('admin.dashboard'));
@@ -62,4 +56,3 @@ class AuthController extends Controller
         return redirect()->route('login')->with('message', 'Logged out successfully');
     }
 }
-
