@@ -17,19 +17,14 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/auth/check', [AuthController::class, 'checkAuth'])->name('auth.check');
 
-Route::get('/register', function () {
-    return view('register');
-})->name('register');
-
 
 Route::get('/assessment', [AssessmentController::class, 'index'])->name('assessment.index');
 Route::post('/assessment', [AssessmentController::class, 'store'])->name('assessment.store');
-Route::get('/results/{id}', [AssessmentController::class, 'results'])->name('assessment.results');
 Route::post('/assessment/result', [AssessmentController::class, 'calculateBurnout'])->name('assessment.result');
 Route::get('/assessment/result', [AssessmentController::class, 'showResultError'])->name('assessment.result.error');
 
 
-// Admin routes - protected by auth middleware
+// Admin routes
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 Route::get('/view', [AdminController::class, 'report'])->name('admin.report');

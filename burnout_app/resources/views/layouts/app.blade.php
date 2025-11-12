@@ -103,7 +103,7 @@
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h18M3 6h18M3 18h18"></path>
                         </svg>
-                        View Report
+                        View Records
                     </a>
                     <a href="{{ route('admin.questions') }}" class="flex items-center px-3 py-4 text-xs font-medium transition border-b border-gray-200 rounded-lg @if(request()->routeIs('admin.questions')) text-white bg-indigo-500 @else text-neutral-800 hover:bg-indigo-100 @endif">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

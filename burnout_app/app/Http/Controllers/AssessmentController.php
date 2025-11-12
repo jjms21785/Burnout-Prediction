@@ -212,7 +212,58 @@ class AssessmentController extends Controller
         ]);
         $assessment->save();
 
-        return redirect()->route('assessment.results', $assessment->id);
+        // Prepare data for result view (same as calculateBurnout method)
+        $exhaustionAverage = count($exhaustionItems) > 0 ? ($exhaustionScore ?? 0) / count($exhaustionItems) : 0;
+        $disengagementAverage = count($disengagementItems) > 0 ? ($disengagementScore ?? 0) / count($disengagementItems) : 0;
+        
+        // Determine categories if not set by Python
+        if (!isset($exhaustionCategory)) {
+            $exhaustionCategory = $exhaustionAverage >= 2.25 ? 'High' : 'Low';
+        }
+        if (!isset($disengagementCategory)) {
+            $disengagementCategory = $disengagementAverage >= 2.10 ? 'High' : 'Low';
+        }
+        
+        // Generate basic interpretations/recommendations if missing
+        if (!$interpretations) {
+            $interpretations = ResultController::generateBasicInterpretations($exhaustionCategory, $disengagementCategory, $exhaustionAverage, $disengagementAverage);
+        }
+        if (!$recommendations) {
+            $recommendations = ResultController::generateBasicRecommendations($exhaustionCategory, $disengagementCategory);
+        }
+        
+        // Get predicted label
+        $predictedLabel = ucfirst($overallRisk);
+        if ($prediction && $prediction !== 'unknown') {
+            $predictedLabel = ucfirst($prediction);
+        }
+        
+        // Prepare demographics for view
+        $name = $validated['name'];
+        $age = $validated['age'];
+        $gender = $validated['gender'];
+        $program = $validated['program'];
+        $year_level = $validated['year_level'];
+        $original_responses = $responses;
+        $totalScore = $exhaustionScore + $disengagementScore;
+        
+        // Process result data for view using ResultController
+        $resultData = ResultController::processResultForView(
+            $dataAvailable,
+            $exhaustionCategory,
+            $disengagementCategory,
+            $barGraph,
+            null
+        );
+
+        // Return result view directly (same as calculateBurnout)
+        return view('assessment.result', compact(
+            'responses', 'original_responses', 'name', 'age', 'gender', 'program', 'year_level',
+            'totalScore', 'predictedLabel',
+            'exhaustionScore', 'disengagementScore', 'exhaustionItems', 'disengagementItems', 'overallRisk',
+            'exhaustionAverage', 'disengagementAverage', 'exhaustionCategory', 'disengagementCategory',
+            'interpretations', 'recommendations', 'barGraph', 'dataAvailable'
+        ))->with($resultData);
     }
 
     public function calculateBurnout(Request $request)
@@ -453,148 +504,6 @@ class AssessmentController extends Controller
             'exhaustionScore', 'disengagementScore', 'exhaustionItems', 'disengagementItems', 'errorMsg', 'overallRisk',
             'exhaustionAverage', 'disengagementAverage', 'exhaustionCategory', 'disengagementCategory',
             'interpretations', 'recommendations', 'barGraph', 'dataAvailable'
-        ))->with($resultData);
-    }
-
-    /**
-     * Extract responses from assessment (used by both calculateBurnout and results)
-     */
-    private function extractResponsesFromAssessment($assessment)
-    {
-        $original_responses = $assessment->raw_answers ?? [];
-        $responses = [];
-        
-        if (!empty($original_responses) && is_array($original_responses)) {
-            if (isset($original_responses['Q1'])) {
-                $responses = $original_responses;
-            } else {
-                foreach ($original_responses as $i => $answer) {
-                    if ($answer !== null && $answer !== '') {
-                        $responses['Q' . ($i + 1)] = (int) $answer;
-                    }
-                }
-            }
-        }
-        
-        // Try answersData if still empty
-        if (empty($responses)) {
-            $answersData = $assessment->answers;
-            if (is_string($answersData)) {
-                $answersData = json_decode($answersData, true) ?? [];
-            }
-            if (isset($answersData['responses']) && is_array($answersData['responses'])) {
-                $responses = $answersData['responses'];
-            }
-        }
-        
-        return ['responses' => $responses, 'original_responses' => $original_responses];
-    }
-
-    public function results($id)
-    {
-        $assessment = Assessment::findOrFail($id);
-        
-        // Extract responses same way calculateBurnout does
-        $responseData = $this->extractResponsesFromAssessment($assessment);
-        $responses = $responseData['responses'];
-        $original_responses = $responseData['original_responses'];
-        
-        // Get stored Python response (same as calculateBurnout would have)
-        $answersData = $assessment->answers;
-        if (is_string($answersData)) {
-            $answersData = json_decode($answersData, true) ?? [];
-        }
-        $pythonResponse = $answersData['python_response'] ?? null;
-        
-        // Reuse exact same calculation logic as calculateBurnout
-        $exhaustionItems = ['Q16', 'Q17', 'Q20', 'Q21', 'Q23', 'Q25', 'Q28', 'Q29'];
-        $disengagementItems = ['Q15', 'Q18', 'Q19', 'Q22', 'Q24', 'Q26', 'Q27', 'Q30'];
-        $exhaustionScore = $assessment->Exhaustion ?? $assessment->exhaustion_score ?? null;
-        $disengagementScore = $assessment->Disengagement ?? $assessment->disengagement_score ?? null;
-        
-        if ($exhaustionScore === null && !empty($responses)) {
-            $exhaustionScore = array_sum(array_intersect_key($responses, array_flip($exhaustionItems)));
-        }
-        if ($disengagementScore === null && !empty($responses)) {
-            $disengagementScore = array_sum(array_intersect_key($responses, array_flip($disengagementItems)));
-        }
-        
-        $exhaustionAverage = count($exhaustionItems) > 0 ? ($exhaustionScore ?? 0) / count($exhaustionItems) : 0;
-        $disengagementAverage = count($disengagementItems) > 0 ? ($disengagementScore ?? 0) / count($disengagementItems) : 0;
-        $exhaustionCategory = $exhaustionAverage >= 2.25 ? 'High' : 'Low';
-        $disengagementCategory = $disengagementAverage >= 2.10 ? 'High' : 'Low';
-        $totalScore = ($exhaustionScore ?? 0) + ($disengagementScore ?? 0);
-        
-        // Process Python response same way calculateBurnout does
-        $interpretations = null;
-        $recommendations = null;
-        $barGraph = null;
-        $dataAvailable = false;
-        $predictedLabel = null;
-        
-        if ($pythonResponse) {
-            $processedData = ResultController::processPythonResponse($pythonResponse);
-            $predictedLabel = $processedData['predicted_label'] ?? null;
-            $exhaustionCategory = $processedData['exhaustion_category'] ?? $exhaustionCategory;
-            $disengagementCategory = $processedData['disengagement_category'] ?? $disengagementCategory;
-            $interpretations = $processedData['interpretations'] ?? null;
-            $recommendations = $processedData['recommendations'] ?? null;
-            $barGraph = $processedData['bar_graph'] ?? null;
-            $dataAvailable = $processedData['data_available'] ?? false;
-            
-            // Recalculate scores from bar graph if available (same as calculateBurnout)
-            if ($barGraph) {
-                if (isset($barGraph['Exhaustion'])) {
-                    $exhaustionAvg = ($barGraph['Exhaustion'] / 100) * 4;
-                    $exhaustionScore = round($exhaustionAvg * 8);
-                }
-                if (isset($barGraph['Disengagement'])) {
-                    $disengagementAvg = ($barGraph['Disengagement'] / 100) * 4;
-                    $disengagementScore = round($disengagementAvg * 8);
-                }
-            }
-        } else {
-            // Get stored interpretations/recommendations
-            $interpretations = $assessment->interpretations ?? $answersData['interpretations'] ?? null;
-            $recommendations = $assessment->recommendations ?? $answersData['recommendations'] ?? null;
-            $barGraph = $answersData['bar_graph'] ?? null;
-        }
-
-        // Removed special synthesis of bar graph when viewing from View Report page
-        
-        // Generate basic if missing (same fallback as calculateBurnout)
-        if (!$interpretations) {
-            $interpretations = ResultController::generateBasicInterpretations($exhaustionCategory, $disengagementCategory, $exhaustionAverage, $disengagementAverage);
-        }
-        if (!$recommendations) {
-            $recommendations = ResultController::generateBasicRecommendations($exhaustionCategory, $disengagementCategory);
-        }
-        if (!$dataAvailable && ($exhaustionScore !== null || $disengagementScore !== null || !empty($responses))) {
-            $dataAvailable = true;
-        }
-        
-        // Get predicted label (same logic as calculateBurnout)
-        if (!$predictedLabel) {
-            $predictedLabel = ucfirst($assessment->Burnout_Category ?? $assessment->overall_risk ?? 'Unknown');
-        }
-        
-        // Extract demographics (same as calculateBurnout output format)
-        $name = $assessment->name ?? 'Unavailable';
-        $age = $assessment->age ?? null;
-        $gender = $assessment->gender ?? $assessment->sex ?? 'Unavailable';
-        $program = $assessment->program ?? $assessment->college ?? 'Unavailable';
-        $year_level = $assessment->year_level ?? $assessment->year ?? 'Unavailable';
-        
-        // Process result same way calculateBurnout does
-        $resultData = ResultController::processResultForView($dataAvailable, $exhaustionCategory, $disengagementCategory, $barGraph, null);
-        
-        // Return same view with same variables (same as calculateBurnout)
-        return view('assessment.result', compact(
-            'assessment', 'responses', 'original_responses', 
-            'name', 'age', 'gender', 'program', 'year_level',
-            'exhaustionScore', 'disengagementScore', 'totalScore',
-            'exhaustionAverage', 'disengagementAverage', 'exhaustionCategory', 'disengagementCategory',
-            'interpretations', 'recommendations', 'predictedLabel', 'barGraph', 'dataAvailable'
         ))->with($resultData);
     }
 

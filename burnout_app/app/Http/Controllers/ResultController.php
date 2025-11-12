@@ -36,7 +36,7 @@ class ResultController extends Controller
         ],
         'C4' => [
             'title' => 'High Exhaustion + High Disengagement = High Burnout',
-            'text' => 'Base on the result, both physically exhausted and emotionally disconnected. The burnout has gone beyond early stages. Running on empty without motivation to refuel. This affects not just school but likely relationships, health, and overall quality of life. This needs immediate rest or support.'
+            'text' => 'Base on the result, both physically exhausted and emotionally disconnected. The burnout has gone beyond early stages. Running on empty without motivation to refuel. This affects not just school but likely relationships, health, and overall quality of life. This needs immediate rest and support.'
         ],
         'D1' => [
             'title' => 'Academic Performance - Good',
@@ -285,19 +285,19 @@ class ResultController extends Controller
         if ($exhaustionCategory == 'Low' && $disengagementCategory == 'Low') {
             $category = 'low';
             $categoryName = 'Low Burnout';
-            $categoryCode = 'Low Exhaustion + Low Disengagement';
+            $categoryCode = 'Low Exhaustion & Low Disengagement';
         } elseif ($exhaustionCategory == 'High' && $disengagementCategory == 'Low') {
             $category = 'exhausted';
             $categoryName = 'Exhausted';
-            $categoryCode = 'High Exhaustion + Low Disengagement';
+            $categoryCode = 'High Exhaustion & Low Disengagement';
         } elseif ($exhaustionCategory == 'Low' && $disengagementCategory == 'High') {
             $category = 'disengaged';
             $categoryName = 'Disengaged';
-            $categoryCode = 'Low Exhaustion + High Disengagement';
+            $categoryCode = 'Low Exhaustion & High Disengagement';
         } else {
             $category = 'high';
             $categoryName = 'High Burnout';
-            $categoryCode = 'High Exhaustion + High Disengagement';
+            $categoryCode = 'High Exhaustion & High Disengagement';
         }
 
         $exhaustionPercent = isset($barGraph['Exhaustion']) ? round($barGraph['Exhaustion']) : 0;

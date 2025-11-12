@@ -127,34 +127,35 @@
                             </div>
                         @endfor
                     
-                    <!-- Navigation Buttons -->
-                    <div class="text-center pb-4">
-                        <div class="flex justify-center gap-4">
+                     <!-- Navigation Buttons -->
+                     <div class="pb-4">
+                        <div class="flex justify-between items-center gap-4">
                             <button type="button" 
                                     id="prevBtn"
                                     class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-lg font-medium transition-colors"
                                     style="display:none;">
                                 Previous
                             </button>
-                            <button type="button" 
-                                    id="nextSectionBtn"
-                                    class="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium transition-colors relative"
-                                    title="Please answer all questions in this section">
-                                Next
-                            </button>
-                            <button type="button" 
-                                    id="resetBtn"
-                                    class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-lg font-medium transition-colors"
-                                    style="display:none;">
-                                Reset
-                            </button>
-                            <button type="submit" 
-                                    id="submitBtn"
-                                    class="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium transition-colors opacity-50 cursor-not-allowed"
-                                    disabled
-                                    style="display:none;">
-                                Submit
-                            </button>
+                            <div class="flex gap-4 ml-auto">
+                                <button type="button" 
+                                        id="nextSectionBtn"
+                                        class="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium transition-colors relative"
+                                        title="Please answer all questions in this section">
+                                    Next
+                                </button>
+                                <button type="button" 
+                                        id="resetBtn"
+                                        class="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+                                        style="display:none;">
+                                    Reset
+                                </button>
+                                <button type="submit" 
+                                        id="submitBtn"
+                                        class="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium transition-colors opacity-50 cursor-not-allowed"
+                                        disabled
+                                        style="display:none;">
+                                    Submit
+                                </button>
                             </div>
                         </div>
                     </div>

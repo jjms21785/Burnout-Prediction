@@ -26,12 +26,6 @@
             
             <!-- Action Buttons - Top Right -->
             <div class="absolute top-4 right-4 flex flex-col gap-2 z-20">
-                <a href="{{ route('assessment.index') }}" class="inline-flex items-center px-2 py-1.5 bg-white text-indigo-600 text-xs font-medium rounded-lg shadow hover:bg-indigo-50 hover:shadow-md transition-all duration-200">
-                    <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Retake
-                </a>
                 <button onclick="exportToPDF()" class="inline-flex items-center px-2 py-1.5 bg-white text-indigo-600 text-xs font-medium rounded-lg shadow hover:bg-indigo-50 hover:shadow-md transition-all duration-200">
                     <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -56,7 +50,21 @@
             <div class="bg-white rounded-xl p-7 shadow-sm border border-indigo-100">
                 <!-- Assessment Breakdown by Category - Two Column Layout -->
                 <div class="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                    <!-- Left Column: Interpretations -->
+                    <!-- Left Column: Chart -->
+                    <div class="flex flex-col h-full">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Breakdown by Category</h3>
+                        <div class="relative flex-1 w-full min-h-[300px]">
+                            @if($hasData && isset($barGraph) && is_array($barGraph))
+                                <canvas id="assessmentBreakdownChart"></canvas>
+                            @else
+                                <div class="flex items-center justify-center h-full">
+                                    <p class="text-gray-500 text-lg">Unavailable</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Interpretations -->
                     <div class="flex flex-col">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Interpretation</h3>
                         @if($hasData && isset($interpretations) && is_array($interpretations))
@@ -104,20 +112,6 @@
                         @else
                             <p class="text-gray-600 text-sm">Unavailable</p>
                         @endif
-                    </div>
-
-                    <!-- Right Column: Chart -->
-                    <div class="flex flex-col h-full">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Breakdown by Category</h3>
-                        <div class="relative flex-1 w-full min-h-[300px]">
-                            @if($hasData && isset($barGraph) && is_array($barGraph))
-                                <canvas id="assessmentBreakdownChart"></canvas>
-                            @else
-                                <div class="flex items-center justify-center h-full">
-                                    <p class="text-gray-500 text-lg">Unavailable</p>
-                                </div>
-                            @endif
-                        </div>
                     </div>
                 </div>
             </div>
