@@ -19,8 +19,8 @@ class AdminUserSeeder extends Seeder
         if (!$admin) {
             User::create([
                 'name' => 'Admin',
-                'email' => 'admin@email.com',
-                'password' => Hash::make('admin@password'),
+                'email' => 'admin',
+                'password' => Hash::make('admin'),
             ]);
             $this->command->info('Admin user created successfully!');
         } else {

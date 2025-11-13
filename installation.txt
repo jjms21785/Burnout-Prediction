@@ -9,13 +9,14 @@ composer install
 npm install
 
 cp .env.example .env 
-(copy rename the .env.example file to .env) 
 
 php artisan key:generate
 
 php artisan migrate --seed
 
 php artisan optimize:clear
+
+npm run build
 
 composer run dev
 

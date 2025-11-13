@@ -9,6 +9,7 @@ export default defineConfig({
                 'resources/css/app.css', 
                 'resources/js/app.js',
                 'resources/js/dashboard.js',
+                'resources/js/export.js',
                 'resources/js/files.js',
                 'resources/js/report.js',
                 'resources/js/assessment.js'
