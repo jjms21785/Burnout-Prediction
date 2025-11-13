@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // User is not authenticated
             
             // If on admin pages and not authenticated, redirect to login
-            const adminRoutes = ['/dashboard', '/view', '/questions', '/files', '/settings'];
+            const adminRoutes = ['/dashboard', '/records', '/questions', '/files', '/settings'];
             const currentPath = window.location.pathname;
             if (adminRoutes.some(route => currentPath.startsWith(route))) {
                 window.location.href = '/login';
@@ -47,14 +47,12 @@ document.addEventListener('DOMContentLoaded', function() {
             gender: document.getElementById('dmGenderFilter')?.value || '',
             program: document.getElementById('dmDeptFilter')?.value || '',
             risk: document.getElementById('dmRiskFilter')?.value || '',
-            time: document.getElementById('dmTimeFilter')?.value || '',
-            olbi_sort: document.getElementById('dmOlbiSort')?.value || '',
-            conf_sort: document.getElementById('dmConfSort')?.value || ''
+            time: document.getElementById('dmTimeFilter')?.value || ''
         };
     }
     function attachDMListeners() {
         const ids = [
-            'dmSearchInput','dmGradeFilter','dmAgeFilter','dmGenderFilter','dmDeptFilter','dmRiskFilter','dmTimeFilter','dmOlbiSort','dmConfSort'
+            'dmSearchInput','dmGradeFilter','dmAgeFilter','dmGenderFilter','dmDeptFilter','dmRiskFilter','dmTimeFilter'
         ];
         ids.forEach(id => {
             const el = document.getElementById(id);
@@ -68,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     function reloadDMTable() {
         const params = getDMParams();
-        const url = new URL('/admin/report', window.location.origin);
+        const url = new URL('/admin/records', window.location.origin);
         Object.entries(params).forEach(([k,v]) => { if(v) url.searchParams.append(k,v); });
         fetch(url)
             .then(res => res.json())
@@ -92,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
         attachDMListeners();
         reloadDMTable();
         // Populate department filter
-        fetch('/admin/report/programs')
+        fetch('/admin/records/programs')
             .then(res => res.json())
             .then(programs => {
                 const deptSel = document.getElementById('dmDeptFilter');

@@ -1,6 +1,6 @@
 /**
- * Report JavaScript Module
- * Handles all assessment report table functionality including:
+ * Records JavaScript Module
+ * Handles all assessment records table functionality including:
  * - Data loading and transformation
  * - Table rendering with inline editing
  * - Sorting, filtering, and pagination
@@ -34,7 +34,7 @@ let currentSortOrder = 'asc';
 
 // Configuration (will be set from Blade template)
 let config = {
-    reportRoute: '',
+    recordsRoute: '',
     updateRoute: '',
     deleteRoute: '',
     csrfToken: ''
@@ -44,10 +44,10 @@ let config = {
  * Initialize configuration from window object
  */
 function initializeConfig() {
-    if (window.reportConfig) {
+    if (window.recordsConfig) {
         config = {
             ...config,
-            ...window.reportConfig
+            ...window.recordsConfig
         };
     }
 }
@@ -61,11 +61,11 @@ function transformAssessmentData(item) {
     const firstName = nameParts[0] || 'Unavailable';
     const lastName = nameParts.slice(1).join(' ') || 'Unavailable';
     
-    // Map overall_risk to category
+    // Map risk (Burnout_Category) to category
     let category = 'Unavailable';
     const risk = item.risk;
     
-    // Handle numeric risk values (0, 1, 2, 3)
+    // Handle numeric risk values (0, 1, 2, 3) from ML model
     if (risk === '0' || risk === 0) {
         category = 'Low Burnout';
     } else if (risk === '1' || risk === 1) {
@@ -75,46 +75,18 @@ function transformAssessmentData(item) {
     } else if (risk === '3' || risk === 3) {
         category = 'High Burnout';
     } else {
-        // Fallback: try to determine from risk string or scores
+        // Fallback for string values or unknown
         const riskLower = String(risk || '').toLowerCase();
         if (riskLower === 'high' || riskLower === '3') {
             category = 'High Burnout';
         } else if (riskLower === 'low' || riskLower === '0') {
             category = 'Low Burnout';
-        } else if (riskLower === 'moderate' || riskLower === '1' || riskLower === '2') {
-            // Determine if Exhausted or Disengaged based on scores
-            const exhaustionScore = item.exhaustion_score ?? 0;
-            const disengagementScore = item.disengagement_score ?? 0;
-            // Threshold: 18 for high exhaustion, 17 for high disengagement
-            const highExhaustion = exhaustionScore >= 18;
-            const highDisengagement = disengagementScore >= 17;
-            
-            if (highExhaustion && !highDisengagement) {
-                category = 'Exhausted';
-            } else if (!highExhaustion && highDisengagement) {
-                category = 'Disengaged';
-            } else if (highExhaustion && highDisengagement) {
-                category = 'High Burnout';
-            } else {
-                category = 'Low Burnout';
-            }
-        } else {
-            // Final fallback: calculate from scores if risk is unavailable
-            const exhaustionScore = item.exhaustion_score ?? 0;
-            const disengagementScore = item.disengagement_score ?? 0;
-            const highExhaustion = exhaustionScore >= 18;
-            const highDisengagement = disengagementScore >= 17;
-            
-            if (!highExhaustion && !highDisengagement) {
-                category = 'Low Burnout';
-            } else if (highExhaustion && !highDisengagement) {
-                category = 'Exhausted';
-            } else if (!highExhaustion && highDisengagement) {
-                category = 'Disengaged';
-            } else {
-                category = 'High Burnout';
-            }
+        } else if (riskLower === '1') {
+            category = 'Disengaged';
+        } else if (riskLower === '2') {
+            category = 'Exhausted';
         }
+        // If still unavailable, category remains 'Unavailable'
     }
     
     return {
@@ -133,7 +105,7 @@ function transformAssessmentData(item) {
  * Load assessments from server
  */
 function loadAssessments() {
-    fetch(config.reportRoute, {
+    fetch(config.recordsRoute, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json'
@@ -263,7 +235,7 @@ function renderViewRow(item) {
             <td class="px-4 py-3 text-neutral-800">${item.category || 'Unavailable'}</td>
             <td class="px-4 py-3 text-center">
                 <div class="flex items-center justify-center space-x-1">
-                    <button onclick="openInterventionModal('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-white bg-indigo-500 hover:bg-indigo-600">View</button>
+                    <button onclick="openViewModal('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-white bg-indigo-500 hover:bg-indigo-600">View</button>
                     <button onclick="startEdit('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-neutral-800 bg-gray-100 hover:bg-gray-200">Edit</button>
                     <button onclick="deleteAssessment('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-white bg-red-500 hover:bg-red-600">Delete</button>
                 </div>
@@ -307,11 +279,60 @@ function renderTable() {
 function updatePagination() {
     const totalPages = Math.ceil(filteredData.length / entriesPerPage);
     
-    // Disable/enable buttons
+    // Get all pagination buttons
+    const startBtn = document.getElementById('startBtn');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
-    if (prevBtn) prevBtn.disabled = currentPage === 1;
-    if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+    const endBtn = document.getElementById('endBtn');
+    
+    // Base classes for buttons (same as sorting buttons)
+    const activeClass = 'flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-indigo-500 text-white hover:bg-indigo-600';
+    const inactiveClass = 'flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-white text-neutral-800 hover:bg-indigo-600 hover:text-white';
+    const disabledClass = 'flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed';
+    
+    // Update start button
+    if (startBtn) {
+        if (currentPage === 1 || totalPages === 0) {
+            startBtn.className = disabledClass;
+            startBtn.disabled = true;
+        } else {
+            startBtn.className = inactiveClass;
+            startBtn.disabled = false;
+        }
+    }
+    
+    // Update prev button
+    if (prevBtn) {
+        if (currentPage === 1 || totalPages === 0) {
+            prevBtn.className = disabledClass;
+            prevBtn.disabled = true;
+        } else {
+            prevBtn.className = inactiveClass;
+            prevBtn.disabled = false;
+        }
+    }
+    
+    // Update next button
+    if (nextBtn) {
+        if (currentPage === totalPages || totalPages === 0) {
+            nextBtn.className = disabledClass;
+            nextBtn.disabled = true;
+        } else {
+            nextBtn.className = inactiveClass;
+            nextBtn.disabled = false;
+        }
+    }
+    
+    // Update end button
+    if (endBtn) {
+        if (currentPage === totalPages || totalPages === 0) {
+            endBtn.className = disabledClass;
+            endBtn.disabled = true;
+        } else {
+            endBtn.className = inactiveClass;
+            endBtn.disabled = false;
+        }
+    }
 }
 
 /**
@@ -319,11 +340,19 @@ function updatePagination() {
  */
 function changePage(direction) {
     const totalPages = Math.ceil(filteredData.length / entriesPerPage);
-    if (direction === 'prev' && currentPage > 1) {
+    
+    if (totalPages === 0) return;
+    
+    if (direction === 'start') {
+        currentPage = 1;
+    } else if (direction === 'prev' && currentPage > 1) {
         currentPage--;
     } else if (direction === 'next' && currentPage < totalPages) {
         currentPage++;
+    } else if (direction === 'end') {
+        currentPage = totalPages;
     }
+    
     renderTable();
 }
 
@@ -426,11 +455,16 @@ function filterByCategory(category) {
  */
 function applyFilters() {
     filteredData = assessmentsData.filter(item => {
-        // Apply search filter
+        // Apply search filter - search across all columns
         const searchMatch = currentSearchTerm === '' || 
-            item.firstName.toLowerCase().includes(currentSearchTerm) ||
-            item.lastName.toLowerCase().includes(currentSearchTerm) ||
-            item.program.toLowerCase().includes(currentSearchTerm);
+            String(item.id || '').toLowerCase().includes(currentSearchTerm) ||
+            String(item.firstName || '').toLowerCase().includes(currentSearchTerm) ||
+            String(item.lastName || '').toLowerCase().includes(currentSearchTerm) ||
+            String(item.gender || '').toLowerCase().includes(currentSearchTerm) ||
+            String(item.age || '').toLowerCase().includes(currentSearchTerm) ||
+            String(item.program || '').toLowerCase().includes(currentSearchTerm) ||
+            String(item.yearLevel || '').toLowerCase().includes(currentSearchTerm) ||
+            String(item.category || '').toLowerCase().includes(currentSearchTerm);
         
         // Apply category filter
         const categoryMatch = currentCategoryFilter === 'all' || 
@@ -690,9 +724,9 @@ function initializeEventListeners() {
 }
 
 /**
- * Initialize the report module
+ * Initialize the records module
  */
-function initializeReport() {
+function initializeRecords() {
     initializeConfig();
     initializeEventListeners();
     loadAssessments();
@@ -700,9 +734,9 @@ function initializeReport() {
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeReport);
+    document.addEventListener('DOMContentLoaded', initializeRecords);
 } else {
-    initializeReport();
+    initializeRecords();
 }
 
 // Export functions to global scope for onclick handlers

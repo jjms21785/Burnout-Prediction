@@ -1,67 +1,72 @@
 /**
- * Intervention JavaScript Module
- * Handles intervention view, data loading, and email sending
+ * View JavaScript Module
+ * Handles viewing assessment details, data loading, and email sending
  */
 
-// Configuration from Blade
+// Configuration from Blade template
 let config = {
     showRoute: '',
-    sendRoute: '',
+    sendEmailRoute: '',
     csrfToken: ''
 };
 
-// State
+// State management
 let currentAssessmentId = null;
 let currentAssessmentData = null;
 
 /**
  * Initialize configuration from window object
+ * Gets view configuration from records.blade.php
  */
 function initializeConfig() {
-    if (window.interventionConfig) {
+    if (window.viewConfig) {
         config = {
             ...config,
-            ...window.interventionConfig
+            ...window.viewConfig
         };
     }
 }
 
 /**
- * Open intervention view for a specific assessment
+ * Open view modal for a specific assessment
+ * Shows detailed assessment information in a modal view
+ * 
+ * @param {string} assessmentId - The ID of the assessment to view
  */
-function openInterventionModal(assessmentId) {
+function openViewModal(assessmentId) {
     currentAssessmentId = assessmentId;
     
-    // Hide table view, show intervention view
+    // Hide table view, show view container
     const tableView = document.getElementById('tableView');
-    const interventionView = document.getElementById('interventionView');
+    const viewContainer = document.getElementById('viewContainer');
     
     if (tableView) tableView.classList.add('hidden');
-    if (interventionView) interventionView.classList.remove('hidden');
+    if (viewContainer) viewContainer.classList.remove('hidden');
     
     // Fetch assessment data
     fetchAssessmentData(assessmentId);
 }
 
 /**
- * Close intervention view and return to table
+ * Close view modal and return to table
+ * Hides the detailed view and shows the records table again
  */
-function closeInterventionModal() {
-    // Hide intervention view, show table view
+function closeViewModal() {
+    // Hide view container, show table view
     const tableView = document.getElementById('tableView');
-    const interventionView = document.getElementById('interventionView');
+    const viewContainer = document.getElementById('viewContainer');
     
     if (tableView) tableView.classList.remove('hidden');
-    if (interventionView) interventionView.classList.add('hidden');
+    if (viewContainer) viewContainer.classList.add('hidden');
     
     // Reset form
-    resetInterventionForm();
+    resetViewForm();
     currentAssessmentId = null;
     currentAssessmentData = null;
 }
 
 /**
- * Show loading state in intervention view
+ * Show loading state in view container
  */
 function showLoadingState() {
     // No loading animation needed
@@ -69,6 +74,9 @@ function showLoadingState() {
 
 /**
  * Fetch assessment data from server
+ * Retrieves detailed assessment information via API
+ * 
+ * @param {string} assessmentId - The ID of the assessment to fetch
  */
 function fetchAssessmentData(assessmentId) {
     const url = config.showRoute.replace(':id', assessmentId);
@@ -87,7 +95,7 @@ function fetchAssessmentData(assessmentId) {
     })
     .then(data => {
         currentAssessmentData = data;
-        populateInterventionView(data);
+        populateViewContainer(data);
     })
     .catch(error => {
         console.error('Error fetching assessment data:', error);
@@ -96,10 +104,13 @@ function fetchAssessmentData(assessmentId) {
 }
 
 /**
- * Show error state in intervention view
+ * Show error state in view container
+ * Displays error message when data fetch fails
+ * 
+ * @param {string} message - Error message to display
  */
 function showErrorState(message) {
-    const contentDiv = document.getElementById('interventionContent');
+    const contentDiv = document.getElementById('viewContent');
     if (contentDiv) {
         contentDiv.innerHTML = `
             <div class="flex items-center justify-center py-12">
@@ -108,7 +119,7 @@ function showErrorState(message) {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <p class="mt-4 text-gray-600">${message}</p>
-                    <button onclick="closeInterventionModal()" class="mt-4 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                    <button onclick="closeViewModal()" class="mt-4 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
                         Back to Table
                     </button>
                 </div>
@@ -118,10 +129,13 @@ function showErrorState(message) {
 }
 
 /**
- * Populate intervention view with assessment data
+ * Populate view container with assessment data
+ * Renders detailed assessment information including scores, levels, and recommendations
+ * 
+ * @param {object} data - Assessment data object containing all assessment details
  */
-function populateInterventionView(data) {
-    const contentDiv = document.getElementById('interventionContent');
+function populateViewContainer(data) {
+    const contentDiv = document.getElementById('viewContent');
     if (!contentDiv) return;
     
     // Determine category badge color
@@ -265,7 +279,7 @@ function populateInterventionView(data) {
         <!-- Header with Back Button -->
         <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
             <h2 class="text-2xl font-semibold text-gray-800">Results</h2>
-            <button onclick="closeInterventionModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            <button onclick="closeViewModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                 ← Back to Table
             </button>
         </div>
@@ -364,7 +378,7 @@ function populateInterventionView(data) {
             <!-- Right Column: Send an email form -->
             <div class="bg-white rounded-lg p-4 border border-gray-200">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Send an Email</h3>
-                <form id="interventionForm" onsubmit="handleFormSubmit(event)">
+                <form id="viewForm" onsubmit="handleFormSubmit(event)">
                     <div class="space-y-4">
                         <!-- Email Address -->
                         <div>
@@ -382,24 +396,41 @@ function populateInterventionView(data) {
                             >
                         </div>
                         
-                        <!-- Appointment Date/Time -->
+                        <!-- Send Options -->
                         <div>
-                            <label for="appointmentDatetime" class="block text-sm font-medium text-gray-700 mb-1">
-                                Appointment Date & Time
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                What would you like to do? <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="datetime-local" 
-                                id="appointmentDatetime" 
-                                name="appointment_datetime"
-                                min="${new Date().toISOString().slice(0, 16)}"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            >
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input 
+                                        type="checkbox" 
+                                        id="sendMessageCheckbox"
+                                        name="send_options[]"
+                                        value="message"
+                                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                        onchange="toggleMessageField()"
+                                    >
+                                    <span class="ml-2 text-sm text-gray-700">Send Message</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input 
+                                        type="checkbox" 
+                                        id="scheduleAppointmentCheckbox"
+                                        name="send_options[]"
+                                        value="appointment"
+                                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                        onchange="toggleAppointmentField()"
+                                    >
+                                    <span class="ml-2 text-sm text-gray-700">Schedule Appointment</span>
+                                </label>
+                            </div>
                         </div>
                         
-                        <!-- Additional Message -->
-                        <div>
+                        <!-- Message Field (Conditional) -->
+                        <div id="messageFieldContainer" class="hidden">
                             <label for="additionalMessage" class="block text-sm font-medium text-gray-700 mb-1">
-                                Message
+                                Message <span class="text-red-500">*</span>
                             </label>
                             <textarea 
                                 id="additionalMessage" 
@@ -409,13 +440,27 @@ function populateInterventionView(data) {
                                 placeholder="Add any personalized notes or instructions for the student..."
                             ></textarea>
                         </div>
+                        
+                        <!-- Appointment Date/Time Field (Conditional) -->
+                        <div id="appointmentFieldContainer" class="hidden">
+                            <label for="appointmentDatetime" class="block text-sm font-medium text-gray-700 mb-1">
+                                Appointment Date & Time <span class="text-red-500">*</span>
+                            </label>
+                            <input 
+                                type="datetime-local" 
+                                id="appointmentDatetime" 
+                                name="appointment_datetime"
+                                min="${new Date().toISOString().slice(0, 16)}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                        </div>
                     </div>
                     
                     <!-- Action Buttons -->
                     <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
                         <button 
                             type="button" 
-                            onclick="closeInterventionModal()" 
+                            onclick="closeViewModal()" 
                             class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >
                             Cancel
@@ -435,6 +480,46 @@ function populateInterventionView(data) {
 }
 
 /**
+ * Toggle message field visibility based on checkbox
+ */
+function toggleMessageField() {
+    const checkbox = document.getElementById('sendMessageCheckbox');
+    const container = document.getElementById('messageFieldContainer');
+    const textarea = document.getElementById('additionalMessage');
+    
+    if (checkbox && container && textarea) {
+        if (checkbox.checked) {
+            container.classList.remove('hidden');
+            textarea.required = true;
+        } else {
+            container.classList.add('hidden');
+            textarea.required = false;
+            textarea.value = '';
+        }
+    }
+}
+
+/**
+ * Toggle appointment field visibility based on checkbox
+ */
+function toggleAppointmentField() {
+    const checkbox = document.getElementById('scheduleAppointmentCheckbox');
+    const container = document.getElementById('appointmentFieldContainer');
+    const input = document.getElementById('appointmentDatetime');
+    
+    if (checkbox && container && input) {
+        if (checkbox.checked) {
+            container.classList.remove('hidden');
+            input.required = true;
+        } else {
+            container.classList.add('hidden');
+            input.required = false;
+            input.value = '';
+        }
+    }
+}
+
+/**
  * Handle form submission
  */
 function handleFormSubmit(event) {
@@ -445,8 +530,36 @@ function handleFormSubmit(event) {
         return;
     }
     
-    const form = document.getElementById('interventionForm');
+    const form = document.getElementById('viewForm');
     const sendButton = document.getElementById('sendButton');
+    
+    // Validate that at least one option is selected
+    const sendMessageCheckbox = document.getElementById('sendMessageCheckbox');
+    const scheduleAppointmentCheckbox = document.getElementById('scheduleAppointmentCheckbox');
+    
+    if (!sendMessageCheckbox.checked && !scheduleAppointmentCheckbox.checked) {
+        alert('Please select at least one option: Send Message or Schedule Appointment');
+        return;
+    }
+    
+    // Validate conditional required fields
+    if (sendMessageCheckbox.checked) {
+        const message = document.getElementById('additionalMessage');
+        if (!message.value.trim()) {
+            alert('Please enter a message');
+            message.focus();
+            return;
+        }
+    }
+    
+    if (scheduleAppointmentCheckbox.checked) {
+        const appointment = document.getElementById('appointmentDatetime');
+        if (!appointment.value) {
+            alert('Please select an appointment date and time');
+            appointment.focus();
+            return;
+        }
+    }
     
     // Disable button and show loading
     sendButton.disabled = true;
@@ -454,9 +567,21 @@ function handleFormSubmit(event) {
     
     // Get form data
     const formData = new FormData(form);
+    
+    // Add send options as individual fields for backend processing
+    const sendOptions = [];
+    if (sendMessageCheckbox.checked) {
+        sendOptions.push('message');
+        formData.append('send_message', '1');
+    }
+    if (scheduleAppointmentCheckbox.checked) {
+        sendOptions.push('appointment');
+        formData.append('send_appointment', '1');
+    }
+    
     formData.append('_token', config.csrfToken);
     
-    const url = config.sendRoute.replace(':id', currentAssessmentId);
+    const url = config.sendEmailRoute.replace(':id', currentAssessmentId);
     
     // Send request
     fetch(url, {
@@ -478,7 +603,7 @@ function handleFormSubmit(event) {
     .then(data => {
         if (data.success) {
             alert('Email sent successfully!');
-            closeInterventionModal();
+            closeViewModal();
         } else {
             throw new Error(data.message || 'Failed to send email');
         }
@@ -489,35 +614,50 @@ function handleFormSubmit(event) {
         
         // Re-enable button
         sendButton.disabled = false;
-        sendButton.innerHTML = 'Send Email';
+        sendButton.innerHTML = 'Send';
     });
 }
 
 /**
- * Reset form
+ * Reset view form
+ * Clears all form fields after submission
  */
-function resetInterventionForm() {
-    const form = document.getElementById('interventionForm');
+function resetViewForm() {
+    const form = document.getElementById('viewForm');
     if (form) {
         form.reset();
+        // Hide conditional fields
+        const messageContainer = document.getElementById('messageFieldContainer');
+        const appointmentContainer = document.getElementById('appointmentFieldContainer');
+        if (messageContainer) messageContainer.classList.add('hidden');
+        if (appointmentContainer) appointmentContainer.classList.add('hidden');
+        
+        // Reset required attributes
+        const message = document.getElementById('additionalMessage');
+        const appointment = document.getElementById('appointmentDatetime');
+        if (message) message.required = false;
+        if (appointment) appointment.required = false;
     }
 }
 
 /**
- * Initialize the intervention module
+ * Initialize the view module
+ * Sets up configuration and event listeners when page loads
  */
-function initializeIntervention() {
+function initializeView() {
     initializeConfig();
 }
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeIntervention);
+    document.addEventListener('DOMContentLoaded', initializeView);
 } else {
-    initializeIntervention();
+    initializeView();
 }
 
-// Export functions to global scope
-window.openInterventionModal = openInterventionModal;
-window.closeInterventionModal = closeInterventionModal;
+// Export functions to global scope for onclick handlers
+window.openViewModal = openViewModal;
+window.closeViewModal = closeViewModal;
 window.handleFormSubmit = handleFormSubmit;
+window.toggleMessageField = toggleMessageField;
+window.toggleAppointmentField = toggleAppointmentField;

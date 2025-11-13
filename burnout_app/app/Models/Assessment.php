@@ -22,7 +22,6 @@ class Assessment extends Model
         'Burnout_Category',
         'ip_address',
         'user_agent',
-        'confidence',
     ];
 
     public function user()

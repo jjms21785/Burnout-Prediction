@@ -405,7 +405,6 @@ class FileController extends Controller
             'Burnout_Category' => $overallRisk,
             'Exhaustion' => $scores['exhaustion'],
             'Disengagement' => $scores['disengagement'],
-            'confidence' => $this->resolveConfidence($data),
             'answers' => json_encode($answers),
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
@@ -577,13 +576,6 @@ class FileController extends Controller
             }
         }
         return $score > 0 ? $score : null;
-    }
-
-    private function resolveConfidence($data)
-    {
-        return isset($data['confidence']) && $data['confidence'] !== 'unavailable' 
-            ? (float)$data['confidence'] 
-            : null;
     }
 
     private function validateRequiredFields($age, $gender, $program, $yearLevel)

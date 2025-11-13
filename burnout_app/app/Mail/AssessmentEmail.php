@@ -9,7 +9,11 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class InterventionMail extends Mailable
+/**
+ * AssessmentEmail
+ * Mailable class for sending follow-up counseling appointment emails
+ */
+class AssessmentEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -17,6 +21,8 @@ class InterventionMail extends Mailable
 
     /**
      * Create a new message instance.
+     * 
+     * @param array $emailData Contains student info, burnout category, appointment date, and message
      */
     public function __construct($emailData)
     {
@@ -25,6 +31,7 @@ class InterventionMail extends Mailable
 
     /**
      * Get the message envelope.
+     * Sets email subject based on whether appointment is scheduled
      */
     public function envelope(): Envelope
     {
@@ -42,11 +49,12 @@ class InterventionMail extends Mailable
 
     /**
      * Get the message content definition.
+     * Uses simple email template from views folder
      */
     public function content(): Content
     {
         return new Content(
-            view: 'emails.intervention',
+            view: 'email',
         );
     }
 

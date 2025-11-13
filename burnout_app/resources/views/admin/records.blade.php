@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'View Report - Burnalytics')
+@section('title', 'Records - Burnalytics')
 
 @section('content')
 <!-- Main Content Area -->
@@ -119,43 +119,54 @@
                 <!-- Pagination -->
                 <div class="flex items-center justify-end mt-4">
                     <div class="flex items-center space-x-2">
-                        <button id="prevBtn" class="flex items-center justify-center w-9 h-9 rounded-lg transition text-white bg-indigo-500 hover:bg-indigo-600" onclick="changePage('prev')">
+                        <button id="startBtn" onclick="changePage('start')" class="flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-white text-neutral-800 hover:bg-indigo-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <button id="prevBtn" onclick="changePage('prev')" class="flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-white text-neutral-800 hover:bg-indigo-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                             </svg>
                         </button>
-                        <button id="nextBtn" class="flex items-center justify-center w-9 h-9 rounded-lg transition text-white bg-indigo-500 hover:bg-indigo-600" onclick="changePage('next')">
+                        <button id="nextBtn" onclick="changePage('next')" class="flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-white text-neutral-800 hover:bg-indigo-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                        <button id="endBtn" onclick="changePage('end')" class="flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-white text-neutral-800 hover:bg-indigo-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
                             </svg>
                         </button>
                     </div>
                 </div>
     </div>
 
-    <!-- Intervention View Container -->
-    <div id="interventionView" class="hidden rounded-xl shadow-sm p-6 mb-6 bg-white border border-gray-200">
-        <!-- Intervention Content will be populated by JavaScript -->
-        <div id="interventionContent"></div>
+    <!-- View Container - displays detailed assessment information -->
+    <div id="viewContainer" class="hidden rounded-xl shadow-sm p-6 mb-6 bg-white border border-gray-200">
+        <!-- View Content will be populated by JavaScript -->
+        <div id="viewContent"></div>
     </div>
 </main>
 
 <!-- Pass configuration to JavaScript -->
 <script>
-    window.reportConfig = {
-        reportRoute: '{{ route("admin.report") }}',
+    window.recordsConfig = {
+        recordsRoute: '{{ route("admin.records") }}',
         updateRoute: '{{ route("admin.assessment.update", ":id") }}',
         deleteRoute: '{{ route("admin.assessment.delete", ":id") }}',
         csrfToken: '{{ csrf_token() }}'
     };
     
-    window.interventionConfig = {
-        showRoute: '{{ route("admin.intervention.show", ":id") }}',
-        sendRoute: '{{ route("admin.intervention.send", ":id") }}',
+    // Configuration for view functionality
+    window.viewConfig = {
+        showRoute: '{{ route("admin.view.show", ":id") }}',
+        sendEmailRoute: '{{ route("admin.view.send-email", ":id") }}',
         csrfToken: '{{ csrf_token() }}'
     };
 </script>
 
 <!-- Load JavaScript modules -->
-@vite(['resources/js/report.js', 'resources/js/view.js'])
+@vite(['resources/js/records.js', 'resources/js/view.js'])
 @endsection

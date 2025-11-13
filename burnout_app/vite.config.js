@@ -11,7 +11,7 @@ export default defineConfig({
                 'resources/js/dashboard.js',
                 'resources/js/export.js',
                 'resources/js/files.js',
-                'resources/js/report.js',
+                'resources/js/records.js',
                 'resources/js/assessment.js',
                 'resources/js/view.js'
             ],
