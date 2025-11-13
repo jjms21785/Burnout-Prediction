@@ -35,6 +35,11 @@
                         @error('last_name')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
                     </div>
                     <div>
+                        <label for="email" class="block text-gray-700 text-sm mb-2">Email Address</label>
+                        <input type="email" name="email" id="email" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" maxlength="255">
+                        @error('email')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror
+                    </div>
+                    <div>
                         <label for="age" class="block text-gray-700 text-sm mb-2">Age</label>
                         <input type="number" name="age" id="age" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" min="10" max="100" required>
                         @error('age')<span class="text-red-600 text-xs">{{ $message }}</span>@enderror

@@ -11,6 +11,7 @@ class Assessment extends Model
 
     protected $fillable = [
         'name',
+        'email',
         'age',
         'sex',
         'college',

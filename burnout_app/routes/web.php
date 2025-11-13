@@ -6,11 +6,12 @@ use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\InterventionController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Authentication routes
-use App\Http\Controllers\AuthController;
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
@@ -46,4 +47,8 @@ Route::post('/settings/user-settings', [AdminController::class, 'updateUserSetti
 Route::post('/settings/clear-all-data', [AdminController::class, 'clearAllData'])->name('admin.clear-all-data');
 Route::post('/admin/assessments/{id}', [AdminController::class, 'updateAssessment'])->name('admin.assessment.update');
 Route::post('/admin/assessments/{id}/delete', [AdminController::class, 'deleteAssessment'])->name('admin.assessment.delete');
+
+// Intervention routes
+Route::get('/admin/intervention/{id}', [InterventionController::class, 'show'])->name('admin.intervention.show');
+Route::post('/admin/intervention/{id}/send', [InterventionController::class, 'sendIntervention'])->name('admin.intervention.send');
 });

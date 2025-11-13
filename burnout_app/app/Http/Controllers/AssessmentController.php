@@ -71,6 +71,7 @@ class AssessmentController extends Controller
 
         $assessment = Assessment::create([
             'name' => $validated['name'],
+            'email' => $validated['email'] ?? null,
             'age' => $validated['age'],
             'sex' => $validated['gender'],
             'college' => $validated['program'],
@@ -178,6 +179,7 @@ class AssessmentController extends Controller
         $validated = $request->validate([
             'first_name' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z ]*$/'],
             'last_name' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z ]*$/'],
+            'email' => ['nullable', 'email', 'max:255'],
             'age' => ['required', 'integer', 'min:10', 'max:100'],
             'gender' => ['required', 'string', 'max:255'],
             'program' => ['required', 'string', 'max:255'],
@@ -321,6 +323,7 @@ class AssessmentController extends Controller
 
         $assessment = Assessment::create([
             'name' => $name,
+            'email' => $validated['email'] ?? null,
             'age' => $age,
             'sex' => $gender,
             'college' => $program,

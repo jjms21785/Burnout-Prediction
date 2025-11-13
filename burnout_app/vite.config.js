@@ -12,7 +12,8 @@ export default defineConfig({
                 'resources/js/export.js',
                 'resources/js/files.js',
                 'resources/js/report.js',
-                'resources/js/assessment.js'
+                'resources/js/assessment.js',
+                'resources/js/view.js'
             ],
             refresh: true,
         }),

@@ -5,8 +5,9 @@
 @section('content')
 <!-- Main Content Area -->
 <main class="flex-1 overflow-y-auto p-3">
-    <!-- Assessments Data Table -->
-            <div class="rounded-xl shadow-sm p-6 mb-6 bg-white border border-gray-200">
+    <!-- Table View Container -->
+    <div id="tableView" class="rounded-xl shadow-sm p-6 mb-6 bg-white border border-gray-200">
+        <!-- Assessments Data Table -->
                 <!-- Controls Row -->
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center space-x-3">
@@ -130,7 +131,13 @@
                         </button>
                     </div>
                 </div>
-            </div>
+    </div>
+
+    <!-- Intervention View Container -->
+    <div id="interventionView" class="hidden rounded-xl shadow-sm p-6 mb-6 bg-white border border-gray-200">
+        <!-- Intervention Content will be populated by JavaScript -->
+        <div id="interventionContent"></div>
+    </div>
 </main>
 
 <!-- Pass configuration to JavaScript -->
@@ -141,8 +148,14 @@
         deleteRoute: '{{ route("admin.assessment.delete", ":id") }}',
         csrfToken: '{{ csrf_token() }}'
     };
+    
+    window.interventionConfig = {
+        showRoute: '{{ route("admin.intervention.show", ":id") }}',
+        sendRoute: '{{ route("admin.intervention.send", ":id") }}',
+        csrfToken: '{{ csrf_token() }}'
+    };
 </script>
 
-<!-- Load report JavaScript module -->
-@vite('resources/js/report.js')
+<!-- Load JavaScript modules -->
+@vite(['resources/js/report.js', 'resources/js/view.js'])
 @endsection

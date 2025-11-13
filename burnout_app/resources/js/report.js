@@ -63,24 +63,58 @@ function transformAssessmentData(item) {
     
     // Map overall_risk to category
     let category = 'Unavailable';
-    const risk = (item.risk || '').toLowerCase();
-    if (risk === 'high') {
-        category = 'High Burnout';
-    } else if (risk === 'moderate') {
-        // Determine if Exhausted or Disengaged based on scores
-        const exhaustionScore = item.exhaustion_score ?? 0;
-        const disengagementScore = item.disengagement_score ?? 0;
-        // Threshold: 16 for high exhaustion/disengagement
-        if (exhaustionScore >= 16 && disengagementScore < 16) {
-            category = 'Exhausted';
-        } else if (disengagementScore >= 16 && exhaustionScore < 16) {
-            category = 'Disengaged';
-        } else {
-            // If both or neither meet threshold, default to Exhausted
-            category = 'Exhausted';
-        }
-    } else if (risk === 'low') {
+    const risk = item.risk;
+    
+    // Handle numeric risk values (0, 1, 2, 3)
+    if (risk === '0' || risk === 0) {
         category = 'Low Burnout';
+    } else if (risk === '1' || risk === 1) {
+        category = 'Disengaged';
+    } else if (risk === '2' || risk === 2) {
+        category = 'Exhausted';
+    } else if (risk === '3' || risk === 3) {
+        category = 'High Burnout';
+    } else {
+        // Fallback: try to determine from risk string or scores
+        const riskLower = String(risk || '').toLowerCase();
+        if (riskLower === 'high' || riskLower === '3') {
+            category = 'High Burnout';
+        } else if (riskLower === 'low' || riskLower === '0') {
+            category = 'Low Burnout';
+        } else if (riskLower === 'moderate' || riskLower === '1' || riskLower === '2') {
+            // Determine if Exhausted or Disengaged based on scores
+            const exhaustionScore = item.exhaustion_score ?? 0;
+            const disengagementScore = item.disengagement_score ?? 0;
+            // Threshold: 18 for high exhaustion, 17 for high disengagement
+            const highExhaustion = exhaustionScore >= 18;
+            const highDisengagement = disengagementScore >= 17;
+            
+            if (highExhaustion && !highDisengagement) {
+                category = 'Exhausted';
+            } else if (!highExhaustion && highDisengagement) {
+                category = 'Disengaged';
+            } else if (highExhaustion && highDisengagement) {
+                category = 'High Burnout';
+            } else {
+                category = 'Low Burnout';
+            }
+        } else {
+            // Final fallback: calculate from scores if risk is unavailable
+            const exhaustionScore = item.exhaustion_score ?? 0;
+            const disengagementScore = item.disengagement_score ?? 0;
+            const highExhaustion = exhaustionScore >= 18;
+            const highDisengagement = disengagementScore >= 17;
+            
+            if (!highExhaustion && !highDisengagement) {
+                category = 'Low Burnout';
+            } else if (highExhaustion && !highDisengagement) {
+                category = 'Exhausted';
+            } else if (!highExhaustion && highDisengagement) {
+                category = 'Disengaged';
+            } else {
+                category = 'High Burnout';
+            }
+        }
     }
     
     return {
@@ -229,6 +263,7 @@ function renderViewRow(item) {
             <td class="px-4 py-3 text-neutral-800">${item.category || 'Unavailable'}</td>
             <td class="px-4 py-3 text-center">
                 <div class="flex items-center justify-center space-x-1">
+                    <button onclick="openInterventionModal('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-white bg-indigo-500 hover:bg-indigo-600">View</button>
                     <button onclick="startEdit('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-neutral-800 bg-gray-100 hover:bg-gray-200">Edit</button>
                     <button onclick="deleteAssessment('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-white bg-red-500 hover:bg-red-600">Delete</button>
                 </div>
