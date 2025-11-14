@@ -74,27 +74,18 @@ class ViewController extends Controller
      */
     public function sendEmail(Request $request, $id)
     {
-        // Check if at least one option is selected
+        // Message is always sent, appointment is optional
         $sendMessage = $request->has('send_message') && $request->send_message == '1';
         $sendAppointment = $request->has('send_appointment') && $request->send_appointment == '1';
         
-        if (!$sendMessage && !$sendAppointment) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please select at least one option: Send Message or Schedule Appointment'
-            ], 422);
-        }
-        
         // Build validation rules
+        // Message is always required (always sent)
         $rules = [
-            'email' => 'required|email'
+            'email' => 'required|email',
+            'additional_message' => 'required|string'
         ];
         
-        // Add conditional validation rules
-        if ($sendMessage) {
-            $rules['additional_message'] = 'required|string';
-        }
-        
+        // Add appointment validation only if appointment is checked
         if ($sendAppointment) {
             $rules['appointment_datetime'] = 'required|date';
         }
@@ -113,18 +104,15 @@ class ViewController extends Controller
             // Get burnout category from stored ML prediction (no manual calculation)
             $category = $this->getBurnoutCategory($assessment);
             
-            // Prepare email data (only include selected options)
+            // Prepare email data
+            // Message is always included (always sent)
             $emailData = [
                 'studentName' => $assessment->name ?? 'Student',
                 'category' => $category,
-                'sendMessage' => $sendMessage,
+                'sendMessage' => true, // Always true since message is always sent
+                'additionalMessage' => $request->additional_message,
                 'sendAppointment' => $sendAppointment
             ];
-            
-            // Only include message if option is selected
-            if ($sendMessage) {
-                $emailData['additionalMessage'] = $request->additional_message;
-            }
             
             // Only include appointment if option is selected
             if ($sendAppointment) {

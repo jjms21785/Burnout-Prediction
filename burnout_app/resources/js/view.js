@@ -376,10 +376,10 @@ function populateViewContainer(data) {
             </div>
             
             <!-- Right Column: Send an email form -->
-            <div class="bg-white rounded-lg p-4 border border-gray-200">
+            <div class="bg-white rounded-lg p-4 border border-gray-200 flex flex-col h-full">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Send an Email</h3>
-                <form id="viewForm" onsubmit="handleFormSubmit(event)">
-                    <div class="space-y-4">
+                <form id="viewForm" onsubmit="handleFormSubmit(event)" class="flex flex-col flex-1">
+                    <div class="space-y-4 flex-1">
                         <!-- Email Address -->
                         <div>
                             <label for="studentEmail" class="block text-sm font-medium text-gray-700 mb-1">
@@ -396,39 +396,8 @@ function populateViewContainer(data) {
                             >
                         </div>
                         
-                        <!-- Send Options -->
+                        <!-- Message Field (Always Shown) -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                What would you like to do? <span class="text-red-500">*</span>
-                            </label>
-                            <div class="space-y-2">
-                                <label class="flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        id="sendMessageCheckbox"
-                                        name="send_options[]"
-                                        value="message"
-                                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                                        onchange="toggleMessageField()"
-                                    >
-                                    <span class="ml-2 text-sm text-gray-700">Send Message</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        id="scheduleAppointmentCheckbox"
-                                        name="send_options[]"
-                                        value="appointment"
-                                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                                        onchange="toggleAppointmentField()"
-                                    >
-                                    <span class="ml-2 text-sm text-gray-700">Schedule Appointment</span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <!-- Message Field (Conditional) -->
-                        <div id="messageFieldContainer" class="hidden">
                             <label for="additionalMessage" class="block text-sm font-medium text-gray-700 mb-1">
                                 Message <span class="text-red-500">*</span>
                             </label>
@@ -436,9 +405,25 @@ function populateViewContainer(data) {
                                 id="additionalMessage" 
                                 name="additional_message"
                                 rows="4"
+                                required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 placeholder="Add any personalized notes or instructions for the student..."
                             ></textarea>
+                        </div>
+                        
+                        <!-- Schedule Appointment Checkbox -->
+                        <div>
+                            <label class="flex items-center">
+                                <input 
+                                    type="checkbox" 
+                                    id="scheduleAppointmentCheckbox"
+                                    name="send_options[]"
+                                    value="appointment"
+                                    class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                    onchange="toggleAppointmentField()"
+                                >
+                                <span class="ml-2 text-sm text-gray-700">Schedule an appointment?</span>
+                            </label>
                         </div>
                         
                         <!-- Appointment Date/Time Field (Conditional) -->
@@ -456,7 +441,7 @@ function populateViewContainer(data) {
                         </div>
                     </div>
                     
-                    <!-- Action Buttons -->
+                    <!-- Action Buttons - Fixed to Bottom -->
                     <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
                         <button 
                             type="button" 
@@ -479,25 +464,6 @@ function populateViewContainer(data) {
     `;
 }
 
-/**
- * Toggle message field visibility based on checkbox
- */
-function toggleMessageField() {
-    const checkbox = document.getElementById('sendMessageCheckbox');
-    const container = document.getElementById('messageFieldContainer');
-    const textarea = document.getElementById('additionalMessage');
-    
-    if (checkbox && container && textarea) {
-        if (checkbox.checked) {
-            container.classList.remove('hidden');
-            textarea.required = true;
-        } else {
-            container.classList.add('hidden');
-            textarea.required = false;
-            textarea.value = '';
-        }
-    }
-}
 
 /**
  * Toggle appointment field visibility based on checkbox
@@ -533,24 +499,16 @@ function handleFormSubmit(event) {
     const form = document.getElementById('viewForm');
     const sendButton = document.getElementById('sendButton');
     
-    // Validate that at least one option is selected
-    const sendMessageCheckbox = document.getElementById('sendMessageCheckbox');
-    const scheduleAppointmentCheckbox = document.getElementById('scheduleAppointmentCheckbox');
-    
-    if (!sendMessageCheckbox.checked && !scheduleAppointmentCheckbox.checked) {
-        alert('Please select at least one option: Send Message or Schedule Appointment');
+    // Validate message field (always required)
+    const message = document.getElementById('additionalMessage');
+    if (!message.value.trim()) {
+        alert('Please enter a message');
+        message.focus();
         return;
     }
     
-    // Validate conditional required fields
-    if (sendMessageCheckbox.checked) {
-        const message = document.getElementById('additionalMessage');
-        if (!message.value.trim()) {
-            alert('Please enter a message');
-            message.focus();
-            return;
-        }
-    }
+    // Validate appointment checkbox
+    const scheduleAppointmentCheckbox = document.getElementById('scheduleAppointmentCheckbox');
     
     if (scheduleAppointmentCheckbox.checked) {
         const appointment = document.getElementById('appointmentDatetime');
@@ -568,14 +526,9 @@ function handleFormSubmit(event) {
     // Get form data
     const formData = new FormData(form);
     
-    // Add send options as individual fields for backend processing
-    const sendOptions = [];
-    if (sendMessageCheckbox.checked) {
-        sendOptions.push('message');
-        formData.append('send_message', '1');
-    }
+    // Message is always sent, appointment is optional
+    formData.append('send_message', '1');
     if (scheduleAppointmentCheckbox.checked) {
-        sendOptions.push('appointment');
         formData.append('send_appointment', '1');
     }
     
@@ -626,17 +579,15 @@ function resetViewForm() {
     const form = document.getElementById('viewForm');
     if (form) {
         form.reset();
-        // Hide conditional fields
-        const messageContainer = document.getElementById('messageFieldContainer');
+        // Hide appointment field
         const appointmentContainer = document.getElementById('appointmentFieldContainer');
-        if (messageContainer) messageContainer.classList.add('hidden');
         if (appointmentContainer) appointmentContainer.classList.add('hidden');
         
-        // Reset required attributes
-        const message = document.getElementById('additionalMessage');
+        // Reset appointment required attribute
         const appointment = document.getElementById('appointmentDatetime');
-        if (message) message.required = false;
         if (appointment) appointment.required = false;
+        
+        // Message field is always shown and required, no need to reset
     }
 }
 
@@ -659,5 +610,4 @@ if (document.readyState === 'loading') {
 window.openViewModal = openViewModal;
 window.closeViewModal = closeViewModal;
 window.handleFormSubmit = handleFormSubmit;
-window.toggleMessageField = toggleMessageField;
 window.toggleAppointmentField = toggleAppointmentField;

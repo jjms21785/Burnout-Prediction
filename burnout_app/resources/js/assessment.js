@@ -26,6 +26,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextBtn = document.getElementById('nextBtn');
     if (nextBtn && demographicStep && questionsStep) {
         nextBtn.addEventListener('click', function() {
+            // Hide error message when Next button is clicked
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorMessage) {
+                errorMessage.style.display = 'none';
+            }
+            
             // Validate demographic fields before proceeding
             const age = document.getElementById('age');
             const gender = document.getElementById('gender');
