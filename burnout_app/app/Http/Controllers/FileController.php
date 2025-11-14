@@ -478,11 +478,12 @@ class FileController extends Controller
             $categoryMap = [
                 'low' => '0',
                 'non-burnout' => '0',
+                'low burnout' => '0',
                 'disengaged' => '1',
                 'exhausted' => '2',
                 'high' => '3',
                 'burnout' => '3',
-                'moderate' => null
+                'high burnout' => '3'
             ];
             
             if (isset($categoryMap[$risk])) {

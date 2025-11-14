@@ -178,7 +178,7 @@
                 </div>
                 <nav class="flex items-center space-x-8">
                         <a href="{{ route('home') }}" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">Home</a>
-                    <a href="#" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">About</a>
+                    <a href="{{ route('home') }}" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">About</a>
                 </nav>
             </div>
         </div>

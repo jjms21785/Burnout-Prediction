@@ -23,20 +23,20 @@ class ResultController extends Controller
             'text' => "Responses show reduced connection to and interest in school work. This might feel like being detached or not caring about studies, questioning if what's being learned matters, or just going through the motions without real interest. This suggests concerns about meaning, fit, or whether the academic path matches with interests or goals."
         ],
         'C1' => [
-            'title' => 'Low Exhaustion + Low Disengagement = Low Burnout',
+            'title' => 'Low Exhaustion & Low Disengagement = Low Burnout',
             'text' => "Things are functioning in a healthy range in both areas. There's enough energy to study and interest in doing it. This balanced state means current demands are manageable and sustainable. This is experiencing the normal ups and downs of school life without crossing into burnout."
         ],
         'C2' => [
-            'title' => 'High Exhaustion + Low Disengagement = Exhausted',
+            'title' => 'High Exhaustion & Low Disengagement = Exhausted',
             'text' => 'This is a "still care but too tired" state. Despite feeling physically and emotionally drained, interest in studies is still there, there hasn\'t been a mental check out. This pattern means being overextended without enough recovery, but the fact that there\'s still care is actually protective. With proper rest and workload adjustment, recovery is possible without losing motivation.'
         ],
         'C3' => [
-            'title' => 'Low Exhaustion + High Disengagement = Disengaged',
+            'title' => 'Low Exhaustion & High Disengagement = Disengaged',
             'text' => "There's energy and capacity for school work, but not the interest or motivation to really engage with it. This \"have energy but no connection\" pattern means the issue isn't about needing rest, it's about questioning meaning, purpose, or fit. This often signals need to explore what's creating the disconnect: Is it the field of study? Teaching methods? Career uncertainty? Outside stress?"
         ],
         'C4' => [
-            'title' => 'High Exhaustion + High Disengagement = High Burnout',
-            'text' => 'Base on the result, both physically exhausted and emotionally disconnected. The burnout has gone beyond early stages. Running on empty without motivation to refuel. This affects not just school but likely relationships, health, and overall quality of life. This needs immediate rest or support.'
+            'title' => 'High Exhaustion & High Disengagement = High Burnout',
+            'text' => 'Base on the result, both physically exhausted and emotionally disconnected. The burnout has gone beyond early stages. Running on empty without motivation to refuel. This affects not just school but likely relationships, health, and overall quality of life. This needs immediate rest and support.'
         ],
         'D1' => [
             'title' => 'Academic Performance - Good',
@@ -74,22 +74,22 @@ class ResultController extends Controller
 
     // Recommendations
     private static $recommendations = [
-        'A1' => "Keep doing what's working to maintain energy levels. Continue getting enough sleep, taking regular breaks, and balancing study time with rest. Stay active with simple exercise like walking, and set realistic goals to avoid burning out later. Keep boundaries between study and personal time clear, and don't skip meals or sleep to finish work.",
-        'A2' => "Rest needs to be the top priority right now. Get more sleep, take breaks during study sessions, and talk to instructors about possible extensions or reduced workload. Say no to extra commitments and focus only on essential tasks. Try gentle activities like walking or stretching to release stress. If feeling exhausted doesn't improve with rest, consider seeing a doctor to check if something else is affecting energy levels.",
-        'B1' => "Stay connected to what makes studying meaningful. Keep linking coursework to personal interests and future goals. Try different study methods to keep things interesting, and connect with classmates or study groups to make learning more enjoyable. Celebrate small wins along the way, and remember why the academic path matters beyond just getting good grades.",
-        'B2' => "Take time to figure out why there's a disconnect with studies. Think about whether the current field really fits with interests and goals, or if outside pressure is driving the academic choices. Talk to advisors or counselors about options and different paths. Try connecting assignments to personal interests to see if engagement improves. If the disconnection doesn't improve, consider that changing direction or taking time off might be the right choice.",
-        'C1' => "Keep up current habits that support both energy and motivation. Stay aware of any changes in how the body or mind feels, and make small adjustments when needed. Use this balanced time to build healthy routines and connect with support resources on campus. Remember that some ups and downs are normal, but watch for patterns that last more than a few days.",
-        'C2' => "Focus on rest without feeling guilty about it. The fact that interest in studies is still there means recovery is possible with proper rest. Talk to instructors about the situation, they often have more flexibility than expected. Cut back on non-essential activities and accept help from friends or tutors. Set firm boundaries for rest time and don't let guilt about studying take over. If exhaustion continues despite resting, see a healthcare provider to rule out medical issues.",
-        'C3' => "The issue isn't about needing rest, it's about finding meaning and connection. Think honestly about what originally sparked interest in this field and whether it still fits. Consider if boring classes or outside stress are causing the disconnect, or if it's something deeper about the academic path. Talk to people working in related careers to get a realistic picture. If after exploring these questions the disconnection remains, know that changing direction shows self-awareness, not failure.",
-        'C4' => "Seek professional help immediately. This level of burnout is serious and typically needs more than self-help. Contact campus counseling or a mental health professional right away. Consider options like reducing course load or taking a leave of absence to create real space for recovery. Tell academic advisors or student services about the situation to learn about available accommodations. Focus on basic needs like sleep and eating, even when motivation is low. Reach out to friends or family for support. Understand that recovery takes time, weeks or months, not days, and that's normal.",
-        'D1' => "Check whether good grades are coming from healthy habits or from sacrificing sleep, health, or personal time. If pushing too hard to maintain performance, consider whether slightly lower grades might be worth protecting overall wellbeing. Success in classes doesn't mean struggles with stress or exhaustion aren't real or important. Make sure to acknowledge accomplishments instead of immediately moving to the next challenge without pause.",
-        'D2' => "Struggling grades are often a sign that something else needs attention first, exhaustion, stress, or disconnection. Get academic support through tutoring, study groups, or office hours. Talk to instructors about difficulties, they can often offer extensions or point to helpful resources. Focus on completing work rather than making it perfect. Consider whether the current course load is realistic, and whether dropping a class or taking time off might help long-term success. Remember that current struggles don't define future potential.",
-        'D3' => "Keep up whatever is helping manage stress well. Use this calmer time to practice stress-management techniques like exercise or relaxation so they become habits. Build and maintain supportive friendships. Pay attention to early signs if stress starts increasing, so adjustments can be made before feeling overwhelmed. Take advantage of lower stress periods to get ahead on upcoming work when possible.",
-        'D4' => "Some stress is normal in school, but make sure it's not slowly building up. Check that coping strategies are working and adjust if needed. Identify what's most important and what can wait or be skipped. Keep regular stress-release activities in the weekly routine, don't let them slide. Watch whether stress is staying the same, getting better, or getting worse over time. Consider stress-management resources or workshops to build better coping skills.",
-        'D5' => "Take action now to reduce stress before it gets worse. Reach out to counseling services for both practical techniques and emotional support. Look at what's causing stress and see what can be changed or reduced, even temporarily. Cut back on commitments wherever possible. Practice daily stress-release like deep breathing or short walks. Make sure to get enough sleep and eat regularly, skipping these makes stress worse. Talk to friends or family for help and perspective.",
-        'D6' => "Protect good sleep by keeping consistent sleep schedules and bedtime routines. Don't sacrifice sleep when workload increases, it makes everything harder. If feeling exhausted despite good sleep, the tiredness might be emotional or mental rather than physical, which means other areas need attention beyond just rest.",
-        'D7' => "Small improvements to sleep can make a big difference in energy and stress. Try going to bed and waking up at the same time every day. Avoid screens, caffeine, and intense studying in the hour before bed. Create a calming bedtime routine. Check that the sleep space is dark, quiet, and comfortable. If thoughts keep racing at night, try writing them down earlier in the day. If sleep doesn't improve with these changes, talk to a healthcare provider.",
-        'D8' => "Fixing sleep needs to be a top priority because everything else is harder without good rest. See a doctor or sleep specialist to check for sleep disorders that might need treatment. Set consistent sleep and wake times, make the bedroom dark and cool, and remove screens from the bedtime routine. Cut back on caffeine and check if medications might be affecting sleep. If anxiety keeps the mind awake, consider counseling or therapy. Understand that sleep improvement takes time, usually several weeks, but it's worth the effort because poor sleep affects mood, focus, stress, and health.",
+        'A1' => "Keep doing what's working to maintain energy levels. Continue getting enough sleep, taking regular breaks, and balancing study time with rest. Stay active with simple exercise like walking, and set realistic goals to avoid burning out later.",
+        'A2' => "Prioritize rest. Sleep more, take study breaks, reduce workload, refuse extra commitments, do gentle activities, and don't skip meals or sleep to finish work.",
+        'B1' => "Stay connected to what makes studying meaningful. Try different study methods to keep things interesting. Appreciate small things, and remember why the academic path matters beyond just getting good grades.",
+        'B2' => "Take time to figure out why there's a disconnect with studies. Think about whether the current field really fits with interests and goals, or if outside pressure is driving the academic choices.",
+        'C1' => "Keep up current habits that support both energy and motivation. Stay aware of any changes in how the body or mind feels, and make small adjustments when needed.",
+        'C2' => "Focus on rest without feeling guilty about it. The fact that interest in studies is still there means recovery is possible with proper rest.",
+        'C3' => "The issue isn't about needing rest, it's about finding meaning. Consider if boring classes or outside stress are causing the disconnect, or if it's something deeper about the academic path.",
+        'C4' => "This level of burnout is serious and consider options like reducing course load or taking a leave of absence to create real space for recovery Focus on basic needs like sleep and eating.",
+        'D1' => "Check whether good grades are coming from healthy habits or from sacrificing sleep, health, or personal time. Success in classes doesn't mean struggles with stress or exhaustion aren't real or important.",
+        'D2' => "Struggling grades are often a sign that something else needs attention first, exhaustion, stress, or disconnection. Focus on completing work rather than making it perfect. Consider whether the current course load is realistic, and taking time off might help long-term success.",
+        'D3' => "Keep up whatever is helping manage stress well. Pay attention to early signs if stress starts increasing, so adjustments can be made before feeling overwhelmed. Take advantage of lower stress periods to get ahead on upcoming work when possible.",
+        'D4' => "Some stress is normal in school, but make sure it's not slowly building up. Identify what's most important and what can wait or be skipped. Consider stress-management resources or workshops to build better coping skills.",
+        'D5' => "Counseling services is needed, for both practical techniques and emotional support. Look at what's causing stress and see what can be changed or reduced, even temporarily. Make sure to get enough sleep and eat regularly.",
+        'D6' => "Protect good sleep by keeping consistent sleep schedules and bedtime routines. Don't sacrifice sleep when workload increases, it makes everything harder.",
+        'D7' => "Small improvements to sleep can make a big difference in energy and stress. Try going to bed and waking up at the same time every day. Avoid screens, caffeine, and intense studying in the hour before bed.",
+        'D8' => "Fixing sleep needs to be a top priority because everything else is harder without good rest. Set consistent sleep and wake times, make the bedroom dark and cool, and remove screens from the bedtime routine.",
     ];
 
     public static function generateBasicInterpretations($exhaustionCategory, $disengagementCategory, $exhaustionAverage = 0, $disengagementAverage = 0)
@@ -259,12 +259,13 @@ class ResultController extends Controller
     }
 
     // Public API: View result processing
-    public static function processResultForView($dataAvailable, $exhaustionCategory = null, $disengagementCategory = null, $barGraph = null, $errorMsg = null)
+    // Uses ML prediction value (0,1,2,3) from database instead of manual calculation
+    public static function processResultForView($mlPredictionValue = null, $barGraph = null, $errorMsg = null)
     {
-        if (!$dataAvailable && !$exhaustionCategory && !$disengagementCategory) {
+        // If no ML prediction value, return unavailable
+        if ($mlPredictionValue === null || $mlPredictionValue === '' || $mlPredictionValue === 'unavailable') {
             return [
                 'categoryName' => 'Results Unavailable',
-                'categoryCode' => $errorMsg ?? 'Assessment data not available.',
                 'category' => null,
                 'exhaustionPercent' => 0,
                 'disengagementPercent' => 0,
@@ -273,31 +274,36 @@ class ResultController extends Controller
                 'sleepPercent' => 0,
             ];
         }
-        
-        if (!$dataAvailable && ($exhaustionCategory || $disengagementCategory)) {
-            $dataAvailable = true;
-        }
 
         $category = null;
         $categoryName = '';
-        $categoryCode = '';
-
-        if ($exhaustionCategory == 'Low' && $disengagementCategory == 'Low') {
-            $category = 'low';
-            $categoryName = 'Low Burnout';
-            $categoryCode = 'Low Exhaustion + Low Disengagement';
-        } elseif ($exhaustionCategory == 'High' && $disengagementCategory == 'Low') {
-            $category = 'exhausted';
-            $categoryName = 'Exhausted';
-            $categoryCode = 'High Exhaustion + Low Disengagement';
-        } elseif ($exhaustionCategory == 'Low' && $disengagementCategory == 'High') {
-            $category = 'disengaged';
-            $categoryName = 'Disengaged';
-            $categoryCode = 'Low Exhaustion + High Disengagement';
+        
+        // Use ML prediction value directly (0,1,2,3) - matches ML model output
+        $categoryNum = is_numeric($mlPredictionValue) ? (int)$mlPredictionValue : null;
+        
+        if ($categoryNum !== null && $categoryNum >= 0 && $categoryNum <= 3) {
+            switch ($categoryNum) {
+                case 0:
+                    $category = 'low';
+                    $categoryName = 'Low Burnout';
+                    break;
+                case 1:
+                    $category = 'exhausted';
+                    $categoryName = 'Exhausted';
+                    break;
+                case 2:
+                    $category = 'disengaged';
+                    $categoryName = 'Disengaged';
+                    break;
+                case 3:
+                    $category = 'high';
+                    $categoryName = 'High Burnout';
+                    break;
+                default:
+                    $categoryName = 'Results Unavailable';
+            }
         } else {
-            $category = 'high';
-            $categoryName = 'High Burnout';
-            $categoryCode = 'High Exhaustion + High Disengagement';
+            $categoryName = 'Results Unavailable';
         }
 
         $exhaustionPercent = isset($barGraph['Exhaustion']) ? round($barGraph['Exhaustion']) : 0;
@@ -314,7 +320,6 @@ class ResultController extends Controller
 
         return [
             'categoryName' => $categoryName,
-            'categoryCode' => $categoryCode,
             'category' => $category,
             'exhaustionPercent' => $exhaustionPercent,
             'disengagementPercent' => $disengagementPercent,

@@ -103,8 +103,13 @@ class RecordsController extends Controller
                 $updateData['year'] = $assessment->year;
             }
             
-            if ($request->has('overall_risk')) {
-                $updateData['Burnout_Category'] = $request->input('overall_risk');
+            // Accept burnout_category (ML prediction value: 0,1,2,3)
+            if ($request->has('burnout_category')) {
+                $category = $request->input('burnout_category');
+                // Validate it's a valid ML prediction value (0,1,2,3)
+                if (in_array($category, ['0', '1', '2', '3', 0, 1, 2, 3])) {
+                    $updateData['Burnout_Category'] = (string)$category;
+                }
             } elseif ($assessment->Burnout_Category) {
                 $updateData['Burnout_Category'] = $assessment->Burnout_Category;
             }

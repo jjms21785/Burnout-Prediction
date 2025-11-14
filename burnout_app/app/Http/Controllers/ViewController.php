@@ -210,10 +210,37 @@ class ViewController extends Controller
         $exhaustionScore = $exhaustionScore ?? 0;
         $disengagementScore = $disengagementScore ?? 0;
         
+        // Derive exhaustion and disengagement levels from ML prediction category (not from scores)
+        // ML model: 0="Non-Burnout", 1="Exhausted", 2="Disengaged", 3="BURNOUT"
+        $mlPredictionValue = $assessment->Burnout_Category;
+        $exhaustionLevel = 'Low';
+        $disengagementLevel = 'Low';
+        
+        if (is_numeric($mlPredictionValue)) {
+            $categoryNum = (int)$mlPredictionValue;
+            switch ($categoryNum) {
+                case 0: // Non-Burnout = Low Exhaustion + Low Disengagement
+                    $exhaustionLevel = 'Low';
+                    $disengagementLevel = 'Low';
+                    break;
+                case 1: // Exhausted = High Exhaustion + Low Disengagement
+                    $exhaustionLevel = 'High';
+                    $disengagementLevel = 'Low';
+                    break;
+                case 2: // Disengaged = Low Exhaustion + High Disengagement
+                    $exhaustionLevel = 'Low';
+                    $disengagementLevel = 'High';
+                    break;
+                case 3: // BURNOUT = High Exhaustion + High Disengagement
+                    $exhaustionLevel = 'High';
+                    $disengagementLevel = 'High';
+                    break;
+            }
+        }
+        
+        // Calculate averages for interpretations (if needed)
         $exhaustionAverage = count($exhaustionItems) > 0 ? $exhaustionScore / count($exhaustionItems) : 0;
         $disengagementAverage = count($disengagementItems) > 0 ? $disengagementScore / count($disengagementItems) : 0;
-        $exhaustionLevel = $exhaustionAverage >= 2.25 ? 'High' : 'Low';
-        $disengagementLevel = $disengagementAverage >= 2.10 ? 'High' : 'Low';
         
         // Process data on-demand: Always call Python API to get fresh calculations
         $pythonResponse = null;

@@ -61,19 +61,20 @@ function transformAssessmentData(item) {
     const firstName = nameParts[0] || 'Unavailable';
     const lastName = nameParts.slice(1).join(' ') || 'Unavailable';
     
-    // Map risk (Burnout_Category) to category
+    // Map risk (Burnout_Category) to category - matches ML model prediction
     let category = 'Unavailable';
     const risk = item.risk;
     
     // Handle numeric risk values (0, 1, 2, 3) from ML model
+    // ML model: 0="Non-Burnout", 1="Exhausted", 2="Disengaged", 3="BURNOUT"
     if (risk === '0' || risk === 0) {
-        category = 'Low Burnout';
+        category = 'Low Burnout';  // ML: "Non-Burnout"
     } else if (risk === '1' || risk === 1) {
-        category = 'Disengaged';
+        category = 'Exhausted';    // ML: "Exhausted" (matches ML model)
     } else if (risk === '2' || risk === 2) {
-        category = 'Exhausted';
+        category = 'Disengaged';   // ML: "Disengaged" (matches ML model)
     } else if (risk === '3' || risk === 3) {
-        category = 'High Burnout';
+        category = 'High Burnout'; // ML: "BURNOUT"
     } else {
         // Fallback for string values or unknown
         const riskLower = String(risk || '').toLowerCase();
@@ -82,9 +83,9 @@ function transformAssessmentData(item) {
         } else if (riskLower === 'low' || riskLower === '0') {
             category = 'Low Burnout';
         } else if (riskLower === '1') {
-            category = 'Disengaged';
+            category = 'Exhausted';    // ML: "Exhausted"
         } else if (riskLower === '2') {
-            category = 'Exhausted';
+            category = 'Disengaged';   // ML: "Disengaged"
         }
         // If still unavailable, category remains 'Unavailable'
     }
@@ -567,12 +568,15 @@ function toggleCustomProgram(id) {
 }
 
 /**
- * Map category to overall_risk for database
+ * Map category label to ML prediction value (0,1,2,3) for database
+ * Returns numeric value that matches ML model prediction
+ * ML model: 0="Non-Burnout", 1="Exhausted", 2="Disengaged", 3="BURNOUT"
  */
-function categoryToRisk(category) {
-    if (category === 'High Burnout') return 'high';
-    if (category === 'Exhausted' || category === 'Disengaged') return 'moderate';
-    if (category === 'Low Burnout') return 'low';
+function categoryToMLValue(category) {
+    if (category === 'Low Burnout') return '0';      // ML: "Non-Burnout"
+    if (category === 'Exhausted') return '1';        // ML: "Exhausted" (matches ML model)
+    if (category === 'Disengaged') return '2';       // ML: "Disengaged" (matches ML model)
+    if (category === 'High Burnout') return '3';     // ML: "BURNOUT"
     return null;
 }
 
@@ -615,7 +619,7 @@ function saveEdit(id) {
     
     const yearLevel = yearLevelEl.value;
     const category = categoryEl.value;
-    const overallRisk = categoryToRisk(category);
+    const burnoutCategory = categoryToMLValue(category);
     
     // Make AJAX call to update the database
     const formData = new FormData();
@@ -625,7 +629,9 @@ function saveEdit(id) {
     formData.append('age', age);
     formData.append('program', program);
     formData.append('year_level', yearLevel);
-    formData.append('overall_risk', overallRisk);
+    if (burnoutCategory !== null) {
+        formData.append('burnout_category', burnoutCategory);
+    }
     
     fetch(config.updateRoute.replace(':id', id), {
         method: 'POST',

@@ -98,18 +98,18 @@ class Assessment extends Model
             return 'Unavailable';
         }
         
-        // If it's a numeric value (0, 1, 2, 3)
+        // If it's a numeric value (0, 1, 2, 3) - matches ML model prediction
         if (is_numeric($category)) {
             $categoryNum = (int)$category;
             switch ($categoryNum) {
                 case 0:
-                    return 'Low Burnout';
+                    return 'Low Burnout';  // ML: "Non-Burnout"
                 case 1:
-                    return 'Disengaged';
+                    return 'Exhausted';    // ML: "Exhausted" (matches ML model)
                 case 2:
-                    return 'Exhausted';
+                    return 'Disengaged';   // ML: "Disengaged" (matches ML model)
                 case 3:
-                    return 'High Burnout';
+                    return 'High Burnout'; // ML: "BURNOUT"
                 default:
                     return 'Unavailable';
             }

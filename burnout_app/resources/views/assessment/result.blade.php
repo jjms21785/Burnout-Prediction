@@ -10,7 +10,6 @@
     
     // Get processed result data from controller
     $categoryName = $categoryName ?? 'Results Unavailable';
-    $categoryCode = $categoryCode ?? ($errorMessage ?? 'Assessment data not available. Please ensure the Flask API is running.');
     $exhaustionPercent = $exhaustionPercent ?? 0;
     $disengagementPercent = $disengagementPercent ?? 0;
     $academicPercent = $academicPercent ?? 0;
@@ -36,7 +35,6 @@
 
             <p class="text-sm font-semibold opacity-95 relative z-10">The result is:</p>
             <h1 class="text-4xl font-bold mb-2 relative z-10">{{ $categoryName }}</h1>
-            <p class="text-[10px] opacity-95 relative z-10 mb-4">{{ $categoryCode }}</p>
             
             @if($hasData && isset($interpretations['combined_result']))
                 <div class="relative z-10 mt-4 pt-4 border-t border-white/20">

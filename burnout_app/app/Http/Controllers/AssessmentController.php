@@ -226,8 +226,10 @@ class AssessmentController extends Controller
 
         $exhaustionAverage = count($exhaustionItems) > 0 ? $exhaustionScore / count($exhaustionItems) : 0;
         $disengagementAverage = count($disengagementItems) > 0 ? $disengagementScore / count($disengagementItems) : 0;
-        $exhaustionCategory = $exhaustionAverage >= 2.25 ? 'High' : 'Low';
-        $disengagementCategory = $disengagementAverage >= 2.10 ? 'High' : 'Low';
+        // Note: exhaustionCategory and disengagementCategory will be derived from ML prediction later
+        // Temporary values for now - will be overridden by ML prediction
+        $exhaustionCategory = 'Low';
+        $disengagementCategory = 'Low';
         $totalScore = $exhaustionScore + $disengagementScore;
 
         $allAnswers = [];
@@ -283,7 +285,8 @@ class AssessmentController extends Controller
                 
                 $processedData = ResultController::processPythonResponse($pythonResponse);
                 
-                $predictedLabel = $processedData['predicted_label'] ?? null;
+                // Don't use processed label - use ML prediction value instead
+                // $predictedLabel will be set from ML prediction value later
                 $exhaustionCategory = $processedData['exhaustion_category'] ?? $exhaustionCategory;
                 $disengagementCategory = $processedData['disengagement_category'] ?? $disengagementCategory;
                 $interpretations = $processedData['interpretations'] ?? null;
@@ -313,11 +316,17 @@ class AssessmentController extends Controller
             ]);
         }
 
+        // Get ML prediction value directly from Python response
         $overallRisk = null;
+        $predictedLabel = null;
         if ($processedData && isset($processedData['predicted_category'])) {
             $categoryNum = (int)$processedData['predicted_category'];
             if ($categoryNum >= 0 && $categoryNum <= 3) {
                 $overallRisk = (string)$categoryNum;
+                // Get label from ML prediction value (matches what's stored in database)
+                $tempAssessment = new Assessment();
+                $tempAssessment->Burnout_Category = $overallRisk;
+                $predictedLabel = $tempAssessment->getBurnoutCategoryLabel();
             }
         }
 
@@ -340,13 +349,21 @@ class AssessmentController extends Controller
             'user_agent' => $request->userAgent()
         ]);
 
+        // Use stored ML prediction value directly (no manual calculation)
+        $mlPredictionValue = $overallRisk ?? null;
+        
         $resultData = ResultController::processResultForView(
-            $dataAvailable,
-            $exhaustionCategory,
-            $disengagementCategory,
+            $mlPredictionValue,
             $barGraph,
             $errorMsg
         );
+        
+        // Set predictedLabel from ML prediction value (not from processed label)
+        if (!$predictedLabel && $mlPredictionValue !== null) {
+            $tempAssessment = new Assessment();
+            $tempAssessment->Burnout_Category = $mlPredictionValue;
+            $predictedLabel = $tempAssessment->getBurnoutCategoryLabel();
+        }
 
         return view('assessment.result', compact(
             'responses', 'original_responses', 'name', 'age', 'gender', 'program', 'year_level',
@@ -414,8 +431,35 @@ class AssessmentController extends Controller
         
         $exhaustionAverage = count($exhaustionItems) > 0 ? ($exhaustionScore ?? 0) / count($exhaustionItems) : 0;
         $disengagementAverage = count($disengagementItems) > 0 ? ($disengagementScore ?? 0) / count($disengagementItems) : 0;
-        $exhaustionCategory = $exhaustionAverage >= 2.25 ? 'High' : 'Low';
-        $disengagementCategory = $disengagementAverage >= 2.10 ? 'High' : 'Low';
+        
+        // Derive exhaustion/disengagement categories from ML prediction (not from scores)
+        // ML model: 0="Non-Burnout", 1="Exhausted", 2="Disengaged", 3="BURNOUT"
+        $mlPredictionValue = $assessment->Burnout_Category;
+        $exhaustionCategory = 'Low';
+        $disengagementCategory = 'Low';
+        
+        if (is_numeric($mlPredictionValue)) {
+            $categoryNum = (int)$mlPredictionValue;
+            switch ($categoryNum) {
+                case 0: // Non-Burnout = Low Exhaustion + Low Disengagement
+                    $exhaustionCategory = 'Low';
+                    $disengagementCategory = 'Low';
+                    break;
+                case 1: // Exhausted = High Exhaustion + Low Disengagement
+                    $exhaustionCategory = 'High';
+                    $disengagementCategory = 'Low';
+                    break;
+                case 2: // Disengaged = Low Exhaustion + High Disengagement
+                    $exhaustionCategory = 'Low';
+                    $disengagementCategory = 'High';
+                    break;
+                case 3: // BURNOUT = High Exhaustion + High Disengagement
+                    $exhaustionCategory = 'High';
+                    $disengagementCategory = 'High';
+                    break;
+            }
+        }
+        
         $totalScore = ($exhaustionScore ?? 0) + ($disengagementScore ?? 0);
         
         $interpretations = null;
@@ -427,8 +471,13 @@ class AssessmentController extends Controller
         if ($pythonResponse) {
             $processedData = ResultController::processPythonResponse($pythonResponse);
             $predictedLabel = $processedData['predicted_label'] ?? null;
-            $exhaustionCategory = $processedData['exhaustion_category'] ?? $exhaustionCategory;
-            $disengagementCategory = $processedData['disengagement_category'] ?? $disengagementCategory;
+            // Use exhaustion/disengagement from Python API if available (for consistency with interpretations)
+            // But ML prediction category is still the source of truth
+            $exhaustionCategoryFromAPI = $processedData['exhaustion_category'] ?? null;
+            $disengagementCategoryFromAPI = $processedData['disengagement_category'] ?? null;
+            // Only override if API provided values (for backward compatibility with old data)
+            if ($exhaustionCategoryFromAPI) $exhaustionCategory = $exhaustionCategoryFromAPI;
+            if ($disengagementCategoryFromAPI) $disengagementCategory = $disengagementCategoryFromAPI;
             $interpretations = $processedData['interpretations'] ?? null;
             $recommendations = $processedData['recommendations'] ?? null;
             $barGraph = $processedData['bar_graph'] ?? null;
@@ -460,8 +509,9 @@ class AssessmentController extends Controller
             $dataAvailable = true;
         }
         
+        // Get predictedLabel from stored ML prediction value (no manual calculation)
         if (!$predictedLabel) {
-            $predictedLabel = ucfirst($assessment->Burnout_Category ?? 'Unknown');
+            $predictedLabel = $assessment->getBurnoutCategoryLabel();
         }
         
         $name = $assessment->name ?? 'Unavailable';
@@ -470,7 +520,10 @@ class AssessmentController extends Controller
         $program = $assessment->college ?? 'Unavailable';
         $year_level = $assessment->year ?? 'Unavailable';
         
-        $resultData = ResultController::processResultForView($dataAvailable, $exhaustionCategory, $disengagementCategory, $barGraph, null);
+        // Use stored ML prediction value directly from database (no manual calculation)
+        $mlPredictionValue = $assessment->Burnout_Category ?? null;
+        
+        $resultData = ResultController::processResultForView($mlPredictionValue, $barGraph, null);
         
         return view('assessment.result', compact(
             'assessment', 'responses', 'original_responses', 

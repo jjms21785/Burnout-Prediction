@@ -30,8 +30,8 @@
                     </a>
 
                     <a href="{{ route('admin.dashboard') }}" class="group">
-                        <div class="flex items-center justify-center bg-indigo-500 px-6 py-3 rounded-xl shadow-xl border border-gray-200 hover:scale-105 transition duration-200">
-                            <span class="text-base font-semibold text-white">Dashboard <span class="text-[10px] font-bold text-gray-50">(for admin)</span></span>
+                        <div class="flex items-center justify-center bg-white px-6 py-3 rounded-xl shadow-xl border border-indigo-500 hover:scale-105 transition duration-200">
+                            <span class="text-indigo-500 font-semibold">Dashboard</span>
                         </div>
                     </a>
                 </div>
