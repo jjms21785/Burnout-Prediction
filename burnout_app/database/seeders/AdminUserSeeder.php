@@ -22,12 +22,10 @@ class AdminUserSeeder extends Seeder
                 'email' => 'admin@email.com',
                 'password' => Hash::make('admin'),
             ]);
-            $this->command->info('Admin user created successfully!');
         } else {
             // Update password if user exists
             $admin->password = Hash::make('admin');
             $admin->save();
-            $this->command->info('Admin user password updated!');
         }
     }
 }

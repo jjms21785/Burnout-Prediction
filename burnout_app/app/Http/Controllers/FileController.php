@@ -304,45 +304,43 @@ class FileController extends Controller
         return ($value === null || $value === '' || (is_string($value) && trim($value) === '')) ? 'unavailable' : $value;
     }
 
+    /**
+     * Get burnout category from stored ML prediction
+     * Returns numeric value (0,1,2,3) for export purposes
+     * NO manual calculation - only reads from database
+     */
     private function getBurnoutCategory($assessment)
     {
-        $exhaustionScore = $assessment->Exhaustion ?? $assessment->exhaustion_score ?? null;
-        $disengagementScore = $assessment->Disengagement ?? $assessment->disengagement_score ?? null;
+        // Read directly from stored ML prediction (no manual calculation)
+        $category = $assessment->Burnout_Category;
         
-        if ($exhaustionScore !== null && $disengagementScore !== null) {
-            $highExhaustion = $exhaustionScore >= 18;
-            $highDisengagement = $disengagementScore >= 17;
-            
-            if (!$highExhaustion && !$highDisengagement) return 0;
-            if (!$highExhaustion && $highDisengagement) return 1;
-            if ($highExhaustion && !$highDisengagement) return 2;
-            return 3;
-        }
-        
-        $overallRisk = $assessment->Burnout_Category ?? $assessment->overall_risk ?? null;
-        if (empty($overallRisk) || $overallRisk === 'unavailable') {
+        if ($category === null || $category === '' || $category === 'unavailable') {
             return 'unavailable';
         }
         
-        if (is_numeric($overallRisk)) {
-            $categoryNum = (int)$overallRisk;
+        // If it's already numeric (0, 1, 2, 3), return as is
+        if (is_numeric($category)) {
+            $categoryNum = (int)$category;
             if ($categoryNum >= 0 && $categoryNum <= 3) {
                 return $categoryNum;
             }
             return 'unavailable';
         }
         
-        $risk = strtolower($overallRisk);
+        // If it's a label string, convert to numeric for backward compatibility
+        $categoryLower = strtolower(trim($category));
         $categoryMap = [
             'low' => 0,
             'non-burnout' => 0,
+            'low burnout' => 0,
             'disengaged' => 1,
             'exhausted' => 2,
             'high' => 3,
-            'burnout' => 3
+            'burnout' => 3,
+            'high burnout' => 3
         ];
         
-        return $categoryMap[$risk] ?? 'unavailable';
+        return $categoryMap[$categoryLower] ?? 'unavailable';
     }
 
     public function downloadFile($filename)

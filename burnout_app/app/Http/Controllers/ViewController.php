@@ -28,8 +28,8 @@ class ViewController extends Controller
             // Process assessment data (extracts answers, calculates scores, gets interpretations/recommendations)
             $processedData = $this->processAssessmentData($assessment);
             
-            // Calculate burnout category from scores
-            $category = $this->calculateBurnoutCategory($assessment);
+            // Get burnout category from stored ML prediction (no manual calculation)
+            $category = $this->getBurnoutCategory($assessment);
             
             // Split name
             $name = $assessment->name ?? 'Unavailable';
@@ -110,8 +110,8 @@ class ViewController extends Controller
                 $assessment->save();
             }
             
-            // Calculate burnout category
-            $category = $this->calculateBurnoutCategory($assessment);
+            // Get burnout category from stored ML prediction (no manual calculation)
+            $category = $this->getBurnoutCategory($assessment);
             
             // Prepare email data (only include selected options)
             $emailData = [
@@ -297,25 +297,11 @@ class ViewController extends Controller
     }
     
     /**
-     * Calculate burnout category from assessment
+     * Get burnout category from stored ML prediction
      */
-    private function calculateBurnoutCategory($assessment)
+    private function getBurnoutCategory($assessment)
     {
-        $exhaustion = $assessment->Exhaustion ?? 0;
-        $disengagement = $assessment->Disengagement ?? 0;
-        
-        $highExhaustion = $exhaustion >= 18;
-        $highDisengagement = $disengagement >= 17;
-        
-        if (!$highExhaustion && !$highDisengagement) {
-            return 'Low Burnout';
-        } elseif (!$highExhaustion && $highDisengagement) {
-            return 'Disengaged';
-        } elseif ($highExhaustion && !$highDisengagement) {
-            return 'Exhausted';
-        } else {
-            return 'High Burnout';
-        }
+        return $assessment->getBurnoutCategoryLabel();
     }
 }
 

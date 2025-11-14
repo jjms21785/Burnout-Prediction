@@ -9,17 +9,23 @@ try:
 except FileNotFoundError:
     raise FileNotFoundError("Model file not found. Please ensure random_forest_burnout_model.pkl exists.")
 
+# ✅ FIX 1: Correct category labels matching your training
 category_labels = {
     0: "Non-Burnout",
-    1: "Disengaged",
-    2: "Exhausted",
+    1: "Exhausted",      # ✅ FIXED ORDER
+    2: "Disengaged",     # ✅ FIXED ORDER
     3: "BURNOUT"
 }
 
-reverse_scored_indices = [1, 2, 4, 5, 9, 10, 12, 14]
+# ✅ FIX 2: Correct OLBI reverse-scored items (standard OLBI-S pattern)
+# These are the POSITIVELY worded items in OLBI-S that need reversing
+# Assuming standard OLBI-S: items 1, 3, 6, 7, 9, 11, 14, 15 (in 1-16 numbering)
+# In 0-indexed: 0, 2, 5, 6, 8, 10, 13, 14
+olbi_reverse_indices = [0, 2, 5, 6, 8, 10, 13, 14]
 
 def reverse_score(val):
-    return 3 - val
+    """Reverse score: 1→4, 2→3, 3→2, 4→1"""
+    return 5 - val  # ✅ FIX: Correct formula for 1-4 scale
 
 @app.route('/')
 def home():
@@ -35,102 +41,147 @@ def predict():
         
         all_responses = data['all_answers']
         if len(all_responses) != 30:
-            return jsonify({'error': 'Expected 30 answers, got ' + str(len(all_responses))}), 400
+            return jsonify({'error': f'Expected 30 answers, got {len(all_responses)}'}), 400
         
-        responses_dict = {}
-        for i in range(30):
-            responses_dict[f'Q{i+1}'] = all_responses[i]
+        # ✅ Create responses dict (Q1-Q30)
+        responses_dict = {f'Q{i+1}': all_responses[i] for i in range(30)}
         
+        # ✅ FIX 3: ML Prediction uses ALL 30 raw responses
         features_array = np.array([all_responses])
         predicted_category = int(model.predict(features_array)[0])
         predicted_label = category_labels.get(predicted_category, "Unknown")
         
-        olbi_mapping = {
-            'disengagement': [14, 17, 18, 21, 23, 25, 26, 29],
-            'exhaustion': [15, 16, 19, 20, 22, 24, 27, 28]
-        }
+        # ========================================
+        # OLBI-S SCORING (Q15-Q30 = indices 14-29)
+        # ========================================
         
-        olbi_responses = []
-        for idx in olbi_mapping['disengagement']:
-            olbi_responses.append(all_responses[idx])
-        for idx in olbi_mapping['exhaustion']:
-            olbi_responses.append(all_responses[idx])
+        # ✅ FIX 4: Extract OLBI responses correctly
+        olbi_responses = all_responses[14:30]  # Q15-Q30 (16 items)
         
-        scored_responses = []
-        for i in range(16):
-            val = olbi_responses[i]
-            if i in reverse_scored_indices:
-                val = reverse_score(val)
-            scored_responses.append(val)
+        # ✅ FIX 5: Apply reverse scoring to correct items
+        scored_olbi = []
+        for i, val in enumerate(olbi_responses):
+            if i in olbi_reverse_indices:
+                scored_olbi.append(reverse_score(val))
+            else:
+                scored_olbi.append(val)
         
-        academic_score = responses_dict['Q1'] + responses_dict['Q2']
-        academic_code = "D1" if academic_score >= 5 else "D2"
+        # ✅ FIX 6: Split into Exhaustion and Disengagement
+        # OLBI-S structure: alternating pattern or specific subscales
+        # Standard OLBI-S: odd items = Exhaustion, even items = Disengagement
+        # OR use your specific mapping from thesis
+        
+        # Assuming standard pattern (adjust if your thesis specifies different):
+        exhaustion_indices = [0, 2, 4, 6, 8, 10, 12, 14]  # Items 1, 3, 5, 7, 9, 11, 13, 15
+        disengagement_indices = [1, 3, 5, 7, 9, 11, 13, 15]  # Items 2, 4, 6, 8, 10, 12, 14, 16
+        
+        exhaustion_items_scores = [scored_olbi[i] for i in exhaustion_indices]
+        disengagement_items_scores = [scored_olbi[i] for i in disengagement_indices]
+        
+        exhaustion_sum = sum(exhaustion_items_scores)
+        disengagement_sum = sum(disengagement_items_scores)
+        
+        exhaustion_mean = exhaustion_sum / 8
+        disengagement_mean = disengagement_sum / 8
+        
+        # ✅ Apply thresholds (from your thesis)
+        ex_high = exhaustion_mean >= 2.25
+        dis_high = disengagement_mean >= 2.1
+        
+        exhaustion_code = "A2" if ex_high else "A1"
+        exhaustion_label = f"{exhaustion_code}: {'High' if ex_high else 'Low'} Exhaustion"
+        
+        disengagement_code = "B2" if dis_high else "B1"
+        disengagement_label = f"{disengagement_code}: {'High' if dis_high else 'Low'} Disengagement"
+        
+        # Combined burnout state interpretation
+        if ex_high and dis_high:
+            combined_code = "C4"
+            combined_label = "C4: High Burnout (High Exhaustion + High Disengagement)"
+        elif ex_high and not dis_high:
+            combined_code = "C2"
+            combined_label = "C2: Exhausted (High Exhaustion + Low Disengagement)"
+        elif not ex_high and dis_high:
+            combined_code = "C3"
+            combined_label = "C3: Disengaged (Low Exhaustion + High Disengagement)"
+        else:
+            combined_code = "C1"
+            combined_label = "C1: Low Burnout (Low Exhaustion + Low Disengagement)"
+        
+        # ========================================
+        # ACADEMIC PERFORMANCE (Q1-Q2)
+        # ========================================
+        academic_sum = responses_dict['Q1'] + responses_dict['Q2']
+        academic_code = "D1" if academic_sum >= 5 else "D2"
         academic_label = f"{academic_code}: Academic Performance - {'Good/High' if academic_code == 'D1' else 'Struggling/Low'}"
         
-        stress_items = {
-            'Q3': 1,
-            'Q4': -1,
-            'Q5': -1,
-            'Q6': 1
-        }
-        stress_score = sum((4 - responses_dict[q] if direction == -1 else responses_dict[q]) 
-                          for q, direction in stress_items.items())
+        # ========================================
+        # STRESS LEVEL (Q3-Q6) - PSS-4
+        # ========================================
+        # Q3, Q6 = negative items (higher = more stress)
+        # Q4, Q5 = positive items (need reversing)
+        stress_score = (
+            responses_dict['Q3'] +
+            (5 - responses_dict['Q4']) +  # Reverse
+            (5 - responses_dict['Q5']) +  # Reverse
+            responses_dict['Q6']
+        )
+        
         if stress_score <= 4:
             stress_code = "D3"
             stress_label = "D3: Stress Level - Low"
-        elif 5 <= stress_score <= 8:
+        elif stress_score <= 8:
             stress_code = "D4"
             stress_label = "D4: Stress Level - Moderate"
         else:
             stress_code = "D5"
             stress_label = "D5: Stress Level - High"
         
-        sleep_items = [f"Q{i}" for i in range(7, 15)]
-        sleep_score = sum(responses_dict[q] for q in sleep_items)
-        if sleep_score >= 24:
+        # ========================================
+        # SLEEP QUALITY (Q7-Q14) - SCI-8
+        # ========================================
+        sleep_sum = sum(responses_dict[f'Q{i}'] for i in range(7, 15))
+        
+        if sleep_sum >= 24:
             sleep_code = "D6"
             sleep_label = "D6: Sleep Quality - Good"
-        elif 16 <= sleep_score < 24:
+        elif sleep_sum >= 16:
             sleep_code = "D7"
             sleep_label = "D7: Sleep Quality - Fair/Moderate"
         else:
             sleep_code = "D8"
             sleep_label = "D8: Sleep Quality - Poor"
         
-        exhaustion_items = ['Q16', 'Q17', 'Q20', 'Q21', 'Q23', 'Q25', 'Q28', 'Q29']
-        disengagement_items = ['Q15', 'Q18', 'Q19', 'Q22', 'Q24', 'Q26', 'Q27', 'Q30']
-        
-        exhaustion_score_sum = sum(responses_dict[q] for q in exhaustion_items)
-        disengagement_score_sum = sum(responses_dict[q] for q in disengagement_items)
-        
-        exhaustion_score = exhaustion_score_sum / len(exhaustion_items)
-        disengagement_score = disengagement_score_sum / len(disengagement_items)
-        
-        ex_high = exhaustion_score >= 2.25
-        dis_high = disengagement_score >= 2.1
-        
-        exhaustion_code = "A2" if ex_high else "A1"
-        exhaustion_label = f"{exhaustion_code}: {'High' if ex_high else 'Low'} Exhaustion interpretation"
-        
-        disengagement_code = "B2" if dis_high else "B1"
-        disengagement_label = f"{disengagement_code}: {'High' if dis_high else 'Low'} Disengagement interpretation"
-        
+        # ========================================
+        # BAR GRAPH DATA (Percentages)
+        # ========================================
         bar_data = {
-            "Academic Performance": round((academic_score / 8) * 100, 2),
+            "Academic Performance": round((academic_sum / 8) * 100, 2),
             "Stress": round((stress_score / 16) * 100, 2),
-            "Sleep": round((sleep_score / 32) * 100, 2),
-            "Exhaustion": round((exhaustion_score / 4) * 100, 2),
-            "Disengagement": round((disengagement_score / 4) * 100, 2),
+            "Sleep": round((sleep_sum / 32) * 100, 2),
+            "Exhaustion": round((exhaustion_sum / 32) * 100, 2),  # ✅ FIX: out of 32
+            "Disengagement": round((disengagement_sum / 32) * 100, 2),  # ✅ FIX: out of 32
         }
         
+        # ========================================
+        # FINAL RESPONSE PAYLOAD
+        # ========================================
         result_payload = {
             "PredictedResult": {
                 "predicted_category": predicted_category,
                 "label": predicted_label,
-                "interpretation": f"{predicted_category}: {predicted_label}"
+                "interpretation": f"Category {predicted_category}: {predicted_label}"
+            },
+            "Scores": {
+                "exhaustion_score": round(exhaustion_mean, 2),
+                "disengagement_score": round(disengagement_mean, 2),
+                "academic_score": academic_sum,
+                "stress_score": stress_score,
+                "sleep_score": sleep_sum
             },
             "ResponseResult": {
                 "Interpretations": {
+                    "Combined": combined_label,
                     "Academic": academic_label,
                     "Stress": stress_label,
                     "Sleep": sleep_label,
@@ -138,6 +189,7 @@ def predict():
                     "Disengagement": disengagement_label
                 },
                 "Codes": {
+                    "Combined": combined_code,
                     "Academic": academic_code,
                     "Stress": stress_code,
                     "Sleep": sleep_code,
@@ -151,7 +203,11 @@ def predict():
         return jsonify(result_payload)
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -1,7 +1,3 @@
-# =========================================================
-# test_single_response.py (Simplified Output for Laravel)
-# =========================================================
-
 import pandas as pd
 import joblib
 import numpy as np
@@ -12,7 +8,7 @@ import json
 # -----------------------------
 model_path = 'random_forest/random_forest_burnout_model.pkl'
 rf_model = joblib.load(model_path)
-print(f"✅ Loaded model: {model_path}")
+print(f"Loaded model: {model_path}")
 
 # -----------------------------
 # Define response (Q1–Q30)
@@ -42,10 +38,10 @@ category_labels = {
 
 # Predicted Result interpretation
 predicted_result_map = {
-    0: "A1: Low Exhaustion interpretation",
-    1: "A2: High Exhaustion interpretation",
-    2: "B1: Low Disengagement interpretation",
-    3: "B2: High Disengagement interpretation"
+    0: "Low Exhaustion and Low Disengagement",
+    1: "Low Exhaustion and High Disengagement",
+    2: "High Exhaustion and Low Disengagement",
+    3: "High Exhaustion and High Disengagement"
 }
 
 predicted_result = predicted_result_map.get(predicted_category, "Unknown")
@@ -144,7 +140,6 @@ print("\n📈 BAR GRAPH DATA (Percentages)")
 for k, v in bar_data.items():
     print(f"  {k}: {v}%")
 
-# Output as JSON for Laravel
 json_output = json.dumps(result_payload, indent=4)
 print("\n📦 JSON Output for Laravel:")
 print(json_output)

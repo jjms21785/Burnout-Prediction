@@ -15,9 +15,7 @@ class AdminController extends Controller
     {
         $totalAssessments = Assessment::count();
         
-        $highExhaustionThreshold = 18;
-        $highDisengagementThreshold = 17;
-        
+        // Read burnout categories directly from stored ML predictions
         $assessments = Assessment::all();
         $lowBurnout = 0;
         $disengagement = 0;
@@ -25,8 +23,8 @@ class AdminController extends Controller
         $highBurnout = 0;
         
         foreach ($assessments as $assessment) {
-            $categoryData = $this->calculateBurnoutCategoryWithScores($assessment);
-            $category = $categoryData['category'];
+            // Get category from stored ML prediction (no manual calculation)
+            $category = $assessment->getBurnoutCategoryLabel();
             
             if ($category === 'Low Burnout') {
                 $lowBurnout++;
@@ -87,11 +85,11 @@ class AdminController extends Controller
             ->take(5)
             ->get()
             ->map(function($assessment) {
-                $categoryData = $this->calculateBurnoutCategory($assessment);
+                // Get category from stored ML prediction (no manual calculation)
                 return [
                     'assessment' => $assessment,
-                    'category' => $categoryData['category'],
-                    'categoryColor' => $categoryData['color']
+                    'category' => $assessment->getBurnoutCategoryLabel(),
+                    'categoryColor' => $assessment->getBurnoutCategoryColor()
                 ];
             });
 
@@ -197,81 +195,14 @@ class AdminController extends Controller
     }
 
 
-    private function calculateBurnoutCategory($assessment)
-    {
-        return $this->calculateBurnoutCategoryWithScores($assessment);
-    }
+    // Note: Removed calculateBurnoutCategory() and calculateBurnoutCategoryWithScores() methods
+    // All burnout categories now come directly from stored ML predictions using Assessment::getBurnoutCategoryLabel()
     
-    private function calculateBurnoutCategoryWithScores($assessment)
-    {
-        $exhaustion = $assessment->Exhaustion ?? null;
-        $disengagement = $assessment->Disengagement ?? null;
-        $highExhaustionThreshold = 18;
-        $highDisengagementThreshold = 17;
-        
-        if ($exhaustion === null || $disengagement === null) {
-            $scores = $this->calculateScoresFromAnswers($assessment);
-            if ($exhaustion === null && isset($scores['exhaustion'])) {
-                $exhaustion = $scores['exhaustion'];
-            }
-            if ($disengagement === null && isset($scores['disengagement'])) {
-                $disengagement = $scores['disengagement'];
-            }
-        }
-        
-        $category = 'Unknown';
-        $categoryColor = 'bg-gray-100 text-gray-800';
-        
-        if ($exhaustion !== null && $disengagement !== null) {
-            $highExhaustion = $exhaustion >= $highExhaustionThreshold;
-            $highDisengagement = $disengagement >= $highDisengagementThreshold;
-            
-            if (!$highExhaustion && !$highDisengagement) {
-                $category = 'Low Burnout';
-                $categoryColor = 'bg-green-100 text-green-800';
-            } elseif (!$highExhaustion && $highDisengagement) {
-                $category = 'Disengaged';
-                $categoryColor = 'bg-orange-100 text-orange-800';
-            } elseif ($highExhaustion && !$highDisengagement) {
-                $category = 'Exhausted';
-                $categoryColor = 'bg-orange-100 text-orange-800';
-            } else {
-                $category = 'High Burnout';
-                $categoryColor = 'bg-red-100 text-red-800';
-            }
-        } elseif ($assessment->Burnout_Category !== null) {
-            $categoryNum = is_numeric($assessment->Burnout_Category) 
-                ? (int)$assessment->Burnout_Category 
-                : null;
-            
-            if ($categoryNum !== null && $categoryNum >= 0 && $categoryNum <= 3) {
-                switch ($categoryNum) {
-                    case 0:
-                        $category = 'Low Burnout';
-                        $categoryColor = 'bg-green-100 text-green-800';
-                        break;
-                    case 1:
-                        $category = 'Disengaged';
-                        $categoryColor = 'bg-orange-100 text-orange-800';
-                        break;
-                    case 2:
-                        $category = 'Exhausted';
-                        $categoryColor = 'bg-orange-100 text-orange-800';
-                        break;
-                    case 3:
-                        $category = 'High Burnout';
-                        $categoryColor = 'bg-red-100 text-red-800';
-                        break;
-                }
-            }
-        }
-        
-        return [
-            'category' => $category,
-            'color' => $categoryColor
-        ];
-    }
-    
+    /**
+     * Calculate exhaustion and disengagement scores from answers
+     * Used only for calculating scores, NOT for determining burnout category
+     * Burnout category comes from stored ML prediction only
+     */
     private function calculateScoresFromAnswers($assessment)
     {
         $answers = $assessment->raw_answers ?? [];
