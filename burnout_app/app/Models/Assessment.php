@@ -150,4 +150,21 @@ class Assessment extends Model
                 return 'bg-gray-100 text-gray-800';
         }
     }
+    /**
+     * Accessor for program (maps to college column)
+     * Allows accessing college as ->program
+     */
+    public function getProgramAttribute()
+    {
+        return $this->college;
+    }
+
+    /**
+     * Accessor for year_level (maps to year column)
+     * Allows accessing year as ->year_level
+     */
+    public function getYearLevelAttribute()
+    {
+        return $this->year;
+    }
 }

@@ -3,15 +3,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 import joblib
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
-
-# ------------------------
-# Create output directory
-# ------------------------
-plot_dir = "random_forest/plots"
-os.makedirs(plot_dir, exist_ok=True)
 
 # Load dataset
 file_path = 'random_forest/dataset/training_data.csv'
@@ -29,8 +20,10 @@ else:
     raise ValueError("No category column found! (Expected 'Category' or 'Burnout_Category')")
 
 # Feature selection
+# Use only Q1–Q30 as features
 features = [f'Q{i}' for i in range(1, 31)]
 
+# Check that all required columns exist
 missing = [col for col in features if col not in df.columns]
 if missing:
     raise ValueError(f"Missing feature columns in CSV: {missing}")
@@ -38,14 +31,14 @@ if missing:
 X = df[features]
 y = df[target_col]
 
-# Split
+# Split into train/test
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
 print(f"\n Train size: {len(X_train)} | Test size: {len(X_test)}")
 
-# Train Random Forest
+# Train Random Forest model
 print("\n Training Random Forest model...")
 rf = RandomForestClassifier(
     n_estimators=200,
@@ -57,50 +50,22 @@ rf = RandomForestClassifier(
 )
 rf.fit(X_train, y_train)
 
-# Evaluate
+
+# Evaluate model
 y_pred = rf.predict(X_test)
 
 print("\nModel evaluation:")
 print("Accuracy:", round(accuracy_score(y_test, y_pred), 4))
 print("\nClassification Report:\n", classification_report(y_test, y_pred))
-cm = confusion_matrix(y_test, y_pred)
-print("\nConfusion Matrix:\n", cm)
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
 
-# ------------------------------
-# SAVE CONFUSION MATRIX AS PNG
-# ------------------------------
-plt.figure(figsize=(7, 6))
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
-            xticklabels=rf.classes_,
-            yticklabels=rf.classes_)
-plt.title("Confusion Matrix")
-plt.xlabel("Predicted")
-plt.ylabel("Actual")
-
-conf_matrix_path = f"{plot_dir}/confusion_matrix.png"
-plt.savefig(conf_matrix_path, dpi=300, bbox_inches="tight")
-plt.close()
-print(f"Confusion matrix saved as: {conf_matrix_path}")
-
-# ------------------------------
-# FEATURE IMPORTANCE GRAPH
-# ------------------------------
+# Feature importances
 importances = pd.Series(rf.feature_importances_, index=features).sort_values(ascending=False)
+print("\nTop 10 important features:")
+print(importances.head(10))
 
-plt.figure(figsize=(10, 8))
-sns.barplot(x=importances.values, y=importances.index, palette="viridis")
-plt.title("Feature Importances")
-plt.xlabel("Importance Score")
-plt.ylabel("Feature (Questions Q1–Q30)")
 
-feature_plot_path = f"{plot_dir}/feature_importances.png"
-plt.savefig(feature_plot_path, dpi=300, bbox_inches="tight")
-plt.close()
-print(f"Feature importance chart saved as: {feature_plot_path}")
-
-# ------------------------------
 # Save trained model
-# ------------------------------
 model_filename = 'random_forest/random_forest_burnout_model.pkl'
 joblib.dump(rf, model_filename)
 print(f"\n Model saved as: {model_filename}")

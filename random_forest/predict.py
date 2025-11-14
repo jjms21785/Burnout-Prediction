@@ -46,7 +46,7 @@ predicted_result_map = {
 
 predicted_result = predicted_result_map.get(predicted_category, "Unknown")
 
-print("\n📋 PREDICTED RESULT")
+print("\nPREDICTED RESULT")
 print("-----------------------------")
 print(f"Predicted Category: {category_labels[predicted_category]} → {predicted_result}")
 
@@ -131,15 +131,15 @@ result_payload = {
 # =========================================================
 # Display Results
 # =========================================================
-print("\n📊 RESPONSE RESULT")
+print("\nRESPONSE RESULT")
 print("-----------------------------")
 for k, v in result_payload["ResponseResult"]["Interpretations"].items():
     print(f"{k}: {v}")
 
-print("\n📈 BAR GRAPH DATA (Percentages)")
+print("\nBAR GRAPH DATA (Percentages)")
 for k, v in bar_data.items():
     print(f"  {k}: {v}%")
 
 json_output = json.dumps(result_payload, indent=4)
-print("\n📦 JSON Output for Laravel:")
+print("\nJSON Output for Laravel:")
 print(json_output)
