@@ -8,19 +8,24 @@ app = Flask(__name__)
 # Load model with better error handling
 model = None
 model_path = "random_forest_burnout_model.pkl"
+model_error = None
 
 try:
     if os.path.exists(model_path):
         model = joblib.load(model_path)
         print(f"Model loaded successfully from {model_path}")
     else:
-        print(f"ERROR: Model file not found at {model_path}")
+        print(f"WARNING: Model file not found at {model_path}")
         print(f"Current working directory: {os.getcwd()}")
-        print(f"Files in current directory: {os.listdir('.')}")
-        raise FileNotFoundError(f"Model file not found at {model_path}")
+        try:
+            files = os.listdir('.')
+            print(f"Files in current directory: {files}")
+        except:
+            pass
+        model_error = f"Model file not found at {model_path}"
 except Exception as e:
     print(f"ERROR loading model: {str(e)}")
-    raise
+    model_error = str(e)
 
 category_labels = {
     0: "Non-Burnout",
@@ -53,11 +58,17 @@ def health():
     """Health check endpoint"""
     try:
         model_status = "loaded" if model is not None else "not loaded"
-        return jsonify({
+        response = {
             'status': 'healthy',
             'model': model_status,
-            'message': 'Flask API is running'
-        }), 200
+            'message': 'Flask API is running',
+            'cwd': os.getcwd()
+        }
+        if model_error:
+            response['model_error'] = model_error
+        if model is None:
+            response['status'] = 'degraded'
+        return jsonify(response), 200
     except Exception as e:
         return jsonify({
             'status': 'unhealthy',
