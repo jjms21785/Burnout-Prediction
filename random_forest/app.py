@@ -1,13 +1,26 @@
 from flask import Flask, render_template, request, jsonify
 import joblib
 import numpy as np
+import os
 
 app = Flask(__name__)
 
+# Load model with better error handling
+model = None
+model_path = "random_forest_burnout_model.pkl"
+
 try:
-    model = joblib.load("random_forest_burnout_model.pkl")
-except FileNotFoundError:
-    raise FileNotFoundError("Model file not found. Please ensure model exists.")
+    if os.path.exists(model_path):
+        model = joblib.load(model_path)
+        print(f"Model loaded successfully from {model_path}")
+    else:
+        print(f"ERROR: Model file not found at {model_path}")
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Files in current directory: {os.listdir('.')}")
+        raise FileNotFoundError(f"Model file not found at {model_path}")
+except Exception as e:
+    print(f"ERROR loading model: {str(e)}")
+    raise
 
 category_labels = {
     0: "Non-Burnout",
@@ -26,10 +39,39 @@ def reverse_score(val):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return jsonify({
+            'error': 'Template rendering failed',
+            'message': str(e),
+            'status': 'error'
+        }), 500
+
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    try:
+        model_status = "loaded" if model is not None else "not loaded"
+        return jsonify({
+            'status': 'healthy',
+            'model': model_status,
+            'message': 'Flask API is running'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    if model is None:
+        return jsonify({
+            'error': 'Model not loaded',
+            'message': 'The prediction model is not available'
+        }), 503
+    
     try:
         data = request.get_json() or {}
         
