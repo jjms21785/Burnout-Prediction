@@ -10,6 +10,18 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ViewController;
 
+// Test route for debugging
+Route::get('/test', function () {
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'Laravel is working',
+        'php_version' => PHP_VERSION,
+        'app_env' => env('APP_ENV'),
+        'app_debug' => env('APP_DEBUG'),
+        'has_app_key' => !empty(env('APP_KEY'))
+    ]);
+});
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Authentication routes
