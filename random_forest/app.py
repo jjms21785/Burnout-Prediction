@@ -5,6 +5,16 @@ import os
 
 app = Flask(__name__)
 
+# Global error handler
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    return jsonify({
+        'error': str(e),
+        'type': type(e).__name__,
+        'traceback': traceback.format_exc()
+    }), 500
+
 # Load model with better error handling
 model = None
 model_path = "random_forest_burnout_model.pkl"
@@ -44,14 +54,15 @@ def reverse_score(val):
 
 @app.route('/')
 def home():
-    try:
-        return render_template('index.html')
-    except Exception as e:
-        return jsonify({
-            'error': 'Template rendering failed',
-            'message': str(e),
-            'status': 'error'
-        }), 500
+    # Return simple JSON instead of template to avoid template errors
+    return jsonify({
+        'message': 'Flask API is running',
+        'endpoints': {
+            'health': '/health',
+            'predict': '/predict (POST)'
+        },
+        'model_loaded': model is not None
+    }), 200
 
 @app.route('/health')
 def health():
