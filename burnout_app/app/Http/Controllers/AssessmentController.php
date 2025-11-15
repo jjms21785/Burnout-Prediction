@@ -99,10 +99,11 @@ class AssessmentController extends Controller
 
         $processedData = null;
         try {
+            $flaskUrl = env('FLASK_URL', 'http://127.0.0.1:5000');
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json'
-            ])->post('http://127.0.0.1:5000/predict', [
+            ])->post($flaskUrl . '/predict', [
                 'all_answers' => $allAnswers
             ]);
             
@@ -245,7 +246,8 @@ class AssessmentController extends Controller
             return back()->withErrors(['answers' => 'Invalid number of answers. Please ensure all 30 questions are answered.'])->withInput();
         }
 
-        $apiUrl = 'http://127.0.0.1:5000/predict';
+        $flaskUrl = env('FLASK_URL', 'http://127.0.0.1:5000');
+        $apiUrl = $flaskUrl . '/predict';
         $errorMsg = null;
         $predictedLabel = null;
         $interpretations = null;
@@ -306,7 +308,8 @@ class AssessmentController extends Controller
                 }
             }
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            $errorMsg = 'Could not connect to prediction service. Please ensure the Flask API is running on http://127.0.0.1:5000';
+            $flaskUrl = env('FLASK_URL', 'http://127.0.0.1:5000');
+            $errorMsg = 'Could not connect to prediction service. Please ensure the Flask API is running on ' . $flaskUrl;
             Log::error('Flask connection error', ['error' => $e->getMessage()]);
         } catch (\Exception $e) {
             $errorMsg = 'Prediction error: ' . $e->getMessage();

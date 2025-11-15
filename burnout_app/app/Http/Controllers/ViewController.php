@@ -242,10 +242,11 @@ class ViewController extends Controller
         // Only call API if we have valid answers
         if (!empty($allAnswers) && count($allAnswers) === 30) {
             try {
+                $flaskUrl = env('FLASK_URL', 'http://127.0.0.1:5000');
                 $response = Http::timeout(10)->withHeaders([
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json'
-                ])->post('http://127.0.0.1:5000/predict', [
+                ])->post($flaskUrl . '/predict', [
                     'all_answers' => $allAnswers
                 ]);
                 
