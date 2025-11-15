@@ -175,7 +175,7 @@
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-3">
                     <a href="{{ route('home') }}" class="block">
-                        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition-opacity">Burnalytics</h1>
+                        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent cursor-pointer">Burnalytics</h1>
                     </a>
                 </div>
                 <nav class="flex items-center space-x-8">
