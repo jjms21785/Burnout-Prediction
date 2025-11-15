@@ -1,2 +1,2 @@
-web: php artisan config:clear && php artisan cache:clear && php artisan route:clear && php artisan view:clear && php artisan storage:link || true && php artisan serve --host=0.0.0.0 --port=$PORT
+web: mkdir -p database && touch database/database.sqlite && chmod 664 database/database.sqlite && php artisan config:clear && php artisan cache:clear && php artisan route:clear && php artisan view:clear && php artisan storage:link || true && php artisan migrate --force || true && php artisan serve --host=0.0.0.0 --port=$PORT
 
