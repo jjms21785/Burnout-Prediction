@@ -15,17 +15,28 @@
     $academicPercent = $academicPercent ?? 0;
     $stressPercent = $stressPercent ?? 0;
     $sleepPercent = $sleepPercent ?? 0;
+    
+    // Determine header color based on category
+    $headerColor = 'from-indigo-500 to-indigo-600';
+    $categoryLower = strtolower($categoryName);
+    if (strpos($categoryLower, 'low') !== false) {
+        $headerColor = 'from-green-500 to-green-600';
+    } elseif (strpos($categoryLower, 'exhausted') !== false || strpos($categoryLower, 'disengaged') !== false) {
+        $headerColor = 'from-yellow-500 to-yellow-600';
+    } elseif (strpos($categoryLower, 'high') !== false) {
+        $headerColor = 'from-red-500 to-red-600';
+    }
 @endphp
 
 <div class="min-h-screen bg-gradient-to-b from-indigo-50 to-white py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Result Header -->
-        <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg p-8 mb-6 text-white relative overflow-hidden shadow-lg">
+        <div class="bg-gradient-to-r {{ $headerColor }} rounded-lg p-8 mb-6 text-white relative overflow-hidden shadow-lg">
             <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-10 rounded-full -mr-48 -mt-48"></div>
             
             <!-- Action Buttons - Top Right -->
             <div class="absolute top-4 right-4 flex flex-col gap-2 z-20">
-                <button onclick="exportToPDF()" class="inline-flex items-center px-2 py-1.5 bg-white text-indigo-600 text-xs font-medium rounded-lg shadow hover:bg-indigo-50 hover:shadow-md transition-all duration-200">
+                <button onclick="exportToPDF()" class="inline-flex items-center px-2 py-1.5 bg-white text-gray-700 text-xs font-medium rounded-lg shadow hover:bg-gray-50 hover:shadow-md transition-all duration-200">
                     <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
@@ -182,19 +193,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('assessmentBreakdownChart');
     if (!ctx) return;
 
+    const dataValues = [
+        Math.max(0, exhaustionPercent),
+        Math.max(0, disengagementPercent),
+        Math.max(0, academicPercent),
+        Math.max(0, stressPercent),
+        Math.max(0, sleepPercent)
+    ];
+    
+    const maxValue = Math.max(...dataValues, 1);
+    const minValue = Math.min(...dataValues);
+    
     new Chart(ctx, {
         type: 'bar',
         data: {
             labels: ['Exhausted', 'Disengaged', 'Academic Performance', 'Stress', 'Sleep'],
             datasets: [{
-                label: 'Percentage (%)',
-                data: [
-                    exhaustionPercent,
-                    disengagementPercent,
-                    academicPercent,
-                    stressPercent,
-                    sleepPercent
-                ],
+                label: 'Score (%)',
+                data: dataValues,
                 backgroundColor: [
                     'rgba(99, 102, 241, 0.8)',
                     'rgba(99, 102, 241, 0.8)',
@@ -213,7 +229,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 borderRadius: {
                     topLeft: 8,
                     topRight: 8
-                }
+                },
+                minBarLength: 2
             }]
         },
         options: {
@@ -226,7 +243,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return context.parsed.y + '%';
+                            const actualValue = dataValues[context.dataIndex];
+                            return actualValue.toFixed(1) + '%';
                         }
                     },
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -244,8 +262,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 y: {
                     beginAtZero: true,
                     max: 100,
+                    min: 0,
                     ticks: {
-                        stepSize: 25,
+                    stepSize: function(context) {
+                        const dataValues = context.chart.data.datasets[0].data;
+                        const maxVal = Math.max(...dataValues);
+                        if (maxVal <= 10) return 2;
+                        if (maxVal <= 20) return 5;
+                        if (maxVal <= 50) return 10;
+                        return 25;
+                    },
                         callback: function(value) {
                             return value + '%';
                         },
@@ -261,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     title: {
                         display: true,
-                        text: 'Percentage (%)',
+                        text: 'Score (%)',
                         font: {
                             size: 12,
                             weight: '600'

@@ -88,7 +88,12 @@
 
         <div class="col-span-7 space-y-4">
             <div class="rounded-xl shadow-sm p-3 bg-white border border-gray-200">
-                <h3 class="text-base font-semibold flex items-center text-neutral-800">Latest Submissions</h3>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-base font-semibold flex items-center text-neutral-800">Latest Submissions</h3>
+                    <a href="{{ route('admin.records') }}" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-indigo-500 text-white rounded-md hover:bg-indigo-400 transition">
+                        <span>View Records</span>
+                    </a>
+                </div>
                 <div class="space-y-1" id="latestSubmissions">
                     @if(isset($latestSubmissions) && $latestSubmissions->count() > 0)
                         <div class="grid grid-cols-12 gap-4 items-center p-1 border-b-1 border-gray-200 bg-gray-50">
@@ -126,34 +131,14 @@
                 </div>
             </div>
 
-            <div class="rounded-xl shadow-sm px-5 pt-5 pb-2 bg-white border border-gray-200 flex flex-col">
-                <div class="grid grid-cols-11 gap-4 items-center mb-3 pb-2 border-b border-gray-200">
-                    <div class="col-span-5 text-xl font-semibold text-neutral-800">Response Distribution</div>
-                    <div class="col-span-6 flex">
-                        <div class="flex-1 text-xs text-center text-gray-700 border-r border-gray-200">Strongly Agree</div>
-                        <div class="flex-1 text-xs text-center text-gray-700 border-r border-gray-200">Agree</div>
-                        <div class="flex-1 text-xs text-center text-gray-700 border-r border-gray-200">Disagree</div>
-                        <div class="flex-1 text-xs text-center text-gray-700">Strongly Disagree</div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-11 gap-4 items-center mb-3">
-                    <div class="col-span-5"></div>
-                    <div class="col-span-6 text-[10px] text-center text-gray-500">Hover on the bar for exact detail. If missing, it has minimal or no value.</div>
+            <div class="rounded-xl shadow-sm px-5 pt-5 pb-5 bg-white border border-gray-200 flex flex-col">
+                <div class="mb-4 pb-2 border-b border-gray-200">
+                    <div class="text-xl font-semibold text-neutral-800 mb-2">Feature Importance</div>
+                    <div class="text-xs text-gray-500">Shows the relative importance of each question (Q1-Q30) in predicting burnout categories based on the Random Forest model.</div>
                 </div>
 
-                <div class="space-y-4 mb-4 flex-1 overflow-y-auto" id="questionsList"></div>
-                
-                <div class="flex justify-end items-center space-x-2">
-                    <button id="prevPageBtn" onclick="changeQuestionPage(-1)" class="flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-white text-neutral-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </button>
-                    <button id="nextPageBtn" onclick="changeQuestionPage(1)" class="flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-white text-neutral-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
+                <div class="flex-1 overflow-y-auto" id="featureImportanceContainer">
+                    <canvas id="featureImportanceChart"></canvas>
                 </div>
             </div>
         </div>
@@ -173,7 +158,7 @@ window.dashboardData = {
     genderDistribution: @json($genderDistribution ?? []),
     yearDistribution: @json($yearDistribution ?? []),
     programDistribution: @json($programDistribution ?? []),
-    questionStats: @json($questionStats ?? []),
+    featureImportance: @json($featureImportance ?? []),
     questionsList: @json($questionsList ?? [])
 };
 </script>

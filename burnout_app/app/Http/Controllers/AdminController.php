@@ -93,13 +93,6 @@ class AdminController extends Controller
                 ];
             });
 
-        $questionStats = Assessment::whereNotNull('answers')
-        ->get()
-            ->map(function($assessment) {
-                return $assessment->raw_answers ?? [];
-            })
-            ->filter();
-
         $questionController = new QuestionController();
         $questionsData = $questionController->getQuestions();
         
@@ -120,6 +113,13 @@ class AdminController extends Controller
             }
         }
 
+        $featureImportance = [];
+        $featureImportancePath = base_path('../random_forest/feature_importance.json');
+        if (file_exists($featureImportancePath)) {
+            $featureImportanceJson = file_get_contents($featureImportancePath);
+            $featureImportance = json_decode($featureImportanceJson, true) ?? [];
+        }
+
         return view('admin.dashboard', compact(
             'totalAssessments',
             'highBurnout',
@@ -131,7 +131,7 @@ class AdminController extends Controller
             'yearDistribution',
             'programDistribution',
             'latestSubmissions',
-            'questionStats',
+            'featureImportance',
             'questionsList'
         ));
     }

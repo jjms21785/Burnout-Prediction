@@ -7,25 +7,22 @@ app = Flask(__name__)
 try:
     model = joblib.load("random_forest_burnout_model.pkl")
 except FileNotFoundError:
-    raise FileNotFoundError("Model file not found. Please ensure random_forest_burnout_model.pkl exists.")
+    raise FileNotFoundError("Model file not found. Please ensure model exists.")
 
-# ✅ FIX: Correct category labels matching your confusion matrix
 category_labels = {
     0: "Non-Burnout",
-    1: "Exhausted",      # ✅ FIXED
-    2: "Disengaged",     # ✅ FIXED
+    1: "Exhausted",     
+    2: "Disengaged",    
     3: "BURNOUT"
 }
 
-# ✅ FIX: Correct reverse-scored indices
-# These are the positively-worded OLBI items (where SA=1 means LOW burnout)
+# positively-worded OLBI items 
 # Q15, Q17, Q19, Q21, Q23, Q24, Q27, Q29
 # In the OLBI array order: [0, 9, 2, 11, 12, 4, 6, 15]
 reverse_scored_indices = [0, 2, 4, 6, 9, 11, 12, 15]
 
 def reverse_score(val):
-    """Reverse score for 1-4 Likert scale"""
-    return 5 - val  # ✅ FIX: Correct formula
+    return 5 - val
 
 @app.route('/')
 def home():
@@ -56,37 +53,20 @@ def predict():
         # ═══════════════════════════════════════════════════════════
         # ACADEMIC PERFORMANCE (Q1-Q2)
         # ═══════════════════════════════════════════════════════════
-        # NOTE: Frontend must send 0-4 scores, NOT 1-4 Likert!
-        # If frontend sends 1-5, subtract 1 from each:
         academic_score = responses_dict['Q1'] + responses_dict['Q2']
-        # If your frontend sends 1-5 instead of 0-4, adjust:
-        # academic_score = (responses_dict['Q1'] - 1) + (responses_dict['Q2'] - 1)
-        
+       
         academic_code = "D1" if academic_score >= 5 else "D2"
         academic_label = f"{academic_code}: Academic Performance - {'Good/High' if academic_code == 'D1' else 'Struggling/Low'}"
         
         # ═══════════════════════════════════════════════════════════
         # STRESS LEVEL (Q3-Q6 / PSS-4)
-        # ═══════════════════════════════════════════════════════════
-        # Q3, Q6: Direct scoring (0-4)
-        # Q4, Q5: Reverse scoring (0-4)
-        # NOTE: If frontend sends 1-5, adjust accordingly!
-        
-        # If frontend sends 0-4:
+        # ═══════════════════════════════════════════════════════════  
         stress_score = (
             responses_dict['Q3'] +
             (4 - responses_dict['Q4']) +  # Reverse
             (4 - responses_dict['Q5']) +  # Reverse
             responses_dict['Q6']
         )
-        
-        # If frontend sends 1-5, use this instead:
-        # stress_score = (
-        #     (responses_dict['Q3'] - 1) +
-        #     (4 - (responses_dict['Q4'] - 1)) +
-        #     (4 - (responses_dict['Q5'] - 1)) +
-        #     (responses_dict['Q6'] - 1)
-        # )
         
         if stress_score <= 4:
             stress_code = "D3"
@@ -101,12 +81,8 @@ def predict():
         # ═══════════════════════════════════════════════════════════
         # SLEEP QUALITY (Q7-Q14 / SCI-8)
         # ═══════════════════════════════════════════════════════════
-        # NOTE: If frontend sends 1-5, adjust!
         sleep_score = sum(responses_dict[f'Q{i}'] for i in range(7, 15))
-        
-        # If frontend sends 1-5 instead of 0-4:
-        # sleep_score = sum(responses_dict[f'Q{i}'] - 1 for i in range(7, 15))
-        
+           
         if sleep_score >= 24:
             sleep_code = "D6"
             sleep_label = "D6: Sleep Quality - Good"
@@ -121,13 +97,11 @@ def predict():
         # OLBI-S BURNOUT ASSESSMENT (Q15-Q30)
         # ═══════════════════════════════════════════════════════════
         
-        # ✅ FIX: Correct mapping
         olbi_mapping = {
             'disengagement': [14, 17, 18, 21, 23, 25, 26, 29],  # Q15,Q18,Q19,Q22,Q24,Q26,Q27,Q30
             'exhaustion': [15, 16, 19, 20, 22, 24, 27, 28]      # Q16,Q17,Q20,Q21,Q23,Q25,Q28,Q29
         }
         
-        # Extract OLBI responses (indices 14-29)
         olbi_responses = []
         for idx in olbi_mapping['disengagement']:
             olbi_responses.append(all_responses[idx])
@@ -181,7 +155,6 @@ def predict():
             "Academic Performance": round((academic_score / 8) * 100, 2),
             "Stress": round((stress_score / 16) * 100, 2),
             "Sleep": round((sleep_score / 32) * 100, 2),
-            # ✅ FIX: Correct percentage calculation for 1-4 scale
             "Exhaustion": round(((exhaustion_mean - 1) / 3) * 100, 2),
             "Disengagement": round(((disengagement_mean - 1) / 3) * 100, 2),
         }

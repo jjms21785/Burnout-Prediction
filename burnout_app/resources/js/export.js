@@ -69,28 +69,32 @@ function exportToExcel() {
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
     
-    const allQuestions = window.allQuestions || [];
-    const questionData = [
-        ['Response Distribution'],
-        ['Question Response Statistics'],
+    const featureImportance = data.featureImportance || {};
+    const questionsList = data.questionsList || [];
+    const featureData = [
+        ['Feature Importance'],
+        ['Model Feature Importance Analysis'],
+        ['Shows the relative importance of each question (Q1-Q30) in predicting burnout categories'],
         [],
-        ['Question', 'Strongly Agree', 'Strongly Agree %', 'Agree', 'Agree %', 'Disagree', 'Disagree %', 'Strongly Disagree', 'Strongly Disagree %', 'Total Responses'],
-        ...allQuestions.map(q => [
-            `Q${q.id}: ${q.text}`,
-            q.responses[0],
-            q.total > 0 ? (q.responses[0] / q.total * 100).toFixed(1) + '%' : '0.0%',
-            q.responses[1],
-            q.total > 0 ? (q.responses[1] / q.total * 100).toFixed(1) + '%' : '0.0%',
-            q.responses[2],
-            q.total > 0 ? (q.responses[2] / q.total * 100).toFixed(1) + '%' : '0.0%',
-            q.responses[3],
-            q.total > 0 ? (q.responses[3] / q.total * 100).toFixed(1) + '%' : '0.0%',
-            q.total
-        ])
+        ['Question', 'Feature', 'Importance', 'Importance (%)', 'Question Text'],
+        ...Object.keys(featureImportance).map(feature => {
+            const qNum = parseInt(feature.replace('Q', ''));
+            const questionText = questionsList[qNum - 1] || `Question ${qNum}`;
+            const importance = featureImportance[feature];
+            const totalImportance = Object.values(featureImportance).reduce((a, b) => a + b, 0);
+            const importancePercent = totalImportance > 0 ? ((importance / totalImportance) * 100).toFixed(4) : '0.0000';
+            return [
+                `Q${qNum}`,
+                feature,
+                importance.toFixed(6),
+                importancePercent + '%',
+                questionText
+            ];
+        })
     ];
     
-    const questionSheet = XLSX.utils.aoa_to_sheet(questionData);
-    XLSX.utils.book_append_sheet(workbook, questionSheet, 'Response Distribution');
+    const featureSheet = XLSX.utils.aoa_to_sheet(featureData);
+    XLSX.utils.book_append_sheet(workbook, featureSheet, 'Feature Importance');
     
     XLSX.writeFile(workbook, `Dashboard_Export_${formatTimestamp()}.xlsx`);
 }
@@ -160,7 +164,7 @@ async function exportToPDF() {
     
     doc.setFontSize(18);
     doc.setFont(undefined, 'bold');
-    doc.text('Burnout Analytics Dashboard', margin, yPos);
+    doc.text('Burnout Analytics Dashboard', pageWidth / 2, yPos, { align: 'center' });
     
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
@@ -266,74 +270,66 @@ async function exportToPDF() {
     
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
-    doc.text('Response Distribution', margin, yPos);
+    doc.text('Feature Importance', pageWidth / 2, yPos, { align: 'center' });
     yPos += 8;
     
-    doc.setFontSize(7);
+    doc.setFontSize(9);
     doc.setFont(undefined, 'normal');
-    const barStartX = 85;
+    doc.text('Shows the relative importance of each question (Q1-Q30) in predicting burnout categories based on the Random Forest model.', margin, yPos);
+    yPos += 10;
+    
+    const featureImportance = data.featureImportance || {};
+    const questionsList = data.questionsList || [];
+    const features = Object.keys(featureImportance).sort((a, b) => featureImportance[b] - featureImportance[a]);
+    const maxImportance = Math.max(...Object.values(featureImportance));
+    const barStartX = margin + 50;
     const barWidth = pageWidth - barStartX - margin;
-    const colWidth = barWidth / 4;
-    const headerLabels = ['Strongly Agree', 'Agree', 'Disagree', 'Strongly Disagree'];
-    headerLabels.forEach((label, idx) => {
-        doc.text(label, barStartX + (colWidth * idx) + (colWidth / 2), yPos, { align: 'center' });
-    });
-    yPos += 6;
+    const barHeight = 5;
+    const rowHeight = 8;
     
-    const allQuestions = window.allQuestions || [];
-    const barColors = ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe'];
-    
-    function drawStackedBar(question, xStart, y, totalWidth, height) {
-        const percentages = question.percentages || [0, 0, 0, 0];
-        let currentX = xStart;
-        
-        percentages.forEach((pct, idx) => {
-            if (pct > 0) {
-                const segmentWidth = (pct / 100) * totalWidth;
-                const rgb = hexToRgb(barColors[idx]);
-                if (rgb) {
-                    doc.setFillColor(rgb.r, rgb.g, rgb.b);
-                    doc.rect(currentX, y, segmentWidth, height, 'F');
-                }
-                
-                if (pct >= 8) {
-                    doc.setFontSize(6);
-                    doc.setTextColor(255, 255, 255);
-                    doc.text(`${pct.toFixed(1)}%`, currentX + (segmentWidth / 2), y + (height / 2) + 1, { align: 'center' });
-                    doc.setTextColor(0, 0, 0);
-                }
-                
-                currentX += segmentWidth;
-            }
-        });
+    if (features.length === 0) {
+        doc.setFontSize(10);
+        doc.text('Feature importance data not available.', margin, yPos);
+    } else {
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'bold');
+        doc.text('Feature', margin, yPos);
+        doc.text('Importance', barStartX, yPos);
+        yPos += 6;
         
         doc.setDrawColor(200, 200, 200);
-        doc.rect(xStart, y, totalWidth, height, 'S');
-    }
-    
-    const responseLabels = ['Strongly Agree', 'Agree', 'Disagree', 'Strongly Disagree'];
-    allQuestions.forEach(q => {
-        checkPageBreak(20);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 3;
         
-        doc.setFontSize(7);
-        doc.setFont(undefined, 'bold');
-        const questionText = `${q.id}. ${q.text}`;
-        const truncatedText = questionText.length > 50 ? questionText.substring(0, 50) + '...' : questionText;
-        doc.text(truncatedText, margin, yPos + 4);
-        
-        const barHeight = 7;
-        drawStackedBar(q, barStartX, yPos, barWidth, barHeight);
-        yPos += barHeight + 3;
-        
-        doc.setFontSize(6);
-        doc.setFont(undefined, 'normal');
-        const textY = yPos;
-        responseLabels.forEach((label, idx) => {
-            doc.text(`${label}: ${q.responses[idx]} (${q.percentages[idx].toFixed(1)}%)`, margin + 5, textY + (idx * 3));
+        features.forEach((feature, idx) => {
+            checkPageBreak(rowHeight + 3);
+            
+            const importance = featureImportance[feature];
+            const normalizedImportance = (importance / maxImportance) * 100;
+            const qNum = parseInt(feature.replace('Q', ''));
+            const questionText = questionsList[qNum - 1] || `Question ${qNum}`;
+            const truncatedText = questionText.length > 40 ? questionText.substring(0, 40) + '...' : questionText;
+            
+            doc.setFontSize(7);
+            doc.setFont(undefined, 'normal');
+            doc.text(`${feature}: ${truncatedText}`, margin, yPos + 3);
+            
+            const rgb = hexToRgb('#6366f1');
+            if (rgb) {
+                doc.setFillColor(rgb.r, rgb.g, rgb.b);
+                const segmentWidth = (normalizedImportance / 100) * barWidth;
+                doc.rect(barStartX, yPos, segmentWidth, barHeight, 'F');
+            }
+            
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(barStartX, yPos, barWidth, barHeight, 'S');
+            
+            doc.setFontSize(7);
+            doc.text(`${(importance * 100).toFixed(4)}%`, barStartX + barWidth + 3, yPos + 3);
+            
+            yPos += rowHeight;
         });
-        doc.text(`Total Responses: ${q.total}`, margin + 5, textY + 12);
-        yPos += 15;
-    });
+    }
     
     doc.save(`Dashboard_Export_${formatTimestamp()}.pdf`);
 }

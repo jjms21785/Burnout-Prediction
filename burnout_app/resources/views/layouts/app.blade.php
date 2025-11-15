@@ -90,7 +90,9 @@
             <!-- Sidebar -->
             <div class="sidebar w-48 flex flex-col bg-gray-50 border-r border-gray-200">
                 <div class="p-4">
-                    <h1 class="text-2xl items-center py-5 text-center border-b border-gray-200 font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent">Burnalytics</h1>
+                    <a href="{{ route('home') }}" class="block">
+                        <h1 class="text-2xl items-center py-5 text-center border-b border-gray-200 font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition-opacity">Burnalytics</h1>
+                    </a>
             </div>
                 <nav class="flex-1 px-2 py-2">
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center px-3 py-4 text-xs font-medium transition border-b border-gray-200 rounded-lg @if(request()->routeIs('admin.dashboard')) text-white bg-indigo-500 @else text-neutral-800 hover:bg-indigo-100 @endif">
@@ -172,13 +174,32 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-3">
-                    <div>
-                        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent">Burnalytics</h1>
-                    </div>
+                    <a href="{{ route('home') }}" class="block">
+                        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition-opacity">Burnalytics</h1>
+                    </a>
                 </div>
                 <nav class="flex items-center space-x-8">
-                        <a href="{{ route('home') }}" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">Home</a>
-                    <a href="{{ route('home') }}" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">About</a>
+                    <a href="{{ route('home') }}" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">Home</a>
+                    <a href="{{ route('home') }}#about" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">About</a>
+                    <a href="{{ route('home') }}#learn-more" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">Learn More</a>
+                    @auth
+                        <div class="relative" id="userMenuContainer">
+                            <button type="button" id="userMenuButton" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105 focus:outline-none">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                            </button>
+                            <div id="userMenuDropdown" class="absolute right-0 mt-2 w-36 bg-white rounded-md shadow-lg opacity-0 invisible transition-all duration-200 z-50">
+                                <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-md">Dashboard</a>
+                                <form method="POST" action="{{ route('logout') }}" class="block">
+                                    @csrf
+                                    <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-md">Log Out</button>
+                                </form>
+                            </div>
+                        </div>
+                    @else
+                        <a href="{{ route('login') }}" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">Log In</a>
+                    @endauth
                 </nav>
             </div>
         </div>
@@ -187,5 +208,35 @@
         @yield('content')
     </main>
     @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const userMenuButton = document.getElementById('userMenuButton');
+            const userMenuDropdown = document.getElementById('userMenuDropdown');
+            
+            if (userMenuButton && userMenuDropdown) {
+                userMenuButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isVisible = userMenuDropdown.classList.contains('opacity-100');
+                    
+                    if (isVisible) {
+                        userMenuDropdown.classList.remove('opacity-100', 'visible');
+                        userMenuDropdown.classList.add('opacity-0', 'invisible');
+                    } else {
+                        userMenuDropdown.classList.remove('opacity-0', 'invisible');
+                        userMenuDropdown.classList.add('opacity-100', 'visible');
+                    }
+                });
+                
+                document.addEventListener('click', function(e) {
+                    const container = document.getElementById('userMenuContainer');
+                    if (container && !container.contains(e.target)) {
+                        userMenuDropdown.classList.remove('opacity-100', 'visible');
+                        userMenuDropdown.classList.add('opacity-0', 'invisible');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
