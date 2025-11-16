@@ -332,23 +332,23 @@ class AssessmentController extends Controller
                     }
                 }
             }
-                } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                    $errorMsg = 'Could not connect to prediction service at ' . $apiUrl . '. Please ensure the Flask API is running. Error: ' . $e->getMessage();
-                    Log::error('Flask connection error', [
-                        'flask_url' => $flaskUrl,
-                        'api_url' => $apiUrl,
-                        'error' => $e->getMessage()
-                    ]);
-                } catch (\Exception $e) {
-                    $errorMsg = 'Prediction error: ' . $e->getMessage();
-                    Log::error('Flask API error', [
-                        'flask_url' => $flaskUrl,
-                        'api_url' => $apiUrl,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                }
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                $errorMsg = 'Could not connect to prediction service at ' . $apiUrl . '. Please ensure the Flask API is running. Error: ' . $e->getMessage();
+                Log::error('Flask connection error', [
+                    'flask_url' => $flaskUrl,
+                    'api_url' => $apiUrl,
+                    'error' => $e->getMessage()
+                ]);
+            } catch (\Exception $e) {
+                $errorMsg = 'Prediction error: ' . $e->getMessage();
+                Log::error('Flask API error', [
+                    'flask_url' => $flaskUrl,
+                    'api_url' => $apiUrl,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
             }
+        }
 
         // Get ML prediction value directly from Python response
         $overallRisk = null;
