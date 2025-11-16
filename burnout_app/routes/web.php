@@ -10,6 +10,26 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ViewController;
 
+// Diagnostic route to check assets
+Route::get('/check-assets', function () {
+    $manifestPath = public_path('build/manifest.json');
+    $manifestExists = file_exists($manifestPath);
+    $buildDirExists = is_dir(public_path('build'));
+    
+    $files = [];
+    if ($buildDirExists) {
+        $files = array_slice(scandir(public_path('build')), 2);
+    }
+    
+    return response()->json([
+        'manifest_exists' => $manifestExists,
+        'build_dir_exists' => $buildDirExists,
+        'build_files' => $files,
+        'manifest_path' => $manifestPath,
+        'public_path' => public_path(),
+    ]);
+});
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Authentication routes
