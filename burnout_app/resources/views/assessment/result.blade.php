@@ -47,7 +47,13 @@
             <p class="text-sm font-semibold opacity-95 relative z-10">The result is:</p>
             <h1 class="text-4xl font-bold mb-2 relative z-10">{{ $categoryName }}</h1>
             
-            @if($hasData && isset($interpretations['combined_result']))
+            @if($errorMessage)
+                <div class="relative z-10 mt-4 pt-4 border-t border-white/20">
+                    <p class="text-sm opacity-95 bg-white/20 rounded px-3 py-2">
+                        ⚠️ {{ $errorMessage }}
+                    </p>
+                </div>
+            @elseif($hasData && isset($interpretations['combined_result']))
                 <div class="relative z-10 mt-4 pt-4 border-t border-white/20">
                     <p class="text-sm opacity-95">{{ $interpretations['combined_result']['text'] ?? '' }}</p>
                 </div>
