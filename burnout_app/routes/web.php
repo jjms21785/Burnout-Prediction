@@ -30,6 +30,35 @@ Route::get('/check-assets', function () {
     ]);
 });
 
+// Diagnostic route to test Flask API
+Route::get('/test-flask', function () {
+    $flaskUrl = env('FLASK_URL', 'http://127.0.0.1:5000');
+    $testAnswers = array_fill(0, 30, 3); // Test with all 3s
+    
+    try {
+        $response = \Illuminate\Support\Facades\Http::timeout(10)->withHeaders([
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json'
+        ])->post($flaskUrl . '/predict', [
+            'all_answers' => $testAnswers
+        ]);
+        
+        return response()->json([
+            'flask_url' => $flaskUrl,
+            'status' => $response->status(),
+            'success' => $response->successful(),
+            'response' => $response->json(),
+            'error' => $response->failed() ? $response->body() : null
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'flask_url' => $flaskUrl,
+            'error' => $e->getMessage(),
+            'type' => get_class($e)
+        ], 500);
+    }
+});
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Authentication routes
