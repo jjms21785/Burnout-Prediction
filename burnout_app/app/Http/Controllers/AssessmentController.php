@@ -255,13 +255,13 @@ class AssessmentController extends Controller
         $flaskUrl = trim($flaskUrl);
         $flaskUrl = preg_replace('/\s+/', '', $flaskUrl); // Remove all whitespace
         $flaskUrl = rtrim($flaskUrl, '/');
+        $apiUrl = $flaskUrl . '/predict';
+        $errorMsg = null;
         // Validate URL format
         if (!filter_var($flaskUrl, FILTER_VALIDATE_URL)) {
             Log::error('Invalid FLASK_URL format', ['flask_url' => $flaskUrl]);
             $errorMsg = 'Invalid Flask API URL configuration. Please check FLASK_URL environment variable.';
         }
-        $apiUrl = $flaskUrl . '/predict';
-        $errorMsg = null;
         $predictedLabel = null;
         $interpretations = null;
         $recommendations = null;
