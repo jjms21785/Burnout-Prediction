@@ -39,9 +39,9 @@ class AdminController extends Controller
 
         $ageDistribution = Assessment::selectRaw('
             CASE 
-                WHEN age BETWEEN 18 AND 20 THEN "18-20"
-                WHEN age BETWEEN 21 AND 23 THEN "21-23"
-                WHEN age BETWEEN 24 AND 26 THEN "24-26"
+                WHEN age BETWEEN 18 AND 20 THEN \'18-20\'
+                WHEN age BETWEEN 21 AND 23 THEN \'21-23\'
+                WHEN age BETWEEN 24 AND 26 THEN \'24-26\'
                 ELSE NULL
             END as age_group,
             COUNT(*) as count
