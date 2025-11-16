@@ -243,6 +243,10 @@ class ViewController extends Controller
         if (!empty($allAnswers) && count($allAnswers) === 30) {
             try {
                 $flaskUrl = env('FLASK_URL', 'http://127.0.0.1:5000');
+                // Clean URL: remove whitespace, newlines, and trailing slashes
+                $flaskUrl = trim($flaskUrl);
+                $flaskUrl = preg_replace('/\s+/', '', $flaskUrl);
+                $flaskUrl = rtrim($flaskUrl, '/');
                 $response = Http::timeout(10)->withHeaders([
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json'

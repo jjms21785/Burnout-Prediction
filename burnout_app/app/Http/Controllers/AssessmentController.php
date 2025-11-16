@@ -100,6 +100,10 @@ class AssessmentController extends Controller
         $processedData = null;
         try {
             $flaskUrl = env('FLASK_URL', 'http://127.0.0.1:5000');
+            // Clean URL: remove whitespace, newlines, and trailing slashes
+            $flaskUrl = trim($flaskUrl);
+            $flaskUrl = preg_replace('/\s+/', '', $flaskUrl);
+            $flaskUrl = rtrim($flaskUrl, '/');
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json'
@@ -247,8 +251,15 @@ class AssessmentController extends Controller
         }
 
         $flaskUrl = env('FLASK_URL', 'http://127.0.0.1:5000');
-        // Remove trailing slash if present
+        // Clean URL: remove whitespace, newlines, and trailing slashes
+        $flaskUrl = trim($flaskUrl);
+        $flaskUrl = preg_replace('/\s+/', '', $flaskUrl); // Remove all whitespace
         $flaskUrl = rtrim($flaskUrl, '/');
+        // Validate URL format
+        if (!filter_var($flaskUrl, FILTER_VALIDATE_URL)) {
+            Log::error('Invalid FLASK_URL format', ['flask_url' => $flaskUrl]);
+            $errorMsg = 'Invalid Flask API URL configuration. Please check FLASK_URL environment variable.';
+        }
         $apiUrl = $flaskUrl . '/predict';
         $errorMsg = null;
         $predictedLabel = null;
