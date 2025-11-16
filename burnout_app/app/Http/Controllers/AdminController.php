@@ -114,8 +114,11 @@ class AdminController extends Controller
         }
 
         $featureImportance = [];
-        // Try multiple paths: storage/app (for Railway), then relative path (for local dev)
-        $featureImportancePath = storage_path('app/feature_importance.json');
+        // Try multiple paths: resources/data (tracked in git), storage/app (fallback), then relative path (for local dev)
+        $featureImportancePath = resource_path('data/feature_importance.json');
+        if (!file_exists($featureImportancePath)) {
+            $featureImportancePath = storage_path('app/feature_importance.json');
+        }
         if (!file_exists($featureImportancePath)) {
             $featureImportancePath = base_path('../random_forest/feature_importance.json');
         }
