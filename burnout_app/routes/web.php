@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\AdminController;
@@ -10,37 +9,6 @@ use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ViewController;
-
-// Test route for debugging
-Route::get('/test', function () {
-    return response()->json([
-        'status' => 'ok',
-        'message' => 'Laravel is working',
-        'php_version' => PHP_VERSION,
-        'app_env' => env('APP_ENV'),
-        'app_debug' => env('APP_DEBUG'),
-        'has_app_key' => !empty(env('APP_KEY'))
-    ]);
-});
-
-// Temporary route to run migrations (REMOVE AFTER USE)
-Route::get('/run-migrations', function () {
-    try {
-        Artisan::call('migrate', ['--force' => true]);
-        $output = Artisan::output();
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Migrations ran successfully',
-            'output' => $output
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ], 500);
-    }
-});
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
