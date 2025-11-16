@@ -331,6 +331,29 @@ class AssessmentController extends Controller
                 $tempAssessment->Burnout_Category = $overallRisk;
                 $predictedLabel = $tempAssessment->getBurnoutCategoryLabel();
             }
+        } elseif ($pythonResponse && isset($pythonResponse['PredictedResult'])) {
+            // Try to get prediction directly from Python response if processedData failed
+            $predictedResult = $pythonResponse['PredictedResult'];
+            if (isset($predictedResult['predicted_category'])) {
+                $categoryNum = (int)$predictedResult['predicted_category'];
+                if ($categoryNum >= 0 && $categoryNum <= 3) {
+                    $overallRisk = (string)$categoryNum;
+                    $tempAssessment = new Assessment();
+                    $tempAssessment->Burnout_Category = $overallRisk;
+                    $predictedLabel = $tempAssessment->getBurnoutCategoryLabel();
+                }
+            }
+        }
+        
+        // Log if we still don't have a prediction
+        if ($overallRisk === null) {
+            Log::warning('No ML prediction value obtained', [
+                'has_processed_data' => !is_null($processedData),
+                'has_python_response' => !is_null($pythonResponse),
+                'python_response_keys' => $pythonResponse ? array_keys($pythonResponse) : null,
+                'flask_url' => $flaskUrl,
+                'error_msg' => $errorMsg
+            ]);
         }
 
         $assessment = Assessment::create([
