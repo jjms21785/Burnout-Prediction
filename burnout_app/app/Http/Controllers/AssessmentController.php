@@ -247,6 +247,8 @@ class AssessmentController extends Controller
         }
 
         $flaskUrl = env('FLASK_URL', 'http://127.0.0.1:5000');
+        // Remove trailing slash if present
+        $flaskUrl = rtrim($flaskUrl, '/');
         $apiUrl = $flaskUrl . '/predict';
         $errorMsg = null;
         $predictedLabel = null;
@@ -257,20 +259,43 @@ class AssessmentController extends Controller
         $pythonResponse = null;
         $processedData = null;
         
+        // First, test if Flask is reachable
         try {
-            $response = \Illuminate\Support\Facades\Http::timeout(10)->withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json'
-            ])->post($apiUrl, [
-                'all_answers' => $allAnswers
-            ]);
-            
-            if ($response->failed()) {
-                $errorMsg = 'Prediction service unavailable. Response status: ' . $response->status();
-                Log::error('Flask API failed', [
-                    'status' => $response->status(),
-                    'body' => $response->body()
+            $healthResponse = \Illuminate\Support\Facades\Http::timeout(5)->get($flaskUrl . '/health');
+            if ($healthResponse->failed()) {
+                $errorMsg = 'Flask API health check failed. Status: ' . $healthResponse->status() . '. Please check if Flask service is running.';
+                Log::error('Flask health check failed', [
+                    'flask_url' => $flaskUrl,
+                    'status' => $healthResponse->status(),
+                    'body' => $healthResponse->body()
                 ]);
+            }
+        } catch (\Exception $e) {
+            $errorMsg = 'Cannot connect to Flask API at ' . $flaskUrl . '. Error: ' . $e->getMessage();
+            Log::error('Flask health check connection error', [
+                'flask_url' => $flaskUrl,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        // Only proceed with prediction if health check passed
+        if (!$errorMsg) {
+            try {
+                $response = \Illuminate\Support\Facades\Http::timeout(10)->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json'
+                ])->post($apiUrl, [
+                    'all_answers' => $allAnswers
+                ]);
+                
+                if ($response->failed()) {
+                    $errorMsg = 'Prediction service unavailable. Response status: ' . $response->status() . '. URL: ' . $apiUrl;
+                    Log::error('Flask API failed', [
+                        'flask_url' => $flaskUrl,
+                        'api_url' => $apiUrl,
+                        'status' => $response->status(),
+                        'body' => $response->body()
+                    ]);
                 
                 if ($response->status() === 400) {
                     $errorMsg = 'Invalid data format sent to prediction service. Please try again.';
@@ -307,17 +332,23 @@ class AssessmentController extends Controller
                     }
                 }
             }
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            $flaskUrl = env('FLASK_URL', 'http://127.0.0.1:5000');
-            $errorMsg = 'Could not connect to prediction service. Please ensure the Flask API is running on ' . $flaskUrl;
-            Log::error('Flask connection error', ['error' => $e->getMessage()]);
-        } catch (\Exception $e) {
-            $errorMsg = 'Prediction error: ' . $e->getMessage();
-            Log::error('Flask API error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
+                } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                    $errorMsg = 'Could not connect to prediction service at ' . $apiUrl . '. Please ensure the Flask API is running. Error: ' . $e->getMessage();
+                    Log::error('Flask connection error', [
+                        'flask_url' => $flaskUrl,
+                        'api_url' => $apiUrl,
+                        'error' => $e->getMessage()
+                    ]);
+                } catch (\Exception $e) {
+                    $errorMsg = 'Prediction error: ' . $e->getMessage();
+                    Log::error('Flask API error', [
+                        'flask_url' => $flaskUrl,
+                        'api_url' => $apiUrl,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
+            }
 
         // Get ML prediction value directly from Python response
         $overallRisk = null;
