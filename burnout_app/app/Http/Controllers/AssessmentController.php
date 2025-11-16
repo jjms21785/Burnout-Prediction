@@ -333,24 +333,34 @@ class AssessmentController extends Controller
             }
         }
 
-        $assessment = Assessment::create([
-            'name' => $name,
-            'email' => $validated['email'] ?? null,
-            'age' => $age,
-            'sex' => $gender,
-            'college' => $program,
-            'year' => $year_level,
-            'answers' => json_encode([
-                'responses' => $original_responses,
-                'interpretations' => $interpretations,
-                'recommendations' => $recommendations
-            ]),
-            'Burnout_Category' => $overallRisk,
-            'Exhaustion' => $exhaustionScore,
-            'Disengagement' => $disengagementScore,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent()
-        ]);
+        // Try to save to database, but don't fail if database is unavailable
+        $assessment = null;
+        try {
+            $assessment = Assessment::create([
+                'name' => $name,
+                'email' => $validated['email'] ?? null,
+                'age' => $age,
+                'sex' => $gender,
+                'college' => $program,
+                'year' => $year_level,
+                'answers' => json_encode([
+                    'responses' => $original_responses,
+                    'interpretations' => $interpretations,
+                    'recommendations' => $recommendations
+                ]),
+                'Burnout_Category' => $overallRisk,
+                'Exhaustion' => $exhaustionScore,
+                'Disengagement' => $disengagementScore,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to save assessment to database', [
+                'error' => $e->getMessage(),
+                'name' => $name
+            ]);
+            // Continue without saving - result page will still work
+        }
 
         // Use stored ML prediction value directly (no manual calculation)
         $mlPredictionValue = $overallRisk ?? null;
@@ -366,6 +376,11 @@ class AssessmentController extends Controller
             $tempAssessment = new Assessment();
             $tempAssessment->Burnout_Category = $mlPredictionValue;
             $predictedLabel = $tempAssessment->getBurnoutCategoryLabel();
+        }
+
+        // If assessment was saved, redirect to results page, otherwise show result directly
+        if ($assessment && $assessment->id) {
+            return redirect()->route('assessment.results', $assessment->id);
         }
 
         return view('assessment.result', compact(
