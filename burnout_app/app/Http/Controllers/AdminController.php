@@ -114,7 +114,11 @@ class AdminController extends Controller
         }
 
         $featureImportance = [];
-        $featureImportancePath = base_path('../random_forest/feature_importance.json');
+        // Try multiple paths: storage/app (for Railway), then relative path (for local dev)
+        $featureImportancePath = storage_path('app/feature_importance.json');
+        if (!file_exists($featureImportancePath)) {
+            $featureImportancePath = base_path('../random_forest/feature_importance.json');
+        }
         if (file_exists($featureImportancePath)) {
             $featureImportanceJson = file_get_contents($featureImportancePath);
             $featureImportance = json_decode($featureImportanceJson, true) ?? [];
