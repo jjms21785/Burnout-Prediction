@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 import joblib
 import numpy as np
 import os
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Global error handler
 @app.errorhandler(Exception)
@@ -86,8 +88,16 @@ def health():
             'error': str(e)
         }), 500
 
-@app.route('/predict', methods=['POST'])
+@app.route('/predict', methods=['POST', 'GET'])
 def predict():
+    # Handle GET requests for testing
+    if request.method == 'GET':
+        return jsonify({
+            'message': 'Predict endpoint is available',
+            'method': 'Use POST to send predictions',
+            'model_loaded': model is not None
+        }), 200
+    
     if model is None:
         return jsonify({
             'error': 'Model not loaded',
