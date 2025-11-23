@@ -86,7 +86,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/records', [RecordsController::class, 'index'])->name('admin.records');
     Route::get('/records/programs', [RecordsController::class, 'programs'])->name('admin.records.programs');
     Route::post('/admin/assessments/{id}', [RecordsController::class, 'update'])->name('admin.assessment.update');
-    Route::post('/admin/assessments/{id}/delete', [RecordsController::class, 'destroy'])->name('admin.assessment.delete');
     Route::get('/questions', [AdminController::class, 'questions'])->name('admin.questions');
     Route::post('/questions/update', [QuestionController::class, 'updateQuestions'])->name('admin.questions.update');
     Route::get('/files', [FileController::class, 'index'])->name('admin.files');
@@ -96,7 +95,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/files/delete/{filename}', [FileController::class, 'deleteFile'])->name('admin.delete-file');
     Route::get('/settings', [AdminController::class, 'settings'])->name('admin.settings');
     Route::post('/settings/user-settings', [AdminController::class, 'updateUserSettings'])->name('admin.update-user');
-    Route::post('/settings/clear-all-data', [AdminController::class, 'clearAllData'])->name('admin.clear-all-data');
 
     // Viewing assessment details
     Route::get('/admin/view/{id}', [ViewController::class, 'show'])->name('admin.view.show');

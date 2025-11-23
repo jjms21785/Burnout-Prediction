@@ -11,12 +11,22 @@ use App\Http\Controllers\QuestionController;
 
 class AdminController extends Controller
 {
-    public function dashboard()
+    public function dashboard(Request $request)
     {
-        $totalAssessments = Assessment::count();
+        $query = Assessment::query();
+        
+        // Date range filter
+        if ($dateFrom = $request->input('date_from')) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo = $request->input('date_to')) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+        
+        $assessments = $query->get();
+        $totalAssessments = $assessments->count();
         
         // Read burnout categories directly from stored ML predictions
-        $assessments = Assessment::all();
         $lowBurnout = 0;
         $disengagement = 0;
         $exhaustion = 0;
@@ -81,7 +91,17 @@ class AdminController extends Controller
             })
             ->toArray();
 
-        $latestSubmissions = Assessment::latest()
+        $latestSubmissionsQuery = Assessment::query();
+        
+        // Apply same date filter to latest submissions
+        if ($dateFrom = $request->input('date_from')) {
+            $latestSubmissionsQuery->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo = $request->input('date_to')) {
+            $latestSubmissionsQuery->whereDate('created_at', '<=', $dateTo);
+        }
+        
+        $latestSubmissions = $latestSubmissionsQuery->latest()
             ->take(5)
             ->get()
             ->map(function($assessment) {
@@ -188,18 +208,6 @@ class AdminController extends Controller
         }
     }
 
-    public function clearAllData(Request $request)
-    {
-        try {
-            $deletedCount = Assessment::count();
-            Assessment::truncate();
-            
-            return redirect()->route('admin.settings')->with('success', "All assessment data has been permanently deleted. {$deletedCount} record(s) were removed.");
-        } catch (\Exception $e) {
-            Log::error('Clear all data failed: ' . $e->getMessage());
-            return back()->with('error', 'Failed to clear data: ' . $e->getMessage());
-        }
-    }
 
 
     // Note: Removed calculateBurnoutCategory() and calculateBurnoutCategoryWithScores() methods

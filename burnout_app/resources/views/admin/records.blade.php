@@ -13,6 +13,31 @@
                     <div class="flex items-center space-x-3">
                         <!-- Search -->
                         <input type="text" id="searchInput" placeholder="Search..." class="px-4 py-2 text-sm rounded-lg border border-gray-200 bg-white w-48">
+                        <!-- Date Filter Dropdown -->
+                        <div class="relative">
+                            <button id="dateFilterBtn" onclick="toggleDateFilterDropdown()" class="flex items-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-neutral-800 hover:bg-gray-50 transition">
+                                <span id="dateFilterBtnText">Date Filter</span>
+                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="dateFilterDropdown" class="hidden absolute left-0 mt-2 w-80 rounded-lg shadow-lg z-50 bg-white border border-gray-200 p-4">
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">Date From</label>
+                                        <input type="date" id="dateFromInput" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 mb-1">Date To</label>
+                                        <input type="date" id="dateToInput" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white">
+                                    </div>
+                                    <div class="flex items-center gap-2 pt-2">
+                                        <button onclick="applyDateFilter()" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-white bg-indigo-500 hover:bg-indigo-600">Confirm</button>
+                                        <button onclick="resetDateFilter()" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-neutral-800 bg-gray-200 hover:bg-gray-300">Reset</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="flex items-center space-x-2">
@@ -76,6 +101,12 @@
                                     <button onclick="sortBy('yearLevel')" class="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 transition text-neutral-800">
                                         Year Level
                                     </button>
+                                    <button onclick="sortBy('dateFrom')" class="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 transition text-neutral-800">
+                                        Date From
+                                    </button>
+                                    <button onclick="sortBy('dateTo')" class="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 transition text-neutral-800">
+                                        Date To
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -107,6 +138,8 @@
                                 <th class="px-4 py-3 text-left font-semibold text-gray-500">Program</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-500">Year Level</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-500">Category</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-500">Status</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-500">Timestamp</th>
                                 <th class="px-4 py-3 text-center font-semibold text-gray-500">Action</th>
                             </tr>
                         </thead>
@@ -155,7 +188,6 @@
     window.recordsConfig = {
         recordsRoute: '{{ route("admin.records") }}',
         updateRoute: '{{ route("admin.assessment.update", ":id") }}',
-        deleteRoute: '{{ route("admin.assessment.delete", ":id") }}',
         csrfToken: '{{ csrf_token() }}'
     };
     

@@ -169,9 +169,118 @@ function deleteFile(filename) {
     }
 }
 
+// Download an archived file
+function downloadArchivedFile(filename) {
+    if (!filesConfig.downloadRoute) {
+        initializeFilesConfig();
+    }
+    
+    // Archive files are in a subdirectory, so we need to handle the path differently
+    const downloadUrl = filesConfig.downloadRoute.replace(':filename', 'archives/' + encodeURIComponent(filename));
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Export to Excel format (same as dashboard)
+function exportToExcelFormat() {
+    if (typeof XLSX === 'undefined') {
+        alert('Excel library not loaded. Please refresh the page.');
+        return;
+    }
+    
+    // Get all assessments data
+    fetch(filesConfig.exportRoute + '?format=json', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const workbook = XLSX.utils.book_new();
+        
+        // Create summary sheet
+        const summaryData = [
+            ['Burnout Analytics Data Export'],
+            ['Generated on: ' + new Date().toLocaleString()],
+            [],
+            ['Total Records', data.length || 0],
+            []
+        ];
+        
+        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+        
+        // Create data sheet with same columns as import
+        if (data && data.length > 0) {
+            const headers = ['first_name', 'last_name', 'sex', 'age', 'year', 'college'];
+            for (let i = 1; i <= 30; i++) {
+                headers.push('Q' + i);
+            }
+            headers.push('Exhaustion', 'Disengagement', 'Category');
+            
+            const rows = [headers];
+            data.forEach(assessment => {
+                const name = assessment.name || 'unavailable';
+                const nameParts = name.split(' ');
+                const firstName = nameParts[0] || 'unavailable';
+                const lastName = nameParts.slice(1).join(' ') || 'unavailable';
+                
+                const row = [
+                    firstName,
+                    lastName,
+                    assessment.sex || 'unavailable',
+                    assessment.age || 'unavailable',
+                    assessment.year || 'unavailable',
+                    assessment.college || 'unavailable'
+                ];
+                
+                // Add answers
+                const answers = assessment.answers ? (typeof assessment.answers === 'string' ? JSON.parse(assessment.answers) : assessment.answers) : [];
+                const rawAnswers = answers.responses || answers;
+                for (let i = 1; i <= 30; i++) {
+                    const qKey = 'Q' + i;
+                    row.push(rawAnswers[qKey] || rawAnswers[i - 1] || 'unavailable');
+                }
+                
+                // Add scores and category
+                row.push(assessment.Exhaustion ? (assessment.Exhaustion / 8.0).toFixed(3) : 'unavailable');
+                row.push(assessment.Disengagement ? (assessment.Disengagement / 8.0).toFixed(3) : 'unavailable');
+                
+                // Map category
+                const category = assessment.Burnout_Category;
+                let categoryLabel = 'unavailable';
+                if (category === '0' || category === 0) categoryLabel = '0';
+                else if (category === '1' || category === 1) categoryLabel = '1';
+                else if (category === '2' || category === 2) categoryLabel = '2';
+                else if (category === '3' || category === 3) categoryLabel = '3';
+                
+                row.push(categoryLabel);
+                rows.push(row);
+            });
+            
+            const dataSheet = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(workbook, dataSheet, 'Data');
+        }
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        XLSX.writeFile(workbook, `Burnalytics_Export_${timestamp}.xlsx`);
+    })
+    .catch(error => {
+        console.error('Export error:', error);
+        alert('Failed to export data. Please try again.');
+    });
+}
+
 // Export functions to global scope for onclick handlers
 window.handleFileImport = handleFileImport;
 window.exportData = exportData;
 window.downloadFile = downloadFile;
 window.deleteFile = deleteFile;
+window.downloadArchivedFile = downloadArchivedFile;
+window.exportToExcelFormat = exportToExcelFormat;
 

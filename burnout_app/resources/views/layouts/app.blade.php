@@ -119,10 +119,6 @@
                         </svg>
                         Files
                     </a>
-                </nav>
-                
-                <!-- Bottom Section: Settings and Logout -->
-                <div class="px-2 border-t border-gray-200">
                     <a href="{{ route('admin.settings') }}" class="flex items-center px-3 py-4 text-xs font-medium transition border-b border-gray-200 rounded-lg @if(request()->routeIs('admin.settings')) text-white bg-indigo-500 @else text-neutral-800 hover:bg-indigo-100 @endif">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
@@ -130,6 +126,10 @@
                         </svg>
                     Settings
                     </a>
+                </nav>
+                
+                <!-- Bottom Section: Logout -->
+                <div class="px-2 border-t border-gray-200">
                     <form id="logout-form" action="{{ route('logout') }}" method="POST">
                         @csrf
                         <button type="submit" class="w-full flex items-center px-3 py-4 text-xs font-medium transition text-neutral-800 hover:bg-red-50 hover:text-red-600">

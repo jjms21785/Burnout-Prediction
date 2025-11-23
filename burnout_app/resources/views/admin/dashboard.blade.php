@@ -4,6 +4,31 @@
 
 @section('header-actions')
     <div class="flex items-center gap-2">
+        <!-- Date Filter Dropdown -->
+        <div class="relative">
+            <button id="dateFilterBtn" onclick="toggleDateFilterDropdown()" class="flex items-center px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-neutral-800 hover:bg-gray-50 transition">
+                <span id="dateFilterBtnText">Date Filter</span>
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+            <div id="dateFilterDropdown" class="hidden absolute right-0 mt-2 w-80 rounded-lg shadow-lg z-50 bg-white border border-gray-200 p-4">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Date From</label>
+                        <input type="date" id="dateFromInput" value="{{ request('date_from') }}" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Date To</label>
+                        <input type="date" id="dateToInput" value="{{ request('date_to') }}" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white">
+                    </div>
+                    <div class="flex items-center gap-2 pt-2">
+                        <button onclick="applyDateFilter()" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-white bg-indigo-500 hover:bg-indigo-600">Confirm</button>
+                        <button onclick="resetDateFilter()" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-neutral-800 bg-gray-200 hover:bg-gray-300">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <button onclick="exportToExcel()" class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-indigo-500 text-white rounded-md hover:bg-indigo-400 transition">
             <span>Export Excel</span>
         </button>
@@ -161,6 +186,80 @@ window.dashboardData = {
     featureImportance: @json($featureImportance ?? []),
     questionsList: @json($questionsList ?? [])
 };
+</script>
+
+<script>
+function toggleDateFilterDropdown() {
+    const dropdown = document.getElementById('dateFilterDropdown');
+    if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+function applyDateFilter() {
+    const dateFrom = document.getElementById('dateFromInput').value;
+    const dateTo = document.getElementById('dateToInput').value;
+    const url = new URL(window.location.href);
+    
+    if (dateFrom) {
+        url.searchParams.set('date_from', dateFrom);
+    } else {
+        url.searchParams.delete('date_from');
+    }
+    
+    if (dateTo) {
+        url.searchParams.set('date_to', dateTo);
+    } else {
+        url.searchParams.delete('date_to');
+    }
+    
+    // Update button text
+    const btnText = document.getElementById('dateFilterBtnText');
+    if (btnText) {
+        if (dateFrom || dateTo) {
+            let text = 'Date Filter';
+            if (dateFrom && dateTo) {
+                text = `${dateFrom} to ${dateTo}`;
+            } else if (dateFrom) {
+                text = `From ${dateFrom}`;
+            } else if (dateTo) {
+                text = `To ${dateTo}`;
+            }
+            btnText.textContent = text;
+        } else {
+            btnText.textContent = 'Date Filter';
+        }
+    }
+    
+    window.location.href = url.toString();
+}
+
+function resetDateFilter() {
+    const dateFromInput = document.getElementById('dateFromInput');
+    const dateToInput = document.getElementById('dateToInput');
+    
+    if (dateFromInput) dateFromInput.value = '';
+    if (dateToInput) dateToInput.value = '';
+    
+    const url = new URL(window.location.href);
+    url.searchParams.delete('date_from');
+    url.searchParams.delete('date_to');
+    
+    const btnText = document.getElementById('dateFilterBtnText');
+    if (btnText) {
+        btnText.textContent = 'Date Filter';
+    }
+    
+    window.location.href = url.toString();
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dateFilterDropdown = document.getElementById('dateFilterDropdown');
+    const dateFilterButton = document.getElementById('dateFilterBtn');
+    
+    if (dateFilterDropdown && dateFilterButton && !dateFilterDropdown.contains(event.target) && !dateFilterButton.contains(event.target)) {
+        dateFilterDropdown.classList.add('hidden');
+    }
+});
 </script>
 
 @vite('resources/js/dashboard.js')

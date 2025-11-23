@@ -101,6 +101,12 @@ class ViewController extends Controller
                 $assessment->save();
             }
             
+            // Update status to 'ongoing' when email is sent
+            if ($assessment->status === 'new' || !$assessment->status) {
+                $assessment->status = 'ongoing';
+                $assessment->save();
+            }
+            
             // Get burnout category from stored ML prediction (no manual calculation)
             $category = $this->getBurnoutCategory($assessment);
             

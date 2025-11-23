@@ -12,12 +12,19 @@ class FileController extends Controller
     {
         $totalRecords = Assessment::count();
         $files = [];
+        $archivedFiles = [];
         $importPath = storage_path('app/imports');
+        $archivePath = storage_path('app/imports/archives');
+        
+        // Ensure archive directory exists
+        if (!is_dir($archivePath)) {
+            mkdir($archivePath, 0755, true);
+        }
         
         if (is_dir($importPath)) {
             $allFiles = scandir($importPath);
             foreach ($allFiles as $file) {
-                if ($file !== '.' && $file !== '..' && is_file($importPath . '/' . $file)) {
+                if ($file !== '.' && $file !== '..' && $file !== 'archives' && is_file($importPath . '/' . $file)) {
                     $files[] = [
                         'name' => $file,
                         'path' => $importPath . '/' . $file,
@@ -30,7 +37,24 @@ class FileController extends Controller
             usort($files, fn($a, $b) => $b['date'] - $a['date']);
         }
         
-        return view('admin.files', compact('totalRecords', 'files'));
+        // Get archived files
+        if (is_dir($archivePath)) {
+            $allArchivedFiles = scandir($archivePath);
+            foreach ($allArchivedFiles as $file) {
+                if ($file !== '.' && $file !== '..' && is_file($archivePath . '/' . $file)) {
+                    $archivedFiles[] = [
+                        'name' => $file,
+                        'path' => $archivePath . '/' . $file,
+                        'size' => filesize($archivePath . '/' . $file),
+                        'date' => filemtime($archivePath . '/' . $file),
+                        'extension' => pathinfo($file, PATHINFO_EXTENSION)
+                    ];
+                }
+            }
+            usort($archivedFiles, fn($a, $b) => $b['date'] - $a['date']);
+        }
+        
+        return view('admin.files', compact('totalRecords', 'files', 'archivedFiles'));
     }
 
     public function importData(Request $request)
@@ -216,6 +240,21 @@ class FileController extends Controller
 
         if ($format === 'csv') {
             return $this->exportCsv($assessments);
+        } elseif ($format === 'json') {
+            return response()->json($assessments->map(function($assessment) {
+                return [
+                    'id' => $assessment->id,
+                    'name' => $assessment->name,
+                    'sex' => $assessment->sex,
+                    'age' => $assessment->age,
+                    'year' => $assessment->year,
+                    'college' => $assessment->college,
+                    'answers' => $assessment->answers,
+                    'Exhaustion' => $assessment->Exhaustion,
+                    'Disengagement' => $assessment->Disengagement,
+                    'Burnout_Category' => $assessment->Burnout_Category
+                ];
+            })->toArray());
         }
         
         return back()->with('error', 'Invalid export format');
@@ -345,7 +384,12 @@ class FileController extends Controller
 
     public function downloadFile($filename)
     {
-        $filePath = storage_path('app/imports/' . $filename);
+        // Check if it's an archived file (contains 'archives/' in the path)
+        if (strpos($filename, 'archives/') === 0) {
+            $filePath = storage_path('app/imports/' . $filename);
+        } else {
+            $filePath = storage_path('app/imports/' . $filename);
+        }
         
         if (!file_exists($filePath)) {
             return redirect()->route('admin.files')->with('error', 'File not found.');
@@ -357,17 +401,35 @@ class FileController extends Controller
     public function deleteFile($filename)
     {
         $filePath = storage_path('app/imports/' . $filename);
+        $archivePath = storage_path('app/imports/archives');
         
         if (!file_exists($filePath)) {
             return redirect()->route('admin.files')->with('error', 'File not found.');
         }
 
         try {
-            unlink($filePath);
-            return redirect()->route('admin.files');
+            // Ensure archive directory exists
+            if (!is_dir($archivePath)) {
+                mkdir($archivePath, 0755, true);
+            }
+            
+            // Move file to archive instead of deleting
+            $archiveFilePath = $archivePath . '/' . $filename;
+            $counter = 1;
+            $baseName = pathinfo($filename, PATHINFO_FILENAME);
+            $fileExtension = pathinfo($filename, PATHINFO_EXTENSION);
+            
+            // Handle duplicate names in archive
+            while (file_exists($archiveFilePath)) {
+                $archiveFilePath = $archivePath . '/' . $baseName . '_' . $counter . '.' . $fileExtension;
+                $counter++;
+            }
+            
+            rename($filePath, $archiveFilePath);
+            return redirect()->route('admin.files')->with('success', 'File moved to archive successfully.');
         } catch (\Exception $e) {
-            Log::error('File deletion failed: ' . $e->getMessage());
-            return redirect()->route('admin.files')->with('error', 'Failed to delete file: ' . $e->getMessage());
+            Log::error('File archiving failed: ' . $e->getMessage());
+            return redirect()->route('admin.files')->with('error', 'Failed to archive file: ' . $e->getMessage());
         }
     }
 

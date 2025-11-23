@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('Exhaustion')->nullable();
             $table->integer('Disengagement')->nullable();
             $table->string('Burnout_Category')->nullable();
+            $table->string('status')->default('new')->nullable();
             $table->string('ip_address')->nullable();
             $table->text('user_agent')->nullable();
             $table->float('confidence')->nullable();

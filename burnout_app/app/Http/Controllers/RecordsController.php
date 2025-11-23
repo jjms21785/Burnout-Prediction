@@ -46,6 +46,15 @@ class RecordsController extends Controller
                     $query->whereMonth('created_at', now()->month);
                 }
             }
+            
+            // Date range filter
+            if ($dateFrom = $request->input('date_from')) {
+                $query->whereDate('created_at', '>=', $dateFrom);
+            }
+            if ($dateTo = $request->input('date_to')) {
+                $query->whereDate('created_at', '<=', $dateTo);
+            }
+            
             $query->orderByDesc('created_at');
 
             $assessments = $query->get();
@@ -59,6 +68,8 @@ class RecordsController extends Controller
                     'program' => $a->college ?? 'Unavailable',
                     'grade' => $a->year ?? 'Unavailable',
                     'risk' => $a->Burnout_Category ?? 'Unavailable',
+                    'status' => $a->status ?? 'new',
+                    'timestamp' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
                     'last_update' => $a->updated_at ? $a->updated_at->format('M d') : 'Unavailable',
                 ];
             });
@@ -114,6 +125,16 @@ class RecordsController extends Controller
                 $updateData['Burnout_Category'] = $assessment->Burnout_Category;
             }
             
+            // Accept status (new, ongoing, resolved)
+            if ($request->has('status')) {
+                $status = $request->input('status');
+                if (in_array($status, ['new', 'ongoing', 'resolved'])) {
+                    $updateData['status'] = $status;
+                }
+            } elseif ($assessment->status) {
+                $updateData['status'] = $assessment->status;
+            }
+            
             $assessment->update($updateData);
 
             return response()->json(['success' => true, 'message' => 'Assessment updated successfully']);
@@ -123,17 +144,5 @@ class RecordsController extends Controller
         }
     }
 
-    public function destroy($id)
-    {
-        try {
-            $assessment = Assessment::findOrFail($id);
-            $assessment->delete();
-
-            return response()->json(['success' => true, 'message' => 'Assessment deleted successfully']);
-        } catch (\Exception $e) {
-            Log::error('Assessment deletion failed: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to delete assessment: ' . $e->getMessage()], 500);
-        }
-    }
 }
 

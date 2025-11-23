@@ -31,12 +31,13 @@ let currentCategoryFilter = 'all';
 let currentSearchTerm = '';
 let currentSortField = 'id';
 let currentSortOrder = 'asc';
+let currentDateFrom = '';
+let currentDateTo = '';
 
 // Configuration (will be set from Blade template)
 let config = {
     recordsRoute: '',
     updateRoute: '',
-    deleteRoute: '',
     csrfToken: ''
 };
 
@@ -98,7 +99,11 @@ function transformAssessmentData(item) {
         age: item.age || 'Unavailable',
         program: item.program || 'Unavailable',
         yearLevel: item.grade || 'Unavailable',
-        category: category
+        category: category,
+        timestamp: item.timestamp || 'Unavailable',
+        status: item.status || 'new',
+        dateFrom: item.timestamp ? new Date(item.timestamp) : null,
+        dateTo: item.timestamp ? new Date(item.timestamp) : null
     };
 }
 
@@ -106,7 +111,15 @@ function transformAssessmentData(item) {
  * Load assessments from server
  */
 function loadAssessments() {
-    fetch(config.recordsRoute, {
+    const url = new URL(config.recordsRoute, window.location.origin);
+    if (currentDateFrom) {
+        url.searchParams.append('date_from', currentDateFrom);
+    }
+    if (currentDateTo) {
+        url.searchParams.append('date_to', currentDateTo);
+    }
+    
+    fetch(url, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json'
@@ -177,6 +190,19 @@ function generateCategoryDropdown(item) {
 }
 
 /**
+ * Generate HTML for status dropdown
+ */
+function generateStatusDropdown(item) {
+    const statuses = ['new', 'ongoing', 'resolved'];
+    let html = `<select id="edit_status_${item.id}" class="w-full px-2 py-1 text-xs border border-indigo-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">`;
+    statuses.forEach(status => {
+        html += `<option value="${status}" ${item.status === status ? 'selected' : ''}>${status.charAt(0).toUpperCase() + status.slice(1)}</option>`;
+    });
+    html += `</select>`;
+    return html;
+}
+
+/**
  * Render table row in edit mode
  */
 function renderEditRow(item) {
@@ -210,6 +236,10 @@ function renderEditRow(item) {
             <td class="px-4 py-2">
                 ${generateCategoryDropdown(item)}
             </td>
+            <td class="px-4 py-2">
+                ${generateStatusDropdown(item)}
+            </td>
+            <td class="px-4 py-2 text-xs text-neutral-800">${formatTimestamp(item.timestamp)}</td>
             <td class="px-4 py-3 text-center">
                 <div class="flex items-center justify-center space-x-1">
                     <button onclick="saveEdit('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-white bg-indigo-500 hover:bg-indigo-600">Save</button>
@@ -218,6 +248,66 @@ function renderEditRow(item) {
             </td>
         </tr>
     `;
+}
+
+/**
+ * Get category badge HTML with colors (matching result page)
+ */
+function getCategoryBadge(category) {
+    const categoryLower = (category || '').toLowerCase();
+    let badgeClass = 'bg-gray-100 text-gray-800';
+    
+    if (categoryLower.includes('low burnout') || categoryLower.includes('low')) {
+        badgeClass = 'bg-green-100 text-green-800';
+    } else if (categoryLower.includes('exhausted')) {
+        badgeClass = 'bg-yellow-100 text-yellow-800';
+    } else if (categoryLower.includes('disengaged')) {
+        badgeClass = 'bg-orange-100 text-orange-800';
+    } else if (categoryLower.includes('high burnout') || categoryLower.includes('high')) {
+        badgeClass = 'bg-red-100 text-red-800';
+    }
+    
+    return `<span class="px-2 py-0.5 text-xs font-medium rounded ${badgeClass}">${category || 'Unavailable'}</span>`;
+}
+
+/**
+ * Get status badge HTML with colors
+ */
+function getStatusBadge(status) {
+    const statusLower = (status || 'new').toLowerCase();
+    let badgeClass = 'bg-blue-100 text-blue-800';
+    let statusText = 'New';
+    
+    if (statusLower === 'ongoing') {
+        badgeClass = 'bg-yellow-100 text-yellow-800';
+        statusText = 'Ongoing';
+    } else if (statusLower === 'resolved') {
+        badgeClass = 'bg-green-100 text-green-800';
+        statusText = 'Resolved';
+    }
+    
+    return `<span class="px-2 py-0.5 text-xs font-medium rounded ${badgeClass}">${statusText}</span>`;
+}
+
+/**
+ * Format timestamp
+ */
+function formatTimestamp(timestamp) {
+    if (!timestamp || timestamp === 'Unavailable') {
+        return 'Unavailable';
+    }
+    try {
+        const date = new Date(timestamp);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return timestamp;
+    }
 }
 
 /**
@@ -233,12 +323,13 @@ function renderViewRow(item) {
             <td class="px-4 py-3 text-neutral-800">${item.age || 'Unavailable'}</td>
             <td class="px-4 py-3 text-neutral-800">${item.program || 'Unavailable'}</td>
             <td class="px-4 py-3 text-neutral-800">${item.yearLevel || 'Unavailable'}</td>
-            <td class="px-4 py-3 text-neutral-800">${item.category || 'Unavailable'}</td>
+            <td class="px-4 py-3 text-neutral-800">${getCategoryBadge(item.category)}</td>
+            <td class="px-4 py-3 text-neutral-800">${getStatusBadge(item.status)}</td>
+            <td class="px-4 py-3 text-neutral-800 text-xs">${formatTimestamp(item.timestamp)}</td>
             <td class="px-4 py-3 text-center">
                 <div class="flex items-center justify-center space-x-1">
                     <button onclick="openViewModal('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-white bg-indigo-500 hover:bg-indigo-600">View</button>
                     <button onclick="startEdit('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-neutral-800 bg-gray-100 hover:bg-gray-200">Edit</button>
-                    <button onclick="deleteAssessment('${item.id}')" class="text-xs font-medium px-2 py-1 rounded transition text-white bg-red-500 hover:bg-red-600">Delete</button>
                 </div>
             </td>
         </tr>
@@ -258,7 +349,7 @@ function renderTable() {
     if (pageData.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                <td colspan="11" class="px-4 py-8 text-center text-gray-500">
                     Unavailable
                 </td>
             </tr>
@@ -401,6 +492,20 @@ function sortBy(field) {
         let aVal = a[field];
         let bVal = b[field];
         
+        // Handle date sorting for dateFrom and dateTo
+        if (field === 'dateFrom' || field === 'dateTo') {
+            aVal = a.dateFrom || a.dateTo || null;
+            bVal = b.dateFrom || b.dateTo || null;
+            if (!aVal && !bVal) return 0;
+            if (!aVal) return 1;
+            if (!bVal) return -1;
+            if (currentSortOrder === 'asc') {
+                return aVal - bVal;
+            } else {
+                return bVal - aVal;
+            }
+        }
+        
         // Handle numeric sorting for id and age
         if (field === 'id' || field === 'age') {
             aVal = parseInt(aVal);
@@ -452,7 +557,7 @@ function filterByCategory(category) {
 }
 
 /**
- * Apply all filters (search and category)
+ * Apply all filters (search, category, and date range)
  */
 function applyFilters() {
     filteredData = assessmentsData.filter(item => {
@@ -471,7 +576,31 @@ function applyFilters() {
         const categoryMatch = currentCategoryFilter === 'all' || 
             item.category === currentCategoryFilter;
         
-        return searchMatch && categoryMatch;
+        // Apply date range filter
+        let dateMatch = true;
+        if (currentDateFrom || currentDateTo) {
+            const itemDate = item.dateFrom || item.dateTo;
+            if (itemDate) {
+                if (currentDateFrom) {
+                    const fromDate = new Date(currentDateFrom);
+                    fromDate.setHours(0, 0, 0, 0);
+                    if (itemDate < fromDate) {
+                        dateMatch = false;
+                    }
+                }
+                if (currentDateTo && dateMatch) {
+                    const toDate = new Date(currentDateTo);
+                    toDate.setHours(23, 59, 59, 999);
+                    if (itemDate > toDate) {
+                        dateMatch = false;
+                    }
+                }
+            } else {
+                dateMatch = false;
+            }
+        }
+        
+        return searchMatch && categoryMatch && dateMatch;
     });
     
     currentPage = 1;
@@ -479,59 +608,6 @@ function applyFilters() {
 }
 
 
-/**
- * Delete assessment
- */
-function deleteAssessment(id) {
-    if (confirm('Are you sure you want to delete this assessment? This action cannot be undone.')) {
-        const formData = new FormData();
-        formData.append('_token', config.csrfToken);
-        
-        fetch(config.deleteRoute.replace(':id', id), {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Remove from local data array
-                const index = assessmentsData.findIndex(item => String(item.id) === String(id));
-                if (index !== -1) {
-                    assessmentsData.splice(index, 1);
-                }
-                
-                // Remove from filtered data
-                const filteredIndex = filteredData.findIndex(item => String(item.id) === String(id));
-                if (filteredIndex !== -1) {
-                    filteredData.splice(filteredIndex, 1);
-                }
-                
-                // Re-render table
-                renderTable();
-                alert('Assessment deleted successfully');
-            } else {
-                alert('Failed to delete assessment: ' + (data.message || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            console.error('Delete error:', error);
-            // Fallback: remove from local data even if API fails
-            const index = assessmentsData.findIndex(item => String(item.id) === String(id));
-            if (index !== -1) {
-                assessmentsData.splice(index, 1);
-            }
-            const filteredIndex = filteredData.findIndex(item => String(item.id) === String(id));
-            if (filteredIndex !== -1) {
-                filteredData.splice(filteredIndex, 1);
-            }
-            renderTable();
-            alert('Assessment removed from view (API call failed, but removed locally)');
-        });
-    }
-}
 
 /**
  * Start editing a row
@@ -580,10 +656,20 @@ function categoryToMLValue(category) {
     return null;
 }
 
+// Track if save is in progress to prevent duplicate calls
+let isSaving = false;
+
 /**
  * Save edited assessment
  */
 function saveEdit(id) {
+    // Prevent duplicate calls
+    if (isSaving) {
+        return;
+    }
+    
+    isSaving = true;
+    
     // Get values from input fields
     const firstNameEl = document.getElementById(`edit_firstName_${id}`);
     const lastNameEl = document.getElementById(`edit_lastName_${id}`);
@@ -593,8 +679,10 @@ function saveEdit(id) {
     const programCustomEl = document.getElementById(`edit_program_custom_${id}`);
     const yearLevelEl = document.getElementById(`edit_yearLevel_${id}`);
     const categoryEl = document.getElementById(`edit_category_${id}`);
+    const statusEl = document.getElementById(`edit_status_${id}`);
     
-    if (!firstNameEl || !lastNameEl || !genderEl || !ageEl || !programSelectEl || !yearLevelEl || !categoryEl) {
+    if (!firstNameEl || !lastNameEl || !genderEl || !ageEl || !programSelectEl || !yearLevelEl || !categoryEl || !statusEl) {
+        isSaving = false;
         alert('Error: Could not find form fields');
         return;
     }
@@ -619,6 +707,7 @@ function saveEdit(id) {
     
     const yearLevel = yearLevelEl.value;
     const category = categoryEl.value;
+    const status = statusEl.value;
     const burnoutCategory = categoryToMLValue(category);
     
     // Make AJAX call to update the database
@@ -629,6 +718,7 @@ function saveEdit(id) {
     formData.append('age', age);
     formData.append('program', program);
     formData.append('year_level', yearLevel);
+    formData.append('status', status);
     if (burnoutCategory !== null) {
         formData.append('burnout_category', burnoutCategory);
     }
@@ -645,6 +735,7 @@ function saveEdit(id) {
         // Update local data array
         const index = assessmentsData.findIndex(item => String(item.id) === String(id));
         if (index !== -1) {
+            const currentItem = assessmentsData[index];
             assessmentsData[index] = {
                 id: id,
                 firstName: firstName || 'Unavailable',
@@ -653,7 +744,11 @@ function saveEdit(id) {
                 age: age || 'Unavailable',
                 program: program || 'Unavailable',
                 yearLevel: yearLevel || 'Unavailable',
-                category: category || 'Unavailable'
+                category: category || 'Unavailable',
+                status: status || 'new',
+                timestamp: currentItem.timestamp || 'Unavailable',
+                dateFrom: currentItem.dateFrom,
+                dateTo: currentItem.dateTo
             };
             
             // Update filtered data as well
@@ -668,16 +763,24 @@ function saveEdit(id) {
             // Re-render table
             renderTable();
             
-            if (data.success) {
+            // Show success message
+            if (data && data.success) {
                 alert('Assessment updated successfully');
             }
+            
+            // Reset saving flag
+            isSaving = false;
+        } else {
+            isSaving = false;
         }
     })
     .catch(error => {
         console.error('Update error:', error);
+        isSaving = false;
         // Fallback: update local data even if API fails
         const index = assessmentsData.findIndex(item => String(item.id) === String(id));
         if (index !== -1) {
+            const currentItem = assessmentsData[index];
             assessmentsData[index] = {
                 id: id,
                 firstName: firstName || 'Unavailable',
@@ -686,7 +789,11 @@ function saveEdit(id) {
                 age: age || 'Unavailable',
                 program: program || 'Unavailable',
                 yearLevel: yearLevel || 'Unavailable',
-                category: category || 'Unavailable'
+                category: category || 'Unavailable',
+                status: status || 'new',
+                timestamp: currentItem.timestamp || 'Unavailable',
+                dateFrom: currentItem.dateFrom,
+                dateTo: currentItem.dateTo
             };
             const filteredIndex = filteredData.findIndex(item => String(item.id) === String(id));
             if (filteredIndex !== -1) {
@@ -709,6 +816,8 @@ function initializeEventListeners() {
         const sortByButton = document.getElementById('sortByBtn');
         const categoryDropdown = document.getElementById('categoryDropdown');
         const categoryButton = document.getElementById('categoryBtn');
+        const dateFilterDropdown = document.getElementById('dateFilterDropdown');
+        const dateFilterButton = document.getElementById('dateFilterBtn');
         
         if (sortByDropdown && sortByButton && !sortByDropdown.contains(event.target) && !sortByButton.contains(event.target)) {
             sortByDropdown.classList.add('hidden');
@@ -716,6 +825,10 @@ function initializeEventListeners() {
         
         if (categoryDropdown && categoryButton && !categoryDropdown.contains(event.target) && !categoryButton.contains(event.target)) {
             categoryDropdown.classList.add('hidden');
+        }
+        
+        if (dateFilterDropdown && dateFilterButton && !dateFilterDropdown.contains(event.target) && !dateFilterButton.contains(event.target)) {
+            dateFilterDropdown.classList.add('hidden');
         }
     });
     
@@ -725,6 +838,53 @@ function initializeEventListeners() {
         searchInput.addEventListener('input', (e) => {
             currentSearchTerm = e.target.value.toLowerCase();
             applyFilters();
+        });
+    }
+    
+    // Use event delegation for table buttons to handle dynamically created elements
+    const tableBody = document.getElementById('tableBody');
+    if (tableBody) {
+        tableBody.addEventListener('click', function(event) {
+            const target = event.target;
+            const button = target.closest('button');
+            
+            if (!button) return;
+            
+            // Handle View button - check onclick attribute
+            const onclickAttr = button.getAttribute('onclick');
+            if (onclickAttr && onclickAttr.includes('openViewModal')) {
+                const match = onclickAttr.match(/openViewModal\(['"]([^'"]+)['"]\)/);
+                if (match && match[1] && typeof window.openViewModal === 'function') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    window.openViewModal(match[1]);
+                    return;
+                }
+            }
+            
+            // Handle Edit button
+            if (onclickAttr && onclickAttr.includes('startEdit')) {
+                const match = onclickAttr.match(/startEdit\(['"]([^'"]+)['"]\)/);
+                if (match && match[1]) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    startEdit(match[1]);
+                    return;
+                }
+            }
+            
+            // Handle Save button - let onclick handle it, just prevent event bubbling
+            if (onclickAttr && onclickAttr.includes('saveEdit')) {
+                // Don't handle here - let the onclick attribute handle it
+                // This prevents double execution
+                return;
+            }
+            
+            // Handle Cancel button - let onclick handle it
+            if (onclickAttr && onclickAttr.includes('cancelEdit')) {
+                // Don't handle here - let the onclick attribute handle it
+                return;
+            }
         });
     }
 }
@@ -746,7 +906,6 @@ if (document.readyState === 'loading') {
 }
 
 // Export functions to global scope for onclick handlers
-window.deleteAssessment = deleteAssessment;
 window.startEdit = startEdit;
 window.cancelEdit = cancelEdit;
 window.toggleCustomProgram = toggleCustomProgram;
@@ -757,4 +916,70 @@ window.setSortOrder = setSortOrder;
 window.sortBy = sortBy;
 window.toggleCategoryDropdown = toggleCategoryDropdown;
 window.filterByCategory = filterByCategory;
+window.toggleDateFilterDropdown = toggleDateFilterDropdown;
+window.applyDateFilter = applyDateFilter;
+window.resetDateFilter = resetDateFilter;
+
+/**
+ * Toggle date filter dropdown
+ */
+function toggleDateFilterDropdown() {
+    const dropdown = document.getElementById('dateFilterDropdown');
+    if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+/**
+ * Apply date filter
+ */
+function applyDateFilter() {
+    const dateFromInput = document.getElementById('dateFromInput');
+    const dateToInput = document.getElementById('dateToInput');
+    
+    currentDateFrom = dateFromInput ? dateFromInput.value : '';
+    currentDateTo = dateToInput ? dateToInput.value : '';
+    
+    // Update button text
+    const btnText = document.getElementById('dateFilterBtnText');
+    if (btnText) {
+        if (currentDateFrom || currentDateTo) {
+            let text = 'Date Filter';
+            if (currentDateFrom && currentDateTo) {
+                text = `${currentDateFrom} to ${currentDateTo}`;
+            } else if (currentDateFrom) {
+                text = `From ${currentDateFrom}`;
+            } else if (currentDateTo) {
+                text = `To ${currentDateTo}`;
+            }
+            btnText.textContent = text;
+        } else {
+            btnText.textContent = 'Date Filter';
+        }
+    }
+    
+    loadAssessments();
+    toggleDateFilterDropdown();
+}
+
+/**
+ * Reset date filter
+ */
+function resetDateFilter() {
+    const dateFromInput = document.getElementById('dateFromInput');
+    const dateToInput = document.getElementById('dateToInput');
+    
+    if (dateFromInput) dateFromInput.value = '';
+    if (dateToInput) dateToInput.value = '';
+    
+    currentDateFrom = '';
+    currentDateTo = '';
+    
+    // Update button text
+    const btnText = document.getElementById('dateFilterBtnText');
+    if (btnText) {
+        btnText.textContent = 'Date Filter';
+    }
+    
+    loadAssessments();
+    toggleDateFilterDropdown();
+}
 

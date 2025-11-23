@@ -43,15 +43,15 @@
                 <div class="flex gap-2">
                     <!-- Import Button -->
                     <button onclick="document.getElementById('importFileInput').click()" class="flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition text-white bg-indigo-500 hover:bg-indigo-600">
-                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
                         Import
                     </button>
 
-                    <!-- Export Button -->
-                    <button onclick="exportData('csv')" class="px-3 py-1.5 text-xs font-medium rounded-md transition text-neutral-800 bg-gray-200 hover:bg-gray-300">
+                    <!-- Export Buttons -->
+                    <button onclick="exportData('csv')" class="px-3 py-1.5 text-xs font-medium rounded-md transition text-white bg-indigo-500 hover:bg-indigo-600">
                         Export to CSV
+                    </button>
+                    <button onclick="exportToExcelFormat()" class="flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition text-white bg-indigo-500 hover:bg-indigo-600">
+                        Export to Excel
                     </button>
                 </div>
             </div>
@@ -119,9 +119,80 @@
             </table>
         </div>
     </div>
+
+    <!-- Archived Files Section - Fixed to Bottom -->
+    <div class="mt-6 rounded-xl px-4 shadow-sm bg-white border border-gray-200">
+        <div class="py-2">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Archived Files</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-50 border border-gray-300">
+                        <th class="px-3 py-2 text-left text-xs border-r border-gray-300 font-semibold text-neutral-800">File Name</th>
+                        <th class="px-3 py-2 text-left text-xs border-r border-gray-300 font-semibold text-neutral-800">Type</th>
+                        <th class="px-3 py-2 text-left text-xs border-r border-gray-300 font-semibold text-neutral-800">Size</th>
+                        <th class="px-3 py-2 text-left text-xs border-r border-gray-300 font-semibold text-neutral-800">Date Archived</th>
+                        <th class="px-3 py-2 text-left text-xs border-r border-gray-300 font-semibold text-neutral-800">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="archivedFileTableBody">
+                    @forelse($archivedFiles ?? [] as $file)
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="px-3 py-2">
+                            <div class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-xs text-neutral-800 font-medium">{{ $file['name'] }}</span>
+                            </div>
+                        </td>
+                        <td class="px-3 py-2">
+                            @if(strtolower($file['extension']) === 'csv')
+                                <span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded text-[10px] font-medium">CSV</span>
+                            @elseif(in_array(strtolower($file['extension']), ['xlsx', 'xls']))
+                                <span class="px-1.5 py-0.5 bg-green-100 text-green-800 rounded text-[10px] font-medium">EXCEL</span>
+                            @else
+                                <span class="px-1.5 py-0.5 bg-gray-100 text-gray-800 rounded text-[10px] font-medium">{{ strtoupper($file['extension']) }}</span>
+                            @endif
+                        </td>
+                        <td class="px-3 py-2 text-xs text-gray-600">
+                            {{ number_format($file['size'] / 1024, 2) }} KB
+                        </td>
+                        <td class="px-3 py-2 text-xs text-gray-600">
+                            {{ date('M d, Y H:i', $file['date']) }}
+                        </td>
+                        <td class="px-3 py-2">
+                            <div class="flex items-center gap-2">
+                                <button onclick="downloadArchivedFile('{{ $file['name'] }}')" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium underline transition">
+                                    Download
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="px-3 py-8 text-center">
+                            <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            <h3 class="mt-2 text-xs font-medium text-gray-900">No archived files</h3>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 </main>
 
 <!-- Pass configuration to JavaScript - must be before vite script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
     (function() {
         window.filesConfig = {

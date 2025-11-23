@@ -20,6 +20,7 @@ class Assessment extends Model
         'Exhaustion',
         'Disengagement',
         'Burnout_Category',
+        'status',
         'ip_address',
         'user_agent',
     ];

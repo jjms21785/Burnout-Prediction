@@ -93,36 +93,5 @@
             </div>
         </form>
     </div>
-
-    <!-- Clear Data Section -->
-    <div class="rounded-xl shadow-sm p-6 bg-white border border-gray-200">
-        <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-white">
-            <div>
-                <p class="text-sm font-medium text-neutral-800">Clear All Data</p>
-                <p class="text-xs mt-1 text-gray-600">This will permanently delete all assessment records from the database. This will erase all data on the system.</p>
-            </div>
-            <form id="clearDataForm" method="POST" action="{{ route('admin.clear-all-data') }}" style="display: inline;">
-                @csrf
-                <button 
-                    type="button"
-                    onclick="confirmClearData()"
-                    class="px-4 py-2 text-sm font-medium rounded-lg transition text-white bg-red-500 hover:bg-red-600"
-                >
-                    Clear All Data
-                </button>
-            </form>
-        </div>
-    </div>
 </main>
-
-<script>
-function confirmClearData() {
-    if (confirm('This action will permanently delete ALL a data (except files). This cannot be undone.')) {
-        const userInput = prompt('Type \'Delete\' to remove all data');
-        if (userInput === 'Delete') {
-            document.getElementById('clearDataForm').submit();
-        }
-    }
-}
-</script>
 @endsection
