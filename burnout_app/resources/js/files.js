@@ -1,5 +1,3 @@
-// Files Management JavaScript
-
 let filesConfig = {
     exportRoute: '',
     downloadRoute: '',
@@ -18,7 +16,6 @@ function initializeFilesConfig() {
 
 initializeFilesConfig();
 
-// Show loading state
 function showLoadingState(message = 'Loading Data, please wait...') {
     const tbody = document.getElementById('fileTableBody');
     if (tbody) {
@@ -35,7 +32,6 @@ function showLoadingState(message = 'Loading Data, please wait...') {
     }
 }
 
-// Handle file import
 function handleFileImport() {
     const form = document.getElementById('importForm');
     const fileInput = document.getElementById('importFileInput');
@@ -43,11 +39,9 @@ function handleFileImport() {
     if (!form || !fileInput) return;
     
     if (fileInput.files.length > 0) {
-        // Show warning first
         const warningMessage = 'Are you sure you want to import this file?\n\nConsider Exporting or go Back Up the current data before adding new data.';
         
         if (confirm(warningMessage)) {
-            // Show loading state
             showLoadingState('Loading Data, please wait...');
             
             const formData = new FormData(form);
@@ -61,12 +55,10 @@ function handleFileImport() {
                 }
             })
             .then(response => {
-                // Check if response is JSON
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
                     return response.json();
                 }
-                // Fallback to redirect behavior
                 if (response.redirected) {
                     window.location.href = response.url;
                 } else {
@@ -75,12 +67,10 @@ function handleFileImport() {
                 return null;
             })
             .then(data => {
-                // Reload page regardless of success/error (loading will disappear)
                 window.location.reload();
             })
             .catch(error => {
                 console.error('Error:', error);
-                // Reload page (loading will disappear)
                 window.location.reload();
             });
         } else {
@@ -89,13 +79,11 @@ function handleFileImport() {
     }
 }
 
-// Export data in specified format
 function exportData(format) {
     if (!filesConfig.exportRoute) {
         initializeFilesConfig();
     }
     
-    // Create download link directly
     const exportUrl = filesConfig.exportRoute + '?format=' + format;
     const link = document.createElement('a');
     link.href = exportUrl;
@@ -103,10 +91,8 @@ function exportData(format) {
     link.style.display = 'none';
     document.body.appendChild(link);
     
-    // Trigger download
     link.click();
     
-    // Clean up after download starts
     setTimeout(() => {
         if (link.parentElement) {
             document.body.removeChild(link);
@@ -114,7 +100,6 @@ function exportData(format) {
     }, 100);
 }
 
-// Download a specific file
 function downloadFile(filename) {
     if (!filesConfig.downloadRoute) {
         initializeFilesConfig();
@@ -128,16 +113,13 @@ function downloadFile(filename) {
     link.click();
     document.body.removeChild(link);
     
-    // Refresh page after a short delay
     setTimeout(() => {
         window.location.reload();
     }, 500);
 }
 
-// Delete a specific file
 function deleteFile(filename) {
     if (confirm('Are you sure you want to delete "' + filename + '"? This action cannot be undone.')) {
-        // Show loading state
         showLoadingState('Deleting File...');
         
         if (!filesConfig.deleteRoute || !filesConfig.csrfToken) {
@@ -169,9 +151,7 @@ function deleteFile(filename) {
     }
 }
 
-// Export functions to global scope for onclick handlers
 window.handleFileImport = handleFileImport;
 window.exportData = exportData;
 window.downloadFile = downloadFile;
 window.deleteFile = deleteFile;
-

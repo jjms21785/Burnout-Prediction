@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle "Others" option for program only (gender and year_level removed)
     function setupOthersOption(selectId, inputId) {
         const select = document.getElementById(selectId);
         const input = document.getElementById(inputId);
@@ -20,19 +19,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     setupOthersOption('program', 'program_other');
     
-    // Two-step form logic
     const demographicStep = document.getElementById('demographicStep');
     const questionsStep = document.getElementById('questionsStep');
     const nextBtn = document.getElementById('nextBtn');
     if (nextBtn && demographicStep && questionsStep) {
         nextBtn.addEventListener('click', function() {
-            // Hide error message when Next button is clicked
             const errorMessage = document.getElementById('errorMessage');
             if (errorMessage) {
                 errorMessage.style.display = 'none';
             }
             
-            // Validate demographic fields before proceeding
             const age = document.getElementById('age');
             const gender = document.getElementById('gender');
             const program = document.getElementById('program');
@@ -41,7 +37,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let valid = true;
             
-            // Validate gender (no "Others" option anymore)
             if (!gender.value || gender.value === '') {
                 gender.classList.add('border-red-500');
                 valid = false;
@@ -49,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 gender.classList.remove('border-red-500');
             }
             
-            // Validate program (has "Others" option)
             if (!program.value || program.value === '') {
                 program.classList.add('border-red-500');
                 valid = false;
@@ -65,7 +59,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Validate year level (no "Others" option anymore)
             if (!yearLevel.value || yearLevel.value === '') {
                 yearLevel.classList.add('border-red-500');
                 valid = false;
@@ -73,7 +66,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 yearLevel.classList.remove('border-red-500');
             }
             
-            // Validate age
             if (!age.value || age.value === '') {
                 age.classList.add('border-red-500');
                 valid = false;
@@ -86,7 +78,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 questionsStep.style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
-                // Scroll to first invalid field
                 const firstInvalid = document.querySelector('.border-red-500');
                 if (firstInvalid) {
                     firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -95,7 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Pagination logic
     const totalQuestions = 30;
     const questionsPerSection = 3;
     const totalSections = 10;
@@ -109,32 +99,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showSection(sectionNumber) {
-        // Hide all sections
         for (let i = 1; i <= totalSections; i++) {
             const section = document.getElementById(`section${i}`);
             if (section) section.style.display = 'none';
         }
         
-        // Show current section
         const currentSectionEl = document.getElementById(`section${sectionNumber}`);
         if (currentSectionEl) currentSectionEl.style.display = 'block';
         
-        // Update navigation buttons
         const prevBtn = document.getElementById('prevBtn');
         const nextSectionBtn = document.getElementById('nextSectionBtn');
         const submitBtn = document.getElementById('submitBtn');
         const resetBtn = document.getElementById('resetBtn');
         
-        // Show/hide Previous button (hidden on first section)
         prevBtn.style.display = sectionNumber > 1 ? 'inline-block' : 'none';
-        
-        // Show/hide Reset button (only on last section)
         resetBtn.style.display = sectionNumber === totalSections ? 'inline-block' : 'none';
         
-        // Check if current section is complete
         const sectionComplete = checkSectionComplete(sectionNumber);
         
-        // Next button is always visible except on last section
         if (sectionNumber < totalSections) {
             nextSectionBtn.style.display = 'inline-block';
             if (sectionComplete) {
@@ -152,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
             nextSectionBtn.style.display = 'none';
         }
         
-        // Show/hide Submit button (only on last section if all questions answered)
         if (sectionNumber === totalSections) {
             const allComplete = Object.keys(answers).length === totalQuestions;
             if (allComplete) {
@@ -189,7 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Handle radio button changes
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('answer-radio')) {
             const name = e.target.name;
@@ -199,7 +179,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const questionIndex = parseInt(match[1]);
                 answers[questionIndex] = e.target.value;
                 
-                // Update styling for selected option
                 const container = e.target.closest('.mb-8');
                 if (container) {
                     container.querySelectorAll('.answer-option').forEach(option => {
@@ -216,13 +195,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateProgress();
                 showSection(currentSection);
                 autoAdvanceSection();
-            } else {
-                
             }
         }
     });
 
-    // Navigation button handlers
     const prevBtn = document.getElementById('prevBtn');
     const nextSectionBtn = document.getElementById('nextSectionBtn');
     
@@ -246,7 +222,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Reset button functionality
     const resetBtn = document.getElementById('resetBtn');
     if (resetBtn) {
         resetBtn.addEventListener('click', function() {
@@ -268,31 +243,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initialize
     updateProgress();
     showSection(1);
 
-    // Submit button validation on click (don't interfere with natural form submission)
     const submitBtn = document.getElementById('submitBtn');
     if (submitBtn) {
         submitBtn.addEventListener('click', function(e) {
-            // Only validate, don't prevent default - let form submit naturally
             if (Object.keys(answers).length !== totalQuestions) {
                 e.preventDefault();
                 e.stopPropagation();
                 alert('Please answer all 30 questions before submitting. You have answered ' + Object.keys(answers).length + ' out of 30 questions.');
                 return false;
             }
-            
-            // If validation passes, let the button's type="submit" handle the submission
         });
     }
 
-    // Form submit handler - validate and ensure all radio buttons are checked
     const form = document.getElementById('assessmentForm');
     if (form) {
         form.addEventListener('submit', function(e) {
-            // Handle "Others" option values - replace "Others" with the text input value (only for program now)
             const program = document.getElementById('program');
             
             if (program && program.value === 'Others') {
@@ -307,22 +275,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Validate all questions are answered
             if (Object.keys(answers).length !== totalQuestions) {
                 e.preventDefault();
                 alert('Please answer all 30 questions before submitting. You have answered ' + Object.keys(answers).length + ' out of 30 questions.');
                 return false;
             }
             
-            // Ensure all radio buttons corresponding to answers are checked
-            // This ensures the form data is properly submitted
             let allChecked = true;
             let missingAnswers = [];
             for (let i = 0; i < 30; i++) {
                 if (answers[i] === undefined || answers[i] === null || answers[i] === '') {
                     missingAnswers.push(i + 1);
                 } else {
-                    // Ensure the corresponding radio button is checked
                     const radioName = 'answers[' + i + ']';
                     const radio = form.querySelector(`input[name="${radioName}"][value="${answers[i]}"]`);
                     if (radio) {
@@ -345,9 +309,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Error: Some answers could not be found. Please refresh the page and try again.');
                 return false;
             }
-            
-            // Don't prevent default - allow form to submit naturally
         });
     }
 });
-

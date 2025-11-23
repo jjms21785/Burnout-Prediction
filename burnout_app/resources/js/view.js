@@ -1,23 +1,12 @@
-/**
- * View JavaScript Module
- * Handles viewing assessment details, data loading, and email sending
- */
-
-// Configuration from Blade template
 let config = {
     showRoute: '',
     sendEmailRoute: '',
     csrfToken: ''
 };
 
-// State management
 let currentAssessmentId = null;
 let currentAssessmentData = null;
 
-/**
- * Initialize configuration from window object
- * Gets view configuration from records.blade.php
- */
 function initializeConfig() {
     if (window.viewConfig) {
         config = {
@@ -27,57 +16,30 @@ function initializeConfig() {
     }
 }
 
-/**
- * Open view modal for a specific assessment
- * Shows detailed assessment information in a modal view
- * 
- * @param {string} assessmentId - The ID of the assessment to view
- */
 function openViewModal(assessmentId) {
     currentAssessmentId = assessmentId;
     
-    // Hide table view, show view container
     const tableView = document.getElementById('tableView');
     const viewContainer = document.getElementById('viewContainer');
     
     if (tableView) tableView.classList.add('hidden');
     if (viewContainer) viewContainer.classList.remove('hidden');
     
-    // Fetch assessment data
     fetchAssessmentData(assessmentId);
 }
 
-/**
- * Close view modal and return to table
- * Hides the detailed view and shows the records table again
- */
 function closeViewModal() {
-    // Hide view container, show table view
     const tableView = document.getElementById('tableView');
     const viewContainer = document.getElementById('viewContainer');
     
     if (tableView) tableView.classList.remove('hidden');
     if (viewContainer) viewContainer.classList.add('hidden');
     
-    // Reset form
     resetViewForm();
     currentAssessmentId = null;
     currentAssessmentData = null;
 }
 
-/**
- * Show loading state in view container
- */
-function showLoadingState() {
-    // No loading animation needed
-}
-
-/**
- * Fetch assessment data from server
- * Retrieves detailed assessment information via API
- * 
- * @param {string} assessmentId - The ID of the assessment to fetch
- */
 function fetchAssessmentData(assessmentId) {
     const url = config.showRoute.replace(':id', assessmentId);
     
@@ -103,12 +65,6 @@ function fetchAssessmentData(assessmentId) {
     });
 }
 
-/**
- * Show error state in view container
- * Displays error message when data fetch fails
- * 
- * @param {string} message - Error message to display
- */
 function showErrorState(message) {
     const contentDiv = document.getElementById('viewContent');
     if (contentDiv) {
@@ -128,17 +84,10 @@ function showErrorState(message) {
     }
 }
 
-/**
- * Populate view container with assessment data
- * Renders detailed assessment information including scores, levels, and recommendations
- * 
- * @param {object} data - Assessment data object containing all assessment details
- */
 function populateViewContainer(data) {
     const contentDiv = document.getElementById('viewContent');
     if (!contentDiv) return;
     
-    // Determine category badge color
     let categoryColorClass = 'bg-green-100 text-green-800';
     if (data.category === 'High Burnout') {
         categoryColorClass = 'bg-red-100 text-red-800';
@@ -146,12 +95,10 @@ function populateViewContainer(data) {
         categoryColorClass = 'bg-orange-100 text-orange-800';
     }
     
-    // Format interpretations
     let interpretationsHtml = '';
     if (data.interpretations) {
         const interpretations = data.interpretations;
         
-        // Exhaustion interpretation
         if (interpretations.top_card && interpretations.top_card.exhaustion) {
             const exhaustion = interpretations.top_card.exhaustion;
             interpretationsHtml += `
@@ -162,7 +109,6 @@ function populateViewContainer(data) {
             `;
         }
         
-        // Disengagement interpretation
         if (interpretations.top_card && interpretations.top_card.disengagement) {
             const disengagement = interpretations.top_card.disengagement;
             interpretationsHtml += `
@@ -173,7 +119,6 @@ function populateViewContainer(data) {
             `;
         }
         
-        // Breakdown interpretations (Academic, Stress, Sleep)
         if (interpretations.breakdown) {
             if (interpretations.breakdown.academic) {
                 const academic = interpretations.breakdown.academic;
@@ -211,12 +156,10 @@ function populateViewContainer(data) {
         interpretationsHtml = '<p class="text-gray-500 text-sm">No interpretations available</p>';
     }
     
-    // Format recommendations
     let recommendationsHtml = '';
     if (data.recommendations) {
         const recommendations = data.recommendations;
         
-        // Exhaustion recommendation
         if (recommendations.exhaustion) {
             recommendationsHtml += `
                 <div class="mb-3">
@@ -225,7 +168,6 @@ function populateViewContainer(data) {
             `;
         }
         
-        // Disengagement recommendation
         if (recommendations.disengagement) {
             recommendationsHtml += `
                 <div class="mb-3">
@@ -234,7 +176,6 @@ function populateViewContainer(data) {
             `;
         }
         
-        // Combined recommendation
         if (recommendations.combined) {
             recommendationsHtml += `
                 <div class="mb-3">
@@ -243,7 +184,6 @@ function populateViewContainer(data) {
             `;
         }
         
-        // Breakdown recommendations (from interpretations.breakdown)
         if (data.interpretations && data.interpretations.breakdown) {
             if (data.interpretations.breakdown.academic && data.interpretations.breakdown.academic.recommendation) {
                 recommendationsHtml += `
@@ -276,7 +216,6 @@ function populateViewContainer(data) {
     }
     
     contentDiv.innerHTML = `
-        <!-- Header with Back Button -->
         <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
             <h2 class="text-2xl font-semibold text-gray-800">Results</h2>
             <button onclick="closeViewModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
@@ -284,9 +223,7 @@ function populateViewContainer(data) {
             </button>
         </div>
         
-        <!-- Two Columns: Student Information | Assessment Results -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <!-- Left Column: Student Information -->
             <div class="bg-gray-50 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3">Student Information</h3>
                 <div class="space-y-3 text-sm">
@@ -321,7 +258,6 @@ function populateViewContainer(data) {
                 </div>
             </div>
             
-            <!-- Right Column: Assessment Results -->
             <div class="bg-blue-50 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3">Assessment Results</h3>
                 <div class="space-y-3 text-sm">
@@ -357,7 +293,6 @@ function populateViewContainer(data) {
             </div>
         </div>
         
-        <!-- Interpretations Section -->
         <div class="bg-white rounded-lg p-4 border border-gray-200 mb-6">
             <h3 class="text-sm font-semibold text-gray-700 mb-4">Interpretation</h3>
             <div class="space-y-4">
@@ -365,9 +300,7 @@ function populateViewContainer(data) {
             </div>
         </div>
         
-        <!-- Two Columns: Recommended Interventions | Send an email -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Left Column: Recommended Interventions -->
             <div class="bg-indigo-50 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3">Recommended Interventions</h3>
                 <div class="space-y-3">
@@ -375,12 +308,10 @@ function populateViewContainer(data) {
                 </div>
             </div>
             
-            <!-- Right Column: Send an email form -->
             <div class="bg-white rounded-lg p-4 border border-gray-200 flex flex-col h-full">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Send an Email</h3>
                 <form id="viewForm" onsubmit="handleFormSubmit(event)" class="flex flex-col flex-1">
                     <div class="space-y-4 flex-1">
-                        <!-- Email Address -->
                         <div>
                             <label for="studentEmail" class="block text-sm font-medium text-gray-700 mb-1">
                                 Student Email Address <span class="text-red-500">*</span>
@@ -396,7 +327,6 @@ function populateViewContainer(data) {
                             >
                         </div>
                         
-                        <!-- Message Field (Always Shown) -->
                         <div>
                             <label for="additionalMessage" class="block text-sm font-medium text-gray-700 mb-1">
                                 Message <span class="text-red-500">*</span>
@@ -411,7 +341,6 @@ function populateViewContainer(data) {
                             ></textarea>
                         </div>
                         
-                        <!-- Schedule Appointment Checkbox -->
                         <div>
                             <label class="flex items-center">
                                 <input 
@@ -426,7 +355,6 @@ function populateViewContainer(data) {
                             </label>
                         </div>
                         
-                        <!-- Appointment Date/Time Field (Conditional) -->
                         <div id="appointmentFieldContainer" class="hidden">
                             <label for="appointmentDatetime" class="block text-sm font-medium text-gray-700 mb-1">
                                 Appointment Date & Time <span class="text-red-500">*</span>
@@ -441,7 +369,6 @@ function populateViewContainer(data) {
                         </div>
                     </div>
                     
-                    <!-- Action Buttons - Fixed to Bottom -->
                     <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
                         <button 
                             type="button" 
@@ -464,10 +391,6 @@ function populateViewContainer(data) {
     `;
 }
 
-
-/**
- * Toggle appointment field visibility based on checkbox
- */
 function toggleAppointmentField() {
     const checkbox = document.getElementById('scheduleAppointmentCheckbox');
     const container = document.getElementById('appointmentFieldContainer');
@@ -485,9 +408,6 @@ function toggleAppointmentField() {
     }
 }
 
-/**
- * Handle form submission
- */
 function handleFormSubmit(event) {
     event.preventDefault();
     
@@ -499,7 +419,6 @@ function handleFormSubmit(event) {
     const form = document.getElementById('viewForm');
     const sendButton = document.getElementById('sendButton');
     
-    // Validate message field (always required)
     const message = document.getElementById('additionalMessage');
     if (!message.value.trim()) {
         alert('Please enter a message');
@@ -507,7 +426,6 @@ function handleFormSubmit(event) {
         return;
     }
     
-    // Validate appointment checkbox
     const scheduleAppointmentCheckbox = document.getElementById('scheduleAppointmentCheckbox');
     
     if (scheduleAppointmentCheckbox.checked) {
@@ -519,14 +437,11 @@ function handleFormSubmit(event) {
         }
     }
     
-    // Disable button and show loading
     sendButton.disabled = true;
     sendButton.innerHTML = 'Sending...';
     
-    // Get form data
     const formData = new FormData(form);
     
-    // Message is always sent, appointment is optional
     formData.append('send_message', '1');
     if (scheduleAppointmentCheckbox.checked) {
         formData.append('send_appointment', '1');
@@ -536,7 +451,6 @@ function handleFormSubmit(event) {
     
     const url = config.sendEmailRoute.replace(':id', currentAssessmentId);
     
-    // Send request
     fetch(url, {
         method: 'POST',
         body: formData,
@@ -565,48 +479,33 @@ function handleFormSubmit(event) {
         console.error('Error sending email:', error);
         alert('Failed to send email: ' + error.message);
         
-        // Re-enable button
         sendButton.disabled = false;
         sendButton.innerHTML = 'Send';
     });
 }
 
-/**
- * Reset view form
- * Clears all form fields after submission
- */
 function resetViewForm() {
     const form = document.getElementById('viewForm');
     if (form) {
         form.reset();
-        // Hide appointment field
         const appointmentContainer = document.getElementById('appointmentFieldContainer');
         if (appointmentContainer) appointmentContainer.classList.add('hidden');
         
-        // Reset appointment required attribute
         const appointment = document.getElementById('appointmentDatetime');
         if (appointment) appointment.required = false;
-        
-        // Message field is always shown and required, no need to reset
     }
 }
 
-/**
- * Initialize the view module
- * Sets up configuration and event listeners when page loads
- */
 function initializeView() {
     initializeConfig();
 }
 
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeView);
 } else {
     initializeView();
 }
 
-// Export functions to global scope for onclick handlers
 window.openViewModal = openViewModal;
 window.closeViewModal = closeViewModal;
 window.handleFormSubmit = handleFormSubmit;

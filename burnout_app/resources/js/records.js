@@ -1,13 +1,3 @@
-/**
- * Records JavaScript Module
- * Handles all assessment records table functionality including:
- * - Data loading and transformation
- * - Table rendering with inline editing
- * - Sorting, filtering, and pagination
- * - CRUD operations
- */
-
-// Constants
 const PROGRAMS = [
     'College of Business and Accountancy',
     'College of Computer Studies',
@@ -21,7 +11,6 @@ const PROGRAMS = [
 const CATEGORIES = ['High Burnout', 'Exhausted', 'Disengaged', 'Low Burnout'];
 const YEAR_LEVELS = ['First', 'Second', 'Third', 'Fourth'];
 
-// State management
 let assessmentsData = [];
 let currentPage = 1;
 let entriesPerPage = 10;
@@ -32,7 +21,6 @@ let currentSearchTerm = '';
 let currentSortField = 'id';
 let currentSortOrder = 'asc';
 
-// Configuration (will be set from Blade template)
 let config = {
     recordsRoute: '',
     updateRoute: '',
@@ -40,9 +28,6 @@ let config = {
     csrfToken: ''
 };
 
-/**
- * Initialize configuration from window object
- */
 function initializeConfig() {
     if (window.recordsConfig) {
         config = {
@@ -52,42 +37,34 @@ function initializeConfig() {
     }
 }
 
-/**
- * Transform server data to UI format
- */
 function transformAssessmentData(item) {
     const name = item.name || 'Unavailable';
     const nameParts = name.split(' ');
     const firstName = nameParts[0] || 'Unavailable';
     const lastName = nameParts.slice(1).join(' ') || 'Unavailable';
     
-    // Map risk (Burnout_Category) to category - matches ML model prediction
     let category = 'Unavailable';
     const risk = item.risk;
     
-    // Handle numeric risk values (0, 1, 2, 3) from ML model
-    // ML model: 0="Non-Burnout", 1="Exhausted", 2="Disengaged", 3="BURNOUT"
     if (risk === '0' || risk === 0) {
-        category = 'Low Burnout';  // ML: "Non-Burnout"
+        category = 'Low Burnout';
     } else if (risk === '1' || risk === 1) {
-        category = 'Exhausted';    // ML: "Exhausted" (matches ML model)
+        category = 'Exhausted';
     } else if (risk === '2' || risk === 2) {
-        category = 'Disengaged';   // ML: "Disengaged" (matches ML model)
+        category = 'Disengaged';
     } else if (risk === '3' || risk === 3) {
-        category = 'High Burnout'; // ML: "BURNOUT"
+        category = 'High Burnout';
     } else {
-        // Fallback for string values or unknown
         const riskLower = String(risk || '').toLowerCase();
         if (riskLower === 'high' || riskLower === '3') {
             category = 'High Burnout';
         } else if (riskLower === 'low' || riskLower === '0') {
             category = 'Low Burnout';
         } else if (riskLower === '1') {
-            category = 'Exhausted';    // ML: "Exhausted"
+            category = 'Exhausted';
         } else if (riskLower === '2') {
-            category = 'Disengaged';   // ML: "Disengaged"
+            category = 'Disengaged';
         }
-        // If still unavailable, category remains 'Unavailable'
     }
     
     return {
@@ -102,9 +79,6 @@ function transformAssessmentData(item) {
     };
 }
 
-/**
- * Load assessments from server
- */
 function loadAssessments() {
     fetch(config.recordsRoute, {
         headers: {
@@ -126,9 +100,6 @@ function loadAssessments() {
     });
 }
 
-/**
- * Generate HTML for program dropdown (edit mode)
- */
 function generateProgramDropdown(item) {
     const isCustom = !PROGRAMS.includes(item.program);
     const selectedProgram = isCustom ? '__custom__' : item.program;
@@ -152,9 +123,6 @@ function generateProgramDropdown(item) {
     return html;
 }
 
-/**
- * Generate HTML for year level dropdown
- */
 function generateYearLevelDropdown(item) {
     let html = `<select id="edit_yearLevel_${item.id}" class="w-full px-2 py-1 text-xs border border-indigo-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">`;
     YEAR_LEVELS.forEach(year => {
@@ -164,9 +132,6 @@ function generateYearLevelDropdown(item) {
     return html;
 }
 
-/**
- * Generate HTML for category dropdown
- */
 function generateCategoryDropdown(item) {
     let html = `<select id="edit_category_${item.id}" class="w-full px-2 py-1 text-xs border border-indigo-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">`;
     CATEGORIES.forEach(category => {
@@ -176,9 +141,6 @@ function generateCategoryDropdown(item) {
     return html;
 }
 
-/**
- * Render table row in edit mode
- */
 function renderEditRow(item) {
     return `
         <tr class="border-b border-gray-200 bg-indigo-50">
@@ -220,9 +182,6 @@ function renderEditRow(item) {
     `;
 }
 
-/**
- * Render table row in view mode
- */
 function renderViewRow(item) {
     return `
         <tr class="border-b border-gray-200 hover:bg-gray-50 transition">
@@ -245,9 +204,6 @@ function renderViewRow(item) {
     `;
 }
 
-/**
- * Render the entire table
- */
 function renderTable() {
     const start = (currentPage - 1) * entriesPerPage;
     const end = start + entriesPerPage;
@@ -274,24 +230,18 @@ function renderTable() {
     updatePagination();
 }
 
-/**
- * Update pagination controls
- */
 function updatePagination() {
     const totalPages = Math.ceil(filteredData.length / entriesPerPage);
     
-    // Get all pagination buttons
     const startBtn = document.getElementById('startBtn');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     const endBtn = document.getElementById('endBtn');
     
-    // Base classes for buttons (same as sorting buttons)
     const activeClass = 'flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-indigo-500 text-white hover:bg-indigo-600';
     const inactiveClass = 'flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-white text-neutral-800 hover:bg-indigo-600 hover:text-white';
     const disabledClass = 'flex items-center justify-center w-9 h-9 rounded-lg transition border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed';
     
-    // Update start button
     if (startBtn) {
         if (currentPage === 1 || totalPages === 0) {
             startBtn.className = disabledClass;
@@ -302,7 +252,6 @@ function updatePagination() {
         }
     }
     
-    // Update prev button
     if (prevBtn) {
         if (currentPage === 1 || totalPages === 0) {
             prevBtn.className = disabledClass;
@@ -313,7 +262,6 @@ function updatePagination() {
         }
     }
     
-    // Update next button
     if (nextBtn) {
         if (currentPage === totalPages || totalPages === 0) {
             nextBtn.className = disabledClass;
@@ -324,7 +272,6 @@ function updatePagination() {
         }
     }
     
-    // Update end button
     if (endBtn) {
         if (currentPage === totalPages || totalPages === 0) {
             endBtn.className = disabledClass;
@@ -336,9 +283,6 @@ function updatePagination() {
     }
 }
 
-/**
- * Change page
- */
 function changePage(direction) {
     const totalPages = Math.ceil(filteredData.length / entriesPerPage);
     
@@ -357,21 +301,14 @@ function changePage(direction) {
     renderTable();
 }
 
-/**
- * Toggle sort by dropdown
- */
 function toggleSortByDropdown() {
     const dropdown = document.getElementById('sortByDropdown');
     if (dropdown) dropdown.classList.toggle('hidden');
 }
 
-/**
- * Set sort order and re-sort
- */
 function setSortOrder(order) {
     currentSortOrder = order;
     
-    // Update button styles
     const ascBtn = document.getElementById('sortAscBtn');
     const descBtn = document.getElementById('sortDescBtn');
     
@@ -385,15 +322,11 @@ function setSortOrder(order) {
         }
     }
     
-    // Re-sort if a field is selected
     if (currentSortField) {
         sortBy(currentSortField);
     }
 }
 
-/**
- * Sort data by field
- */
 function sortBy(field) {
     currentSortField = field;
     
@@ -401,12 +334,10 @@ function sortBy(field) {
         let aVal = a[field];
         let bVal = b[field];
         
-        // Handle numeric sorting for id and age
         if (field === 'id' || field === 'age') {
             aVal = parseInt(aVal);
             bVal = parseInt(bVal);
         } else {
-            // Convert to lowercase for string comparison
             aVal = String(aVal).toLowerCase();
             bVal = String(bVal).toLowerCase();
         }
@@ -424,39 +355,25 @@ function sortBy(field) {
     toggleSortByDropdown();
 }
 
-/**
- * Toggle category dropdown
- */
 function toggleCategoryDropdown() {
     const dropdown = document.getElementById('categoryDropdown');
     if (dropdown) dropdown.classList.toggle('hidden');
 }
 
-/**
- * Filter by category
- */
 function filterByCategory(category) {
     currentCategoryFilter = category;
     
-    // Update button text
     const btnText = document.getElementById('categoryBtnText');
     if (btnText) {
         btnText.textContent = category === 'all' ? 'Category' : category;
     }
     
-    // Apply filter
     applyFilters();
-    
-    // Close dropdown
     toggleCategoryDropdown();
 }
 
-/**
- * Apply all filters (search and category)
- */
 function applyFilters() {
     filteredData = assessmentsData.filter(item => {
-        // Apply search filter - search across all columns
         const searchMatch = currentSearchTerm === '' || 
             String(item.id || '').toLowerCase().includes(currentSearchTerm) ||
             String(item.firstName || '').toLowerCase().includes(currentSearchTerm) ||
@@ -467,7 +384,6 @@ function applyFilters() {
             String(item.yearLevel || '').toLowerCase().includes(currentSearchTerm) ||
             String(item.category || '').toLowerCase().includes(currentSearchTerm);
         
-        // Apply category filter
         const categoryMatch = currentCategoryFilter === 'all' || 
             item.category === currentCategoryFilter;
         
@@ -478,10 +394,6 @@ function applyFilters() {
     renderTable();
 }
 
-
-/**
- * Delete assessment
- */
 function deleteAssessment(id) {
     if (confirm('Are you sure you want to delete this assessment? This action cannot be undone.')) {
         const formData = new FormData();
@@ -497,19 +409,16 @@ function deleteAssessment(id) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Remove from local data array
                 const index = assessmentsData.findIndex(item => String(item.id) === String(id));
                 if (index !== -1) {
                     assessmentsData.splice(index, 1);
                 }
                 
-                // Remove from filtered data
                 const filteredIndex = filteredData.findIndex(item => String(item.id) === String(id));
                 if (filteredIndex !== -1) {
                     filteredData.splice(filteredIndex, 1);
                 }
                 
-                // Re-render table
                 renderTable();
                 alert('Assessment deleted successfully');
             } else {
@@ -518,7 +427,6 @@ function deleteAssessment(id) {
         })
         .catch(error => {
             console.error('Delete error:', error);
-            // Fallback: remove from local data even if API fails
             const index = assessmentsData.findIndex(item => String(item.id) === String(id));
             if (index !== -1) {
                 assessmentsData.splice(index, 1);
@@ -533,25 +441,16 @@ function deleteAssessment(id) {
     }
 }
 
-/**
- * Start editing a row
- */
 function startEdit(id) {
     editingId = String(id);
     renderTable();
 }
 
-/**
- * Cancel editing
- */
 function cancelEdit() {
     editingId = null;
     renderTable();
 }
 
-/**
- * Toggle custom program input visibility
- */
 function toggleCustomProgram(id) {
     const select = document.getElementById(`edit_program_${id}`);
     const customInput = document.getElementById(`edit_program_custom_${id}`);
@@ -567,24 +466,15 @@ function toggleCustomProgram(id) {
     }
 }
 
-/**
- * Map category label to ML prediction value (0,1,2,3) for database
- * Returns numeric value that matches ML model prediction
- * ML model: 0="Non-Burnout", 1="Exhausted", 2="Disengaged", 3="BURNOUT"
- */
 function categoryToMLValue(category) {
-    if (category === 'Low Burnout') return '0';      // ML: "Non-Burnout"
-    if (category === 'Exhausted') return '1';        // ML: "Exhausted" (matches ML model)
-    if (category === 'Disengaged') return '2';       // ML: "Disengaged" (matches ML model)
-    if (category === 'High Burnout') return '3';     // ML: "BURNOUT"
+    if (category === 'Low Burnout') return '0';
+    if (category === 'Exhausted') return '1';
+    if (category === 'Disengaged') return '2';
+    if (category === 'High Burnout') return '3';
     return null;
 }
 
-/**
- * Save edited assessment
- */
 function saveEdit(id) {
-    // Get values from input fields
     const firstNameEl = document.getElementById(`edit_firstName_${id}`);
     const lastNameEl = document.getElementById(`edit_lastName_${id}`);
     const genderEl = document.getElementById(`edit_gender_${id}`);
@@ -604,7 +494,6 @@ function saveEdit(id) {
     const gender = genderEl.value;
     const age = parseInt(ageEl.value);
     
-    // Handle program - check if custom or predefined
     let program;
     const programSelect = programSelectEl.value;
     if (programSelect === '__custom__') {
@@ -621,7 +510,6 @@ function saveEdit(id) {
     const category = categoryEl.value;
     const burnoutCategory = categoryToMLValue(category);
     
-    // Make AJAX call to update the database
     const formData = new FormData();
     formData.append('_token', config.csrfToken);
     formData.append('name', firstName + ' ' + lastName);
@@ -642,7 +530,6 @@ function saveEdit(id) {
     })
     .then(response => response.json())
     .then(data => {
-        // Update local data array
         const index = assessmentsData.findIndex(item => String(item.id) === String(id));
         if (index !== -1) {
             assessmentsData[index] = {
@@ -656,16 +543,12 @@ function saveEdit(id) {
                 category: category || 'Unavailable'
             };
             
-            // Update filtered data as well
             const filteredIndex = filteredData.findIndex(item => String(item.id) === String(id));
             if (filteredIndex !== -1) {
                 filteredData[filteredIndex] = {...assessmentsData[index]};
             }
             
-            // Reset editing state
             editingId = null;
-            
-            // Re-render table
             renderTable();
             
             if (data.success) {
@@ -675,7 +558,6 @@ function saveEdit(id) {
     })
     .catch(error => {
         console.error('Update error:', error);
-        // Fallback: update local data even if API fails
         const index = assessmentsData.findIndex(item => String(item.id) === String(id));
         if (index !== -1) {
             assessmentsData[index] = {
@@ -699,11 +581,7 @@ function saveEdit(id) {
     });
 }
 
-/**
- * Initialize event listeners
- */
 function initializeEventListeners() {
-    // Close dropdowns when clicking outside
     document.addEventListener('click', function(event) {
         const sortByDropdown = document.getElementById('sortByDropdown');
         const sortByButton = document.getElementById('sortByBtn');
@@ -719,7 +597,6 @@ function initializeEventListeners() {
         }
     });
     
-    // Search input event listener
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -729,23 +606,18 @@ function initializeEventListeners() {
     }
 }
 
-/**
- * Initialize the records module
- */
 function initializeRecords() {
     initializeConfig();
     initializeEventListeners();
     loadAssessments();
 }
 
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeRecords);
 } else {
     initializeRecords();
 }
 
-// Export functions to global scope for onclick handlers
 window.deleteAssessment = deleteAssessment;
 window.startEdit = startEdit;
 window.cancelEdit = cancelEdit;
@@ -757,4 +629,3 @@ window.setSortOrder = setSortOrder;
 window.sortBy = sortBy;
 window.toggleCategoryDropdown = toggleCategoryDropdown;
 window.filterByCategory = filterByCategory;
-

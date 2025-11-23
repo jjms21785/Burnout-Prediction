@@ -13,11 +13,12 @@
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-3">
                     <a href="{{ route('home') }}" class="block">
-                        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition-opacity">Burnalytics</h1>
+                        <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent cursor-pointer">Burnalytics</h1>
                     </a>
                 </div>
                 <nav class="flex items-center space-x-8">
                     <a href="#about" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">About</a>
+                    <a href="#learn-more" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105">Learn More</a>
                     @auth
                         <div class="relative" id="userMenuContainer">
                             <button type="button" id="userMenuButton" class="text-gray-600 hover:text-indigo-500 transition-all duration-200 transform hover:scale-105 focus:outline-none">
@@ -42,10 +43,10 @@
     </header>
 
     <!-- Hero Section -->
-    <section id="hero" class="flex items-center justify-center px-4 py-20 bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen">
+    <section id="hero" class="flex items-center justify-center px-4 py-20 bg-gradient-to-br from-indigo-50 to-indigo-50 min-h-screen">
         <div class="max-w-2xl w-full text-center space-y-8">
             <div class="space-y-6">
-                <h2 class="text-5xl md:text-6xl font-bold text-blue-600">
+                <h2 class="text-5xl md:text-6xl font-bold text-indigo-600">
                     Burnalytix
                 </h2>
                 
@@ -61,13 +62,13 @@
             <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <a
                     href="{{ route('assessment.index') }}"
-                    class="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
+                    class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
                 >
                     Take Assessment
                 </a>
                 <a
                     href="#learn-more"
-                    class="px-8 py-3 border-2 border-blue-600 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-all duration-200 transform hover:scale-105"
+                    class="px-8 py-3 border-2 border-indigo-600 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition-all duration-200 transform hover:scale-105"
                 >
                     Learn More
                 </a>
@@ -79,7 +80,7 @@
     <section id="about" class="px-4 py-20 bg-white">
         <div class="max-w-4xl mx-auto space-y-12">
             <div class="text-center space-y-4 mb-12">
-                <h2 class="text-4xl md:text-5xl font-bold text-blue-600">About Burnalytix</h2>
+                <h2 class="text-4xl md:text-5xl font-bold text-indigo-600">About Burnalytix</h2>
                 <p class="text-lg text-slate-600">Understanding Academic Burnout</p>
             </div>
 
@@ -101,12 +102,12 @@
             <div class="space-y-6">
                 <h3 class="text-2xl font-bold text-slate-900">Who Benefits</h3>
                 <div class="grid md:grid-cols-2 gap-6">
-                    <div class="p-6 bg-blue-50 rounded-lg space-y-2">
-                        <h4 class="font-bold text-blue-600">Students</h4>
+                    <div class="p-6 bg-indigo-50 rounded-lg space-y-2">
+                        <h4 class="font-bold text-indigo-600">Students</h4>
                         <p class="text-slate-700 text-sm">Receive early warning about burnout and actionable recommendations for managing stress before performance declines.</p>
                     </div>
-                    <div class="p-6 bg-blue-50 rounded-lg space-y-2">
-                        <h4 class="font-bold text-blue-600">Counselors</h4>
+                    <div class="p-6 bg-indigo-50 rounded-lg space-y-2">
+                        <h4 class="font-bold text-indigo-600">Counselors</h4>
                         <p class="text-slate-700 text-sm">Identify at-risk students automatically, prioritize interventions, and make data-driven decisions with visual dashboards.</p>
                     </div>
                 </div>
@@ -117,28 +118,28 @@
                 <h3 class="text-2xl font-bold text-slate-900">How It Works</h3>
                 <div class="space-y-4">
                     <div class="flex gap-4">
-                        <div class="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                        <div class="flex-shrink-0 w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
                         <div>
                             <h4 class="font-bold text-slate-900">Complete the Assessment</h4>
                             <p class="text-slate-700">Answer validated questions about your exhaustion, engagement, stress, and sleep quality.</p>
                         </div>
                     </div>
                     <div class="flex gap-4">
-                        <div class="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                        <div class="flex-shrink-0 w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
                         <div>
                             <h4 class="font-bold text-slate-900">Machine Learning Analysis</h4>
                             <p class="text-slate-700">Our Random Forest model analyzes your responses and identifies patterns in your burnout risk.</p>
                         </div>
                     </div>
                     <div class="flex gap-4">
-                        <div class="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                        <div class="flex-shrink-0 w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
                         <div>
                             <h4 class="font-bold text-slate-900">Get Your Results</h4>
                             <p class="text-slate-700">Receive a detailed breakdown of your burnout level with personalized recommendations.</p>
                         </div>
                     </div>
                     <div class="flex gap-4">
-                        <div class="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">4</div>
+                        <div class="flex-shrink-0 w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">4</div>
                         <div>
                             <h4 class="font-bold text-slate-900">Connect with Support</h4>
                             <p class="text-slate-700">Counselors review high-risk assessments and reach out with personalized guidance and resources.</p>
@@ -152,19 +153,19 @@
                 <h3 class="text-2xl font-bold text-slate-900">Key Features</h3>
                 <ul class="space-y-2 text-slate-700">
                     <li class="flex gap-2">
-                        <span class="text-blue-600 font-bold">✓</span>
+                        <span class="text-indigo-600 font-bold">✓</span>
                         <span><strong>94.68% Accuracy</strong> - Random Forest model validated on 467 students</span>
                     </li>
                     <li class="flex gap-2">
-                        <span class="text-blue-600 font-bold">✓</span>
+                        <span class="text-indigo-600 font-bold">✓</span>
                         <span><strong>Four Burnout Categories</strong> - Low Burnout, Exhausted, Disengaged, or High Burnout</span>
                     </li>
                     <li class="flex gap-2">
-                        <span class="text-blue-600 font-bold">✓</span>
+                        <span class="text-indigo-600 font-bold">✓</span>
                         <span><strong>Validated Assessment</strong> - Based on OLBI-S, PSS-4, and SCI-8 instruments</span>
                     </li>
                     <li class="flex gap-2">
-                        <span class="text-blue-600 font-bold">✓</span>
+                        <span class="text-indigo-600 font-bold">✓</span>
                         <span><strong>Instant Feedback</strong> - Immediate results with personalized recommendations</span>
                     </li>
                 </ul>
@@ -176,7 +177,7 @@
     <section id="learn-more" class="px-4 py-20 bg-slate-50">
         <div class="max-w-4xl mx-auto space-y-12">
             <div class="text-center space-y-4 mb-12">
-                <h2 class="text-4xl md:text-5xl font-bold text-blue-600">Learn More</h2>
+                <h2 class="text-4xl md:text-5xl font-bold text-indigo-600">Learn More</h2>
                 <p class="text-lg text-slate-600">Deep Dive into the System</p>
             </div>
 
@@ -240,19 +241,19 @@
                 </p>
                 <ul class="space-y-2 text-slate-700">
                     <li class="flex gap-2">
-                        <span class="text-blue-600 font-bold">•</span>
+                        <span class="text-indigo-600 font-bold">•</span>
                         <span>Identifies complex patterns that humans might miss</span>
                     </li>
                     <li class="flex gap-2">
-                        <span class="text-blue-600 font-bold">•</span>
+                        <span class="text-indigo-600 font-bold">•</span>
                         <span>Handles missing or incomplete data gracefully</span>
                     </li>
                     <li class="flex gap-2">
-                        <span class="text-blue-600 font-bold">•</span>
+                        <span class="text-indigo-600 font-bold">•</span>
                         <span>Provides explainable results (not a "black box")</span>
                     </li>
                     <li class="flex gap-2">
-                        <span class="text-blue-600 font-bold">•</span>
+                        <span class="text-indigo-600 font-bold">•</span>
                         <span>Achieved 94.68% accuracy on validation testing</span>
                     </li>
                 </ul>
@@ -263,27 +264,27 @@
                 <h3 class="text-2xl font-bold text-slate-900">For Students</h3>
                 <ol class="space-y-4 text-slate-700">
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">1.</span>
+                        <span class="font-bold text-indigo-600">1.</span>
                         <span>Click "Take Assessment" to begin the 10-minute questionnaire</span>
                     </li>
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">2.</span>
+                        <span class="font-bold text-indigo-600">2.</span>
                         <span>Enter your personal details (name, age, year level, program)</span>
                     </li>
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">3.</span>
+                        <span class="font-bold text-indigo-600">3.</span>
                         <span>Answer all questions honestly on the provided scale</span>
                     </li>
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">4.</span>
+                        <span class="font-bold text-indigo-600">4.</span>
                         <span>Receive your burnout classification and personalized recommendations</span>
                     </li>
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">5.</span>
+                        <span class="font-bold text-indigo-600">5.</span>
                         <span>Save your unique results code to revisit your assessment anytime</span>
                     </li>
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">6.</span>
+                        <span class="font-bold text-indigo-600">6.</span>
                         <span>Connect with guidance counselors if recommended based on your results</span>
                     </li>
                 </ol>
@@ -294,27 +295,27 @@
                 <h3 class="text-2xl font-bold text-slate-900">For Guidance Counselors</h3>
                 <ol class="space-y-4 text-slate-700">
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">1.</span>
+                        <span class="font-bold text-indigo-600">1.</span>
                         <span>Log in to view the dashboard with all student assessments</span>
                     </li>
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">2.</span>
+                        <span class="font-bold text-indigo-600">2.</span>
                         <span>See burnout distribution and demographic breakdowns at a glance</span>
                     </li>
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">3.</span>
+                        <span class="font-bold text-indigo-600">3.</span>
                         <span>Filter students by burnout category to prioritize high-risk cases</span>
                     </li>
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">4.</span>
+                        <span class="font-bold text-indigo-600">4.</span>
                         <span>View detailed assessment results including exhaustion, disengagement, stress, and sleep quality scores</span>
                     </li>
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">5.</span>
+                        <span class="font-bold text-indigo-600">5.</span>
                         <span>Send personalized emails to students with guidance and appointment scheduling</span>
                     </li>
                     <li class="flex gap-3">
-                        <span class="font-bold text-blue-600">6.</span>
+                        <span class="font-bold text-indigo-600">6.</span>
                         <span>Export reports in Excel or PDF for institutional analysis and documentation</span>
                     </li>
                 </ol>
@@ -346,46 +347,18 @@
     </section>
 
     <!-- Footer CTA -->
-    <section class="px-4 py-16 bg-blue-600">
+    <section class="px-4 py-16 bg-indigo-600">
         <div class="max-w-2xl mx-auto text-center space-y-6">
             <h3 class="text-3xl md:text-4xl font-bold text-white">Ready to know your burnout results?</h3>
             <a
                 href="{{ route('assessment.index') }}"
-                class="inline-block px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-md hover:shadow-lg"
+                class="inline-block px-8 py-3 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 transition-colors shadow-md hover:shadow-lg"
             >
                 Take Assessment
             </a>
         </div>
     </section>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const userMenuButton = document.getElementById('userMenuButton');
-            const userMenuDropdown = document.getElementById('userMenuDropdown');
-            
-            if (userMenuButton && userMenuDropdown) {
-                userMenuButton.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const isVisible = userMenuDropdown.classList.contains('opacity-100');
-                    
-                    if (isVisible) {
-                        userMenuDropdown.classList.remove('opacity-100', 'visible');
-                        userMenuDropdown.classList.add('opacity-0', 'invisible');
-                    } else {
-                        userMenuDropdown.classList.remove('opacity-0', 'invisible');
-                        userMenuDropdown.classList.add('opacity-100', 'visible');
-                    }
-                });
-                
-                document.addEventListener('click', function(e) {
-                    const container = document.getElementById('userMenuContainer');
-                    if (container && !container.contains(e.target)) {
-                        userMenuDropdown.classList.remove('opacity-100', 'visible');
-                        userMenuDropdown.classList.add('opacity-0', 'invisible');
-                    }
-                });
-            }
-        });
-    </script>
+    @vite('resources/js/app.js')
 </body>
 </html>

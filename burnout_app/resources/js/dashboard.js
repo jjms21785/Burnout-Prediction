@@ -119,7 +119,6 @@ function initializeCharts(dashboardData) {
     window.dashboardCharts.yearChart = createDoughnutChart('yearChart', yearData.labels, yearData.values, YEAR_COLORS);
 }
 
-
 function createFeatureImportanceChart(dashboardData) {
     const canvas = document.getElementById('featureImportanceChart');
     if (!canvas) return null;
@@ -225,7 +224,6 @@ function initDashboard(dashboardData) {
     initializeCharts(dashboardData);
     window.dashboardCharts.featureImportanceChart = createFeatureImportanceChart(dashboardData);
 }
-
 
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.dashboardData !== 'undefined') {
