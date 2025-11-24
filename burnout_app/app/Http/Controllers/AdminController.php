@@ -81,7 +81,17 @@ class AdminController extends Controller
             })
             ->toArray();
 
-        $programDistribution = Assessment::selectRaw('college, COUNT(*) as count')
+        // Apply same date filter to program distribution
+        $programDistributionQuery = Assessment::query();
+        if ($dateFrom = $request->input('date_from')) {
+            $programDistributionQuery->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo = $request->input('date_to')) {
+            $programDistributionQuery->whereDate('created_at', '<=', $dateTo);
+        }
+        
+        $programDistribution = $programDistributionQuery
+            ->selectRaw('college, COUNT(*) as count')
             ->whereNotNull('college')
             ->groupBy('college')
             ->get()
@@ -90,6 +100,158 @@ class AdminController extends Controller
                 return !empty($key) && $value > 0;
             })
             ->toArray();
+
+        // Calculate program breakdown by category (using filtered assessments)
+        $programBreakdown = [];
+        $programs = array_keys($programDistribution);
+        foreach ($programs as $program) {
+            $programAssessments = $assessments->filter(function($assessment) use ($program) {
+                return $assessment->college === $program;
+            });
+            
+            $programTotal = $programAssessments->count();
+            $high = 0;
+            $exhausted = 0;
+            $disengaged = 0;
+            $low = 0;
+            
+            foreach ($programAssessments as $assessment) {
+                $category = $assessment->getBurnoutCategoryLabel();
+                if ($category === 'High Burnout') {
+                    $high++;
+                } elseif ($category === 'Exhausted') {
+                    $exhausted++;
+                } elseif ($category === 'Disengaged') {
+                    $disengaged++;
+                } elseif ($category === 'Low Burnout') {
+                    $low++;
+                }
+            }
+            
+            $programBreakdown[$program] = [
+                'total' => $programTotal,
+                'high' => $high,
+                'exhausted' => $exhausted,
+                'disengaged' => $disengaged,
+                'low' => $low
+            ];
+        }
+
+        // Calculate gender breakdown by category
+        $genderBreakdown = [];
+        $genders = array_keys($genderDistribution);
+        foreach ($genders as $gender) {
+            $genderAssessments = $assessments->filter(function($assessment) use ($gender) {
+                return $assessment->sex === $gender;
+            });
+            
+            $genderTotal = $genderAssessments->count();
+            $high = 0;
+            $exhausted = 0;
+            $disengaged = 0;
+            $low = 0;
+            
+            foreach ($genderAssessments as $assessment) {
+                $category = $assessment->getBurnoutCategoryLabel();
+                if ($category === 'High Burnout') {
+                    $high++;
+                } elseif ($category === 'Exhausted') {
+                    $exhausted++;
+                } elseif ($category === 'Disengaged') {
+                    $disengaged++;
+                } elseif ($category === 'Low Burnout') {
+                    $low++;
+                }
+            }
+            
+            $genderBreakdown[$gender] = [
+                'total' => $genderTotal,
+                'high' => $high,
+                'exhausted' => $exhausted,
+                'disengaged' => $disengaged,
+                'low' => $low
+            ];
+        }
+
+        // Calculate year breakdown by category
+        $yearBreakdown = [];
+        $years = array_keys($yearDistribution);
+        foreach ($years as $year) {
+            $yearAssessments = $assessments->filter(function($assessment) use ($year) {
+                return $assessment->year === $year;
+            });
+            
+            $yearTotal = $yearAssessments->count();
+            $high = 0;
+            $exhausted = 0;
+            $disengaged = 0;
+            $low = 0;
+            
+            foreach ($yearAssessments as $assessment) {
+                $category = $assessment->getBurnoutCategoryLabel();
+                if ($category === 'High Burnout') {
+                    $high++;
+                } elseif ($category === 'Exhausted') {
+                    $exhausted++;
+                } elseif ($category === 'Disengaged') {
+                    $disengaged++;
+                } elseif ($category === 'Low Burnout') {
+                    $low++;
+                }
+            }
+            
+            $yearBreakdown[$year] = [
+                'total' => $yearTotal,
+                'high' => $high,
+                'exhausted' => $exhausted,
+                'disengaged' => $disengaged,
+                'low' => $low
+            ];
+        }
+
+        // Calculate age breakdown by category
+        $ageBreakdown = [];
+        $ageGroups = array_keys($ageDistribution);
+        foreach ($ageGroups as $ageGroup) {
+            $ageAssessments = $assessments->filter(function($assessment) use ($ageGroup) {
+                $age = $assessment->age;
+                if ($ageGroup === '18-20') {
+                    return $age >= 18 && $age <= 20;
+                } elseif ($ageGroup === '21-23') {
+                    return $age >= 21 && $age <= 23;
+                } elseif ($ageGroup === '24-26') {
+                    return $age >= 24 && $age <= 26;
+                }
+                return false;
+            });
+            
+            $ageTotal = $ageAssessments->count();
+            $high = 0;
+            $exhausted = 0;
+            $disengaged = 0;
+            $low = 0;
+            
+            foreach ($ageAssessments as $assessment) {
+                $category = $assessment->getBurnoutCategoryLabel();
+                if ($category === 'High Burnout') {
+                    $high++;
+                } elseif ($category === 'Exhausted') {
+                    $exhausted++;
+                } elseif ($category === 'Disengaged') {
+                    $disengaged++;
+                } elseif ($category === 'Low Burnout') {
+                    $low++;
+                }
+            }
+            
+            $ageBreakdown[$ageGroup] = [
+                'total' => $ageTotal,
+                'high' => $high,
+                'exhausted' => $exhausted,
+                'disengaged' => $disengaged,
+                'low' => $low
+            ];
+        }
 
         $latestSubmissionsQuery = Assessment::query();
         
@@ -157,10 +319,17 @@ class AdminController extends Controller
             'genderDistribution',
             'yearDistribution',
             'programDistribution',
+            'programBreakdown',
+            'genderBreakdown',
+            'yearBreakdown',
+            'ageBreakdown',
             'latestSubmissions',
             'featureImportance',
             'questionsList'
-        ));
+        ))->with([
+            'dateFrom' => $request->input('date_from'),
+            'dateTo' => $request->input('date_to')
+        ]);
     }
 
 

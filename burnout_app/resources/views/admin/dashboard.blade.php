@@ -179,12 +179,19 @@ window.dashboardData = {
     exhaustion: {{ $exhaustion ?? 0 }},
     disengagement: {{ $disengagement ?? 0 }},
     lowBurnout: {{ $lowBurnout ?? 0 }},
+    totalAssessments: {{ $totalAssessments ?? 0 }},
     ageDistribution: @json($ageDistribution ?? []),
     genderDistribution: @json($genderDistribution ?? []),
     yearDistribution: @json($yearDistribution ?? []),
     programDistribution: @json($programDistribution ?? []),
+    programBreakdown: @json($programBreakdown ?? []),
+    genderBreakdown: @json($genderBreakdown ?? []),
+    yearBreakdown: @json($yearBreakdown ?? []),
+    ageBreakdown: @json($ageBreakdown ?? []),
     featureImportance: @json($featureImportance ?? []),
-    questionsList: @json($questionsList ?? [])
+    questionsList: @json($questionsList ?? []),
+    dateFrom: @json(request('date_from')),
+    dateTo: @json(request('date_to'))
 };
 </script>
 
