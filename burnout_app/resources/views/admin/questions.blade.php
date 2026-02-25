@@ -20,7 +20,7 @@
             <form id="questionsForm" method="POST" action="{{ route('admin.questions.update') }}">
                 @csrf
                 
-                <!-- All Questions (Arranged Numerically) -->
+                <!-- All Questions -->
                 <div class="rounded-xl shadow-sm p-4 mb-4 bg-white border border-gray-200">
                     <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
                         <!-- Description -->
@@ -43,7 +43,7 @@
                     
                     <div class="space-y-2">
                         @php
-                            // Ensure questions are sorted by their numeric ID (Q1-Q30)
+                            // sorted by numeric ID
                             $allQuestions = $questions;
                             usort($allQuestions, function($a, $b) {
                                 $aNum = intval(preg_replace('/[^0-9]/', '', $a['id']));
@@ -79,7 +79,7 @@
 <script>
 let isEditing = false;
 
-// Detect when user starts editing
+// user starts editing
 document.addEventListener('DOMContentLoaded', function() {
     const textareas = document.querySelectorAll('.question-textarea');
     const cancelBtn = document.getElementById('cancelBtn');
@@ -106,8 +106,6 @@ function cancelChanges() {
     }
 }
 
-// Form submission is handled by Laravel automatically
-// No JavaScript intervention needed
 </script>
 @endsection
 

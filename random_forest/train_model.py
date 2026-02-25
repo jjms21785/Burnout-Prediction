@@ -19,11 +19,10 @@ elif 'Burnout_Category' in df.columns:
 else:
     raise ValueError("No category column found! (Expected 'Category' or 'Burnout_Category')")
 
-# Feature selection
-# Use only Q1–Q30 as features
+# Use Q1–Q30 
 features = [f'Q{i}' for i in range(1, 31)]
 
-# Check that all required columns exist
+# Check columns 
 missing = [col for col in features if col not in df.columns]
 if missing:
     raise ValueError(f"Missing feature columns in CSV: {missing}")
@@ -39,7 +38,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(f"\n Train size: {len(X_train)} | Test size: {len(X_test)}")
 
 # Train Random Forest model
-print("\n Training Random Forest model...")
 rf = RandomForestClassifier(
     n_estimators=200,
     max_depth=None,

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Records - Burnalytics')
+    @section('title', 'Records - Burnalytics')
 
 @section('content')
 <!-- Main Content Area -->
